@@ -1,0 +1,5 @@
+/usr/
+/local/
+*.pyc
+.*.swp
+*~

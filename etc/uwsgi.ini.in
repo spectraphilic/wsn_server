@@ -1,0 +1,15 @@
+[uwsgi]
+plugins      = python27
+chdir   =      ${ROOT}
+home         = ${ROOT}/usr
+pythonpath   = ${ROOT}
+module       = project.wsgi
+daemonize    = ${ROOT}/var/uwsgi.log
+pidfile      = ${ROOT}/run/uwsgi.pid
+socket       = ${ROOT}/run/uwsgi.socket
+chown-socket = ${USER}:${GROUP}
+chmod-socket = 664
+vacuum       = True
+
+#master       = true
+#processes    = 1

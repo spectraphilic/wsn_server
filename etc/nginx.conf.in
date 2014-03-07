@@ -1,0 +1,21 @@
+server {
+    listen 80;
+    server_name ${DOMAIN};
+    charset utf-8;
+
+    error_log /var/log/nginx/${NAME}_error_log;
+    access_log /var/log/nginx/${NAME}_access_log;
+
+    location /media {
+        alias ${ROOT}/project/media;
+    }
+
+    location /static {
+        alias ${ROOT}/var/static;
+    }
+
+    location / {
+        include /etc/nginx/uwsgi_params;
+        uwsgi_pass unix:${uwsgi_socket};
+    }
+}

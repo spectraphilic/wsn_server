@@ -1,0 +1,7 @@
+check process ${NAME} with pidfile ${uwsgi_pidfile}
+   start program = "/usr/bin/uwsgi ${ROOT}/etc/uwsgi.ini"
+                   as uid ${USER} and gid ${GROUP}
+   stop  program = "/usr/bin/uwsgi --stop ${uwsgi_pidfile}
+                   as uid ${USER} and gid ${GROUP}
+   if failed unixsocket ${uwsgi_socket} type TCP then restart
+   if 5 restarts within 5 cycles then timeout
