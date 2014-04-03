@@ -7,7 +7,7 @@ Once
 
 Uwsgi::
 
-  # echo "www-servers/uwsgi" >> /etc/portage/package.keywords/uwsgi
+  # echo "www-servers/uwsgi" > /etc/portage/package.keywords/uwsgi
   # emerge uwsgi
  
 Nginx::
@@ -17,7 +17,7 @@ Nginx::
   ...
   include /etc/nginx/sites/*.conf;
   ...
-  # rc-service nginx restart
+  # service nginx restart
 
 
 Each
@@ -25,15 +25,15 @@ Each
 
 Make::
 
-  $ cd <PATH-TO-PROJECT>/etc
+  $ cd <PATH-TO-PROJECT>
   $ make deploy
 
 Nginx::
 
   # cp <PATH-TO-PROJECT>/etc/nginx.conf /etc/nginx/sites/<PROJECT-NAME>.conf
-  # rc-service nginx reload
+  # service nginx reload
  
 Monit::
 
   # cp <PATH-TO-PROJECT>/etc/monit.conf /etc/monit.d/<PROJECT-NAME>.conf
-  # rc-service monit reload
+  # service monit reload
