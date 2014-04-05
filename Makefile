@@ -10,7 +10,10 @@ help:
 install:
 	virtualenv --setuptools -p /usr/bin/python2 usr
 	usr/bin/pip install --upgrade setuptools
-	usr/bin/pip install -r requirements.txt
+	usr/bin/pip install -r etc/requirements.txt
+
+update:
+	usr/bin/pip install -r etc/requirements.txt
 
 deploy:
 	./boot.py build
