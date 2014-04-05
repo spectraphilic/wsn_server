@@ -13,7 +13,7 @@ install:
 	usr/bin/pip install -r requirements.txt
 
 deploy:
-	$(MAKE) -C etc
+	./boot.py build
 	./manage.py collectstatic --noinput
 
 start:

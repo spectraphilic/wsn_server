@@ -10,6 +10,7 @@ socket       = ${ROOT}/run/uwsgi.socket
 chown-socket = ${USER}:${GROUP}
 chmod-socket = 664
 vacuum       = True
+env          = DJANGO_SETTINGS_MODULE=project.settings.${TARGET}
 
 #master       = true
 #processes    = 1
