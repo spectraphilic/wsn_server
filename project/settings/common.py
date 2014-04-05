@@ -9,15 +9,15 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 """
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-import os
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+from os.path import dirname, join
+BASE_DIR = dirname(dirname(dirname(__file__)))
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'pc-5!jab)_5wa=%-fmhx-b9_u15qcond&7vkk3b8y*t4!y!q+r'
+SECRET_KEY = ''
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -58,7 +58,7 @@ WSGI_APPLICATION = 'project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'var', 'db.sqlite3'),
+        'NAME': join(BASE_DIR, 'var', 'db.sqlite3'),
     }
 }
 
@@ -80,3 +80,17 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
 
 STATIC_URL = '/static/'
+
+#
+# Handle the secret key automatically and securely
+#
+try:
+    from secret import SECRET_KEY
+except ImportError:
+    from random import choice
+    from string import ascii_letters, digits
+
+    choices = ascii_letters + digits
+    SECRET_KEY = ''.join([ choice(choices) for x in range(50) ])
+    filename = join(dirname(__file__), 'secret.py')
+    open(filename, 'w').write("SECRET_KEY = '%s'\n" % SECRET_KEY)
