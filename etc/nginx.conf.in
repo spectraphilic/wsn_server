@@ -7,7 +7,7 @@ server {
     access_log /var/log/nginx/${NAME}_access_log;
 
     location /media {
-        alias ${ROOT}/project/media;
+        alias ${ROOT}/var/media;
     }
 
     location /static {
