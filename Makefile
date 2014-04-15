@@ -23,8 +23,8 @@ start:
 	uwsgi etc/uwsgi.ini
 
 stop:
-	uwsgi --stop run/uwsgi.pid
+	uwsgi --stop var/run/uwsgi.pid
 
 restart:
-	uwsgi --stop run/uwsgi.pid
+	uwsgi --stop var/run/uwsgi.pid
 	uwsgi etc/uwsgi.ini

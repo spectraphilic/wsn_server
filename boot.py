@@ -42,8 +42,8 @@ def build(parser, args):
         'DOMAIN' : ' '.join(settings.ALLOWED_HOSTS),
         'NAME'   : name,
         'ROOT'   : root,
-        'PIDFILE': join(root, 'run', 'uwsgi.pid'),
-        'SOCKET' : join(root, 'run', 'uwsgi.socket'),
+        'PIDFILE': join(root, 'var', 'run', 'uwsgi.pid'),
+        'SOCKET' : join(root, 'var', 'run', 'uwsgi.socket'),
         'USER'   : getenv('USER'),
         'GROUP'  : 'nginx', # www-data for Debian
         'TARGET' : target,
