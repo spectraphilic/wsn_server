@@ -1,6 +1,6 @@
 [uwsgi]
 plugins      = python27
-chdir   =      ${ROOT}
+chdir        = ${ROOT}
 home         = ${ROOT}/usr
 pythonpath   = ${ROOT}
 module       = project.wsgi
