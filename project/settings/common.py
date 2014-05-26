@@ -10,8 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.6/ref/settings/
 """
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+# Import from the Standard Library
 from os.path import dirname, join
+from random import choice
+from socket import getfqdn
+from string import ascii_letters, digits
+
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = dirname(dirname(dirname(__file__)))
 
 
@@ -82,6 +87,18 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = join(BASE_DIR, 'var', 'static')
+
+# Media files
+MEDIA_ROOT = join(BASE_DIR, 'var', 'media')
+MEDIA_URL = '/media/'
+
+#
+# Emails
+#
+ADMINS = ()
+MANAGERS = ADMINS
+SERVER_EMAIL = 'root@' + getfqdn()
 
 #
 # Handle the secret key automatically and securely
@@ -89,9 +106,6 @@ STATIC_URL = '/static/'
 try:
     from secret import SECRET_KEY
 except ImportError:
-    from random import choice
-    from string import ascii_letters, digits
-
     choices = ascii_letters + digits
     SECRET_KEY = ''.join([ choice(choices) for x in range(50) ])
     filename = join(dirname(__file__), 'secret.py')
