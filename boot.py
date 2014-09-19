@@ -9,59 +9,71 @@ from os.path import abspath, dirname, join
 from string import Template
 
 
-def build(parser, args):
-    # Load the configuration file
-    config = ConfigParser()
-    config.read('etc/boot.ini')
-    name = config.get('boot', 'name')
 
-    # Get the target
-    target = args.target
-    try:
-        old_target = open('var/boot').read()
-    except IOError:
-        old_target = None
+class Build(object):
 
-    if not target:
-        target = old_target or 'development' # Default
+    config = None
+    target = None
 
-    if target != old_target:
-        open('var/boot', 'w').write(target)
+    def get_config_value(self, key):
+        config = self.config
+        return config.get(self.target, 'name') or config.get('boot', 'name')
 
-    print 'Build... (target is %s)' % target
 
-    # Load the settings file
-    settings = import_module('project.settings.%s' % target)
+    def build(self, parser, args):
+        # The configuration file
+        config = ConfigParser()
+        config.read('etc/boot.ini')
+        self.config = config
 
-    # The namespace
-    root = abspath(dirname(__file__))
-    namespace = {
-        'DOMAIN' : ' '.join(settings.ALLOWED_HOSTS),
-        'NAME'   : name,
-        'ROOT'   : root,
-        'PIDFILE': join(root, 'var', 'run', 'uwsgi.pid'),
-        'SOCKET' : join(root, 'var', 'run', 'uwsgi.socket'),
-        'USER'   : getenv('USER'),
-        'GROUP'  : 'nginx', # www-data for Debian
-        'TARGET' : target,
-    }
+        # The target
+        target = args.target
+        try:
+            old_target = open('var/boot').read()
+        except IOError:
+            old_target = None
 
-    # Process etc
-    for filename in listdir('etc'):
-        if not filename.endswith('.in'):
-            continue
+        if not target:
+            target = old_target or 'development' # Default
 
-        file_in = join('etc', filename)
-        file_out = file_in[:-3]
+        if target != old_target:
+            open('var/boot', 'w').write(target)
 
-        print 'Update', file_out
-        template = open(file_in).read()
-        template = Template(template)
-        data = template.substitute(**namespace)
-        open(file_out, 'w').write(data)
+        self.target = target
 
-    print 'Done.'
-    print
+        # Load the settings file
+        print 'Build... (target is %s)' % target
+        settings = import_module('project.settings.%s' % target)
+
+        # The namespace
+        root = abspath(dirname(__file__))
+        namespace = {
+            'DOMAIN' : ' '.join(settings.ALLOWED_HOSTS),
+            'NAME'   : self.get_config_value('name'),
+            'ROOT'   : root,
+            'PIDFILE': join(root, 'var', 'run', 'uwsgi.pid'),
+            'SOCKET' : join(root, 'var', 'run', 'uwsgi.socket'),
+            'USER'   : getenv('USER'),
+            'GROUP'  : 'nginx', # www-data for Debian
+            'TARGET' : target,
+        }
+
+        # Process etc
+        for filename in listdir('etc'):
+            if not filename.endswith('.in'):
+                continue
+
+            file_in = join('etc', filename)
+            file_out = file_in[:-3]
+
+            print 'Update', file_out
+            template = open(file_in).read()
+            template = Template(template)
+            data = template.substitute(**namespace)
+            open(file_out, 'w').write(data)
+
+        print 'Done.'
+        print
 
 
 if __name__ == '__main__':
@@ -71,7 +83,7 @@ if __name__ == '__main__':
     # boot.py build
     parser_build = subparsers.add_parser('build')
     parser_build.add_argument('target', nargs='?')
-    parser_build.set_defaults(func=build)
+    parser_build.set_defaults(func=Build().build)
 
     # Go!
     args = parser.parse_args()
