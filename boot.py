@@ -5,12 +5,9 @@ from argparse import ArgumentParser
 from ConfigParser import ConfigParser
 from importlib import import_module
 from os import getenv, listdir
-from os.path import abspath, dirname, exists, getmtime, join
+from os.path import abspath, dirname, join
 from string import Template
 
-
-def file_is_stale(file_in, file_out):
-    return not exists(file_out) or getmtime(file_out) < getmtime(file_in)
 
 def build(parser, args):
     # Load the configuration file
@@ -56,8 +53,6 @@ def build(parser, args):
 
         file_in = join('etc', filename)
         file_out = file_in[:-3]
-        if target == old_target and not file_is_stale(file_in, file_out):
-            continue
 
         print 'Update', file_out
         template = open(file_in).read()
