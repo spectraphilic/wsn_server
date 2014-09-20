@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 from ConfigParser import ConfigParser, NoSectionError
 from importlib import import_module
 from os import getenv, listdir
-from os.path import abspath, dirname, join
+from os.path import abspath, dirname, exists, join
 from string import Template
 
 
@@ -70,8 +70,15 @@ class Build(object):
 
             file_in = join('etc', filename)
             file_out = file_in[:-3]
-
             print 'Update', file_out
+
+            # Make a backup of the old file
+            if exists(file_out):
+                file_bak = file_out + '.bak'
+                data = open(file_out).read()
+                open(file_bak, 'w').write(data)
+
+            # Update
             template = open(file_in).read()
             template = Template(template)
             data = template.substitute(**namespace)
