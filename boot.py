@@ -2,7 +2,7 @@
 
 # Import from the Standard Library
 from argparse import ArgumentParser
-from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser, NoSectionError
 from importlib import import_module
 from os import getenv, listdir
 from os.path import abspath, dirname, join
@@ -17,7 +17,12 @@ class Build(object):
 
     def get_config_value(self, key):
         config = self.config
-        return config.get(self.target, 'name') or config.get('boot', 'name')
+        try:
+            value = config.get(self.target, 'name')
+        except NoSectionError:
+            value = None
+
+        return value or config.get('boot', 'name')
 
 
     def build(self, parser, args):
