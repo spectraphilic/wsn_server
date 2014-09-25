@@ -12,5 +12,5 @@ chmod-socket = 664
 vacuum       = True
 env          = DJANGO_SETTINGS_MODULE=project.settings.${TARGET}
 
-#master       = true
-#processes    = 1
+master       = true
+processes    = 2
