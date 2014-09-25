@@ -12,10 +12,8 @@ install:
 	usr/bin/pip install --upgrade setuptools
 	usr/bin/pip install -r etc/requirements.txt
 
-update:
-	usr/bin/pip install -r etc/requirements.txt
-
 deploy:
+	usr/bin/pip install -r etc/requirements.txt
 	./boot.py build
 	./manage.py collectstatic --noinput
 
