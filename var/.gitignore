@@ -1,4 +1,0 @@
-static
-uwsgi.log
-db.sqlite3
-boot

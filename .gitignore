@@ -1,5 +1,6 @@
-/usr/
 /local/
+/usr/
+/var/
 *.pyc
 .*.swp
 *~
