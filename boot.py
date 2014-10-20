@@ -2,7 +2,7 @@
 
 # Import from the Standard Library
 from argparse import ArgumentParser
-from ConfigParser import ConfigParser, NoSectionError
+from configparser import ConfigParser, NoSectionError
 from importlib import import_module
 from os import getenv, listdir
 from os.path import abspath, dirname, exists, join
