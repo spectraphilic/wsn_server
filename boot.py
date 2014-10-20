@@ -47,7 +47,7 @@ class Build(object):
         self.target = target
 
         # Load the settings file
-        print 'Build... (target is %s)' % target
+        print('Build... (target is %s)' % target)
         settings = import_module('project.settings.%s' % target)
 
         # The namespace
@@ -70,7 +70,7 @@ class Build(object):
 
             file_in = join('etc', filename)
             file_out = file_in[:-3]
-            print 'Update', file_out
+            print('Update', file_out)
 
             # Make a backup of the old file
             if exists(file_out):
@@ -84,8 +84,8 @@ class Build(object):
             data = template.substitute(**namespace)
             open(file_out, 'w').write(data)
 
-        print 'Done.'
-        print
+        print('Done.')
+        print()
 
 
 if __name__ == '__main__':
