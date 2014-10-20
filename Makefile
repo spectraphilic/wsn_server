@@ -8,7 +8,7 @@ help:
 
 
 install:
-	virtualenv --setuptools -p /usr/bin/python2 usr
+	virtualenv --setuptools -p /usr/bin/python3 usr
 	usr/bin/pip install --upgrade setuptools
 	usr/bin/pip install -r etc/requirements.txt
 

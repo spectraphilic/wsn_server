@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 # Import from the Standard Library
 from argparse import ArgumentParser
