@@ -1,5 +1,5 @@
 [uwsgi]
-plugins      = python33
+plugins      = python34
 chdir        = ${ROOT}
 home         = ${ROOT}/usr
 pythonpath   = ${ROOT}
