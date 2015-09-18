@@ -19,7 +19,7 @@ from socket import getfqdn
 from string import ascii_letters, digits
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = dirname(dirname(dirname(abspath(__file__))))
+BASE_DIR = dirname(dirname(abspath(__file__)))
 
 
 # Quick-start development settings - unsuitable for production

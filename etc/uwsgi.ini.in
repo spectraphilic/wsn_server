@@ -10,7 +10,7 @@ socket       = ${SOCKET}
 chown-socket = ${USER}:${GROUP}
 chmod-socket = 664
 vacuum       = True
-env          = DJANGO_SETTINGS_MODULE=project.settings.${TARGET}
+env          = DJANGO_SETTINGS_MODULE=boot.settings.${TARGET}
 
 master       = true
 processes    = 2

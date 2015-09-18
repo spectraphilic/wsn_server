@@ -10,11 +10,11 @@ help:
 install:
 	virtualenv --setuptools -p /usr/bin/python3 usr
 	usr/bin/pip install --upgrade setuptools
-	usr/bin/pip install -r etc/requirements.txt
+	usr/bin/pip install -r boot/requirements.txt
 
 deploy:
-	usr/bin/pip install -r etc/requirements.txt
-	./boot.py build
+	usr/bin/pip install -r boot/requirements.txt
+	./boot/boot.py build
 	./manage.py collectstatic --noinput
 
 start:

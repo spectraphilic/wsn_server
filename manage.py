@@ -8,7 +8,7 @@ if __name__ == "__main__":
     else:
         target = 'development'
 
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project.settings.%s" % target)
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "boot.settings.%s" % target)
 
     from django.core.management import execute_from_command_line
 

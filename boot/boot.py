@@ -7,6 +7,7 @@ from importlib import import_module
 from os import getenv, listdir
 from os.path import abspath, dirname, exists, join
 from string import Template
+import sys
 
 
 
@@ -28,7 +29,7 @@ class Build(object):
     def build(self, parser, args):
         # The configuration file
         config = ConfigParser()
-        config.read('etc/boot.ini')
+        config.read('boot/boot.ini')
         self.config = config
 
         # The target
@@ -48,10 +49,9 @@ class Build(object):
 
         # Load the settings file
         print('Build... (target is %s)' % target)
-        settings = import_module('project.settings.%s' % target)
+        settings = import_module('boot.settings.%s' % target)
 
         # The namespace
-        root = abspath(dirname(__file__))
         namespace = {
             'DOMAIN' : ' '.join(settings.ALLOWED_HOSTS),
             'NAME'   : self.get_config_value('name'),
@@ -96,6 +96,10 @@ if __name__ == '__main__':
     parser_build = subparsers.add_parser('build')
     parser_build.add_argument('target', nargs='?')
     parser_build.set_defaults(func=Build().build)
+
+    # Add the root (..) to sys.path
+    root = dirname(dirname(abspath(__file__)))
+    sys.path.insert(0, root)
 
     # Go!
     args = parser.parse_args()
