@@ -1,5 +1,16 @@
+"""
+The purpose of this module is to wrap the wsgi application to add these
+features:
 
-class PingMiddleware(object):
+  /ping  -- URL used for monitoring purposes, to know whether the application
+            is responding or not.
+
+"""
+
+from project.wsgi import application
+
+
+class PingMiddleware:
 
     def __init__(self, app):
         self.app = app
@@ -14,3 +25,6 @@ class PingMiddleware(object):
             return [text]
 
         return self.app(environ, start_response)
+
+# Add url /ping for monitoring
+application = PingMiddleware(application)
