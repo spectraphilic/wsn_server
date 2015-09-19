@@ -1,0 +1,13 @@
+[uwsgi]
+plugins      = python34
+chdir        = ${ROOT}
+home         = ${ROOT}/usr
+pythonpath   = ${ROOT}
+module       = boot.wsgi
+pidfile      = ${PIDFILE}
+http         = 127.0.0.1:8000
+vacuum       = True
+env          = DJANGO_SETTINGS_MODULE=boot.settings.${TARGET}
+
+master       = true
+processes    = 2

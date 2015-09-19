@@ -3,12 +3,7 @@ import os
 import sys
 
 if __name__ == "__main__":
-    if os.path.exists('var/boot'):
-        target = open('var/boot').read().strip()
-    else:
-        target = 'development'
-
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "boot.settings.%s" % target)
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "boot.active.settings")
 
     from django.core.management import execute_from_command_line
 
