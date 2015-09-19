@@ -42,7 +42,7 @@ setup: target
 # requirements
 requirements:
 	usr/bin/pip install -r boot/requirements.txt
-ifneq ("$(wildcard boot/$(TARGET))","")
+ifneq ("$(wildcard boot/active/requirements.txt)","")
 	usr/bin/pip install -r boot/active/requirements.txt
 endif
 
@@ -55,7 +55,10 @@ install: setup requirements
 #
 update: requirements
 	./boot/boot.py build
-	./manage.py collectstatic --noinput
+ifneq ("$(wildcard boot/active/Makefile)","")
+	$(MAKE) -C boot/active
+endif
+
 
 start:
 	uwsgi boot/active/uwsgi.ini

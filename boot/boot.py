@@ -14,42 +14,22 @@ import sys
 class Build(object):
 
     config = None
-    target = None
 
     def get_config_value(self, key):
-        config = self.config
         try:
-            value = config.get(self.target, 'name')
+            return self.config.get('boot', key)
         except NoSectionError:
-            value = None
-
-        return value or config.get('boot', 'name')
-
+            return None
 
     def build(self, parser, args):
         # The configuration file
         config = ConfigParser()
-        config.read('boot/boot.ini')
+        config.read('boot/active/boot.ini')
         self.config = config
 
-        # The target
-        target = args.target
-        try:
-            old_target = open('var/boot').read()
-        except IOError:
-            old_target = None
-
-        if not target:
-            target = old_target or 'development' # Default
-
-        if target != old_target:
-            open('var/boot', 'w').write(target)
-
-        self.target = target
-
         # Load the settings file
-        print('Build... (target is %s)' % target)
-        settings = import_module('boot.settings.%s' % target)
+        print('Build...')
+        settings = import_module('boot.active.settings')
 
         # The namespace
         namespace = {
@@ -60,15 +40,14 @@ class Build(object):
             'SOCKET' : join(root, 'var', 'run', 'uwsgi.socket'),
             'USER'   : getenv('USER'),
             'GROUP'  : 'nginx', # www-data for Debian
-            'TARGET' : target,
         }
 
         # Process etc
-        for filename in listdir('etc'):
+        for filename in listdir('boot/active'):
             if not filename.endswith('.in'):
                 continue
 
-            file_in = join('etc', filename)
+            file_in = join('boot/active', filename)
             file_out = file_in[:-3]
             print('Update', file_out)
 
@@ -94,7 +73,6 @@ if __name__ == '__main__':
 
     # boot.py build
     parser_build = subparsers.add_parser('build')
-    parser_build.add_argument('target', nargs='?')
     parser_build.set_defaults(func=Build().build)
 
     # Add the root (..) to sys.path

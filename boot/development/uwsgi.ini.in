@@ -7,7 +7,7 @@ module       = boot.wsgi
 pidfile      = ${PIDFILE}
 http         = 127.0.0.1:8000
 vacuum       = True
-env          = DJANGO_SETTINGS_MODULE=boot.settings.${TARGET}
+env          = DJANGO_SETTINGS_MODULE=boot.active.settings
 
 master       = true
 processes    = 2
