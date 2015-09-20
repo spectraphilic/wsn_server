@@ -18,10 +18,10 @@ class PingMiddleware:
     def __call__(self, environ, start_response):
         if environ['PATH_INFO'] == '/ping':
             # we're being asked to render the profile view
-            text = 'pong'
+            text = 'pong'.encode('utf-8')
             start_response('200 OK', [
-                ('content-type', 'text/html; charset="UTF-8"'),
-                ('content-length', str(len(text)))])
+                ('Content-type', 'text/plain; charset="utf-8"'),
+                ('Content-length', str(len(text)))])
             return [text]
 
         return self.app(environ, start_response)
