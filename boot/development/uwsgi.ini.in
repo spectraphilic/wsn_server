@@ -5,9 +5,11 @@ home         = ${ROOT}/usr
 pythonpath   = ${ROOT}
 module       = boot.wsgi
 pidfile      = ${PIDFILE}
-http         = 127.0.0.1:8000
 vacuum       = True
 env          = DJANGO_SETTINGS_MODULE=boot.active.settings
 
 master       = true
+master-fifo  = ${FIFO}
 processes    = 2
+
+http         = 127.0.0.1:8000

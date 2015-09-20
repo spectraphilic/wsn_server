@@ -7,7 +7,7 @@ help:
 	@echo "make install"
 	@echo "    Creates the virtual environment, installs the required"
 	@echo "    software, and just prepares everything, including"
-	@echo "    initilizing the database (python manage.py migrate)."
+	@echo "    initilizing the database."
 	@echo
 	@echo "    This will also set the symbolic link boot/activate, by"
 	@echo "    default to the 'development' target. This can be changed"
@@ -84,6 +84,7 @@ _syn:
 # Rules
 #
 install: _env _lnk _req _bld _syn
+	./manage.py createsuperuser
 
 switch: _lnk _req _bld
 
@@ -95,4 +96,5 @@ start:
 stop:
 	uwsgi --stop var/run/uwsgi.pid
 
-restart: stop start
+reload:
+	echo r > var/run/uwsgi.fifo

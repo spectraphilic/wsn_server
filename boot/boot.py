@@ -37,6 +37,7 @@ class Build(object):
             'NAME'   : self.get_config_value('name'),
             'ROOT'   : root,
             'PIDFILE': join(root, 'var', 'run', 'uwsgi.pid'),
+            'FIFO'   : join(root, 'var', 'run', 'uwsgi.fifo'),
             'SOCKET' : join(root, 'var', 'run', 'uwsgi.socket'),
             'USER'   : getenv('USER'),
             'GROUP'  : 'nginx', # www-data for Debian

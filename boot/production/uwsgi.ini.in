@@ -4,13 +4,15 @@ chdir        = ${ROOT}
 home         = ${ROOT}/usr
 pythonpath   = ${ROOT}
 module       = boot.wsgi
-daemonize    = ${ROOT}/var/log/uwsgi.log
 pidfile      = ${PIDFILE}
-socket       = ${SOCKET}
-chown-socket = ${USER}:${GROUP}
-chmod-socket = 664
 vacuum       = True
 env          = DJANGO_SETTINGS_MODULE=boot.active.settings
 
 master       = true
+master-fifo  = ${FIFO}
 processes    = 2
+
+daemonize    = ${ROOT}/var/log/uwsgi.log
+socket       = ${SOCKET}
+chown-socket = ${USER}:${GROUP}
+chmod-socket = 664
