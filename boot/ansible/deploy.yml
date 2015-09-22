@@ -1,0 +1,14 @@
+- name: "Deploy update in a server"
+  hosts: "localhost"
+  vars:
+    prefix: "{{ ansible_user_dir }}/testing-ansible"
+  tasks:
+  - debug: "var=dest"
+  - name: "Find out Git url"
+    command: "git config --get remote.origin.url"
+    register: "repo"
+    changed_when: false
+  - set_fact: "repo={{ repo.stdout }}"
+  - set_fact: "name={{ repo|basename|regex_replace('.git$', '') }}"
+  - name: "Git pull"
+    git: "dest={{ prefix }}/{{ name }} repo={{ repo }}"
