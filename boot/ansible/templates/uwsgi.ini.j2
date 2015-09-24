@@ -1,0 +1,18 @@
+[uwsgi]
+plugins      = python34
+chdir        = {{ root }}
+home         = {{ venv }}
+pythonpath   = {{ root }}
+module       = boot.wsgi
+pidfile      = {{ pid }}
+vacuum       = True
+env          = DJANGO_SETTINGS_MODULE=boot.active.settings
+
+master       = true
+master-fifo  = {{ fifo }}
+processes    = 2
+
+xdaemonize    = {{ root }}/var/log/uwsgi.log
+socket       = {{ sock }}
+chown-socket = {{ user }}:{{ group }}
+chmod-socket = 664

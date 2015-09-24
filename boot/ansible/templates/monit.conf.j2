@@ -1,0 +1,9 @@
+check process {{ name }} with pidfile {{ pid }}
+   start program = "/usr/bin/uwsgi {{ root }}/etc/uwsgi.ini"
+                   as uid {{ user }} and gid {{ group }}
+   stop  program = "/usr/bin/uwsgi --stop {{ pid }}"
+                   as uid {{ user }} and gid {{ group }}
+   if failed unixsocket {{ sock }} type TCP then restart
+   if failed port 80 protocol http request "/ping" status = 200
+      hostheader "{{ domain }}" then restart
+   if 5 restarts within 5 cycles then timeout
