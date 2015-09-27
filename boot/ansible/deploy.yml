@@ -67,7 +67,7 @@
 
   - name: "Uwsgi configuration"
     template:
-      src: "templates/uwsgi.conf.j2"
+      src: "templates/uwsgi.ini.j2"
       dest: "{{ root }}/etc/uwsgi.conf"
     notify: "reload uwsgi"
 
@@ -77,13 +77,17 @@
       dest: "{{ root }}/etc/nginx.conf"
     notify: "reload nginx"
 
+  - name: "(sudo) Nginx: mkdir /etc/nginx/sites"
+    file: "path=/etc/nginx/sites state=directory"
+    sudo: true
+
   - name: "Nginx symlink"
     file:
       path: "/etc/nginx/sites/{{ name }}.conf"
       state: "link"
       src: "{{ root }}/etc/nginx.conf"
-    sudo: true
     notify: "reload nginx"
+    sudo: true
 
   - name: "Monit configuration"
     template:
@@ -91,12 +95,17 @@
       dest: "{{ root }}/etc/monit.conf"
     notify: "restart monit"
 
+  - name: "(sudo) Monit: mkdir /etc/monit.d"
+    file: "path=/etc/monit.d state=directory"
+    sudo: true
+
   - name: "Monit symlink"
-    template:
+    file:
       path: "/etc/monit.d/{{ name }}.conf"
       state: "link"
       src: "{{ root }}/etc/monit.conf"
     notify: "restart monit"
+    sudo: true
 
   #
   # Handlers

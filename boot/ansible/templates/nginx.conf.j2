@@ -16,6 +16,6 @@ server {
 
     location / {
         include /etc/nginx/uwsgi_params;
-        uwsgi_pass unix:{{ socket }};
+        uwsgi_pass unix:{{ sock }};
     }
 }
