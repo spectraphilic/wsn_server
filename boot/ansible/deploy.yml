@@ -5,6 +5,7 @@
     domain: "{{ ansible_default_ipv4.address }}.xip.io"
     user  : "{{ ansible_user_id }}"
     group : "{% if ansible_os_family == 'Debian' %}www-data{% else %}nginx{% endif %}"
+    target: "{{ hostvars[inventory_hostname].target }}"
 
   tasks:
   - name: "Find out Git url"
@@ -42,9 +43,17 @@
 
   - name: "Install Python packages"
     pip:
-      executable: pip
+      executable: "pip"
       virtualenv: "{{ venv }}"
       requirements: "{{ root }}/boot/requirements.txt"
+
+  #
+  # Settings
+  #
+  - name: "Copy settings file"
+    copy:
+      src: "files/settings.{{ target }}.py"
+      dest: "{{ root }}/project/local_settings.py"
 
   #
   # Database

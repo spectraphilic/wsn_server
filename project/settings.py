@@ -128,3 +128,13 @@ except ImportError:
     SECRET_KEY = ''.join([ choice(choices) for x in range(50) ])
     filename = join(dirname(__file__), 'secret.py')
     open(filename, 'w').write("SECRET_KEY = '%s'\n" % SECRET_KEY)
+
+
+#
+# Local settings
+#
+try:
+    from local_settings import *
+except ImportError, e:
+    if 'local_settings' not in e:
+        raise e

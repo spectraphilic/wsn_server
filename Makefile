@@ -99,5 +99,8 @@ stop:
 reload:
 	echo r > var/run/uwsgi.fifo
 
+#
+# Ansible
+#
 deploy:
 	ansible-playbook -i boot/ansible/hosts boot/ansible/deploy.yml
