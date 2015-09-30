@@ -135,6 +135,6 @@ except ImportError:
 #
 try:
     from local_settings import *
-except ImportError, e:
+except ImportError as e:
     if 'local_settings' not in e:
         raise e
