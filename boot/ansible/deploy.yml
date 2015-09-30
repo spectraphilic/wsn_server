@@ -6,6 +6,7 @@
     user  : "{{ ansible_user_id }}"
     group : "{% if ansible_os_family == 'Debian' %}www-data{% else %}nginx{% endif %}"
     target: "{{ hostvars[inventory_hostname].target }}"
+    cwd   : "{{ playbook_dir|dirname|dirname }}"
 
   tasks:
   - name: "Find out Git url"
@@ -30,7 +31,8 @@
       pid : "{{ root }}/var/run/uwsgi.pid"
 
   - name: "Git pull"
-    git: "repo={{ repo }} dest={{ root }}"
+    git: "repo=file:///{{ cwd }} dest={{ root }}"
+    #git: "repo={{ repo }} dest={{ root }}"
 
   #
   # Virtualenv
