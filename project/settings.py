@@ -136,5 +136,5 @@ except ImportError:
 try:
     from local_settings import *
 except ImportError as e:
-    if 'local_settings' not in e:
+    if 'local_settings' not in e.msg:
         raise e
