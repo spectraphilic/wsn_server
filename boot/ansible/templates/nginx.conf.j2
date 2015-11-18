@@ -15,6 +15,7 @@ server {
     }
 
     location / {
+        client_max_body_size 10m;
         include /etc/nginx/uwsgi_params;
         uwsgi_pass unix:{{ sock }};
     }
