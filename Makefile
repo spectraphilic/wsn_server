@@ -104,3 +104,6 @@ reload:
 #
 deploy:
 	ansible-playbook -i boot/ansible/hosts boot/ansible/deploy.yml
+
+ansible-install:
+	ansible-playbook -i boot/ansible/hosts boot/ansible/install.yml

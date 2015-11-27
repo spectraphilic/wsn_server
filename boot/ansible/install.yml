@@ -1,0 +1,31 @@
+- name: "Install locally, in-site"
+  hosts: "local"
+  vars_files:
+  - "vars.yml"
+
+  tasks:
+
+  # Find out root & name
+  - name: "Find out working tree root directory"
+    command: "git rev-parse --show-toplevel"
+    register: "root"
+  - set_fact:
+      root: "{{ root.stdout }}"
+
+  - set_fact:
+      name: "{{ root|basename }}"
+
+  #
+  # Variables
+  #
+  - set_fact:
+      sock: "{{ root }}/var/run/uwsgi.socket"
+      fifo: "{{ root }}/var/run/uwsgi.fifo"
+      pid : "{{ root }}/var/run/uwsgi.pid"
+
+  #
+  # Includes
+  #
+  - include: "tasks/venv.yml"
+  - include: "tasks/settings.yml"
+  - include: "tasks/database.yml"

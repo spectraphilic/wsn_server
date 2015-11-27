@@ -1,72 +1,47 @@
 - name: "Deploy update in a server"
   hosts: "localhost"
-  vars:
-    prefix: "{{ ansible_user_dir }}/testing-ansible"
-    domain: "{{ ansible_default_ipv4.address }}.xip.io"
-    user  : "{{ ansible_user_id }}"
-    group : "{% if ansible_os_family == 'Debian' %}www-data{% else %}nginx{% endif %}"
-    target: "{{ hostvars[inventory_hostname].target }}"
-    cwd   : "{{ playbook_dir|dirname|dirname }}"
+  vars_files:
+  - "vars.yml"
 
   tasks:
+
+  # Find out repo
   - name: "Find out Git url"
     command: "git config --get remote.origin.url"
     register: "repo"
     changed_when: false
+  - set_fact:
+      repo: "{{ repo.stdout }}"
+
+  # Find out root & name
+  - set_fact:
+      name: "{{ repo|basename|regex_replace('.git$', '') }}"
+
+  - name: "Expand prefix"              # Ansible 2: not needed anymore (use ~)
+    command: "realpath {{ prefix }}"
+    register: "prefix"
+    changed_when: false
+  - set_fact:
+      prefix: "{{ prefix.stdout }}"
+
+  - set_fact:
+      root: "{{ prefix }}/{{ name }}"
 
   #
   # Variables
   #
   - set_fact:
-      repo: "{{ repo.stdout }}"
-  - set_fact:
-      # Ansible 2: {{ repo|basename|splitext|first }}
-      name: "{{ repo|basename|regex_replace('.git$', '') }}"
-  - set_fact:
-      root: "{{ prefix }}/{{ name }}"
-  - set_fact:
-      venv: "{{ root }}/usr"
       sock: "{{ root }}/var/run/uwsgi.socket"
       fifo: "{{ root }}/var/run/uwsgi.fifo"
       pid : "{{ root }}/var/run/uwsgi.pid"
 
-  - name: "Git pull"
-    git: "repo=file:///{{ cwd }} dest={{ root }}"
-    #git: "repo={{ repo }} dest={{ root }}"
-
   #
-  # Virtualenv
+  # Includes
   #
-  # Ansible 2: Use just the pip module, with the new virtualenv_python option
-  - name: "Setup Virtualenv"
-    command: "virtualenv -p /usr/bin/python3 {{ venv }}"
-    args:
-        creates: "{{ venv }}"
-
-  - name: "Install Python packages"
-    pip:
-      executable: "pip"
-      virtualenv: "{{ venv }}"
-      requirements: "{{ root }}/boot/requirements.txt"
-
-  #
-  # Settings
-  #
-  - name: "Copy settings file"
-    copy:
-      src: "files/settings.{{ target }}.py"
-      dest: "{{ root }}/project/local_settings.py"
-
-  #
-  # Database
-  #
-  # FIXME It says 'ok' when it should say 'changed'
-  - name: "Create database"
-    django_manage:
-      virtualenv: "{{ venv }}"
-      app_path: "{{ root }}"
-      settings: "project.settings"
-      command: "migrate"
+  - include: "tasks/pull.yml"
+  - include: "tasks/venv.yml"
+  - include: "tasks/settings.yml"
+  - include: "tasks/database.yml"
 
   #
   # etc (uwsgi, nginx, monit)
@@ -88,6 +63,15 @@
       dest: "{{ root }}/etc/nginx.conf"
     notify: "reload nginx"
 
+  - name: "Monit configuration"
+    template:
+      src: "templates/monit.conf.j2"
+      dest: "{{ root }}/etc/monit.conf"
+    notify: "restart monit"
+
+  #
+  # sudo (nginx, monit)
+  #
   - name: "(sudo) Nginx: mkdir /etc/nginx/sites"
     file: "path=/etc/nginx/sites state=directory"
     sudo: true
@@ -99,12 +83,6 @@
       src: "{{ root }}/etc/nginx.conf"
     notify: "reload nginx"
     sudo: true
-
-  - name: "Monit configuration"
-    template:
-      src: "templates/monit.conf.j2"
-      dest: "{{ root }}/etc/monit.conf"
-    notify: "restart monit"
 
   - name: "(sudo) Monit: mkdir /etc/monit.d"
     file: "path=/etc/monit.d state=directory"

@@ -1,0 +1,22 @@
+#
+# Setup virtual environment
+#
+# Input : root
+# Output: venv
+# Requires:
+#
+
+- set_fact:
+    venv: "{{ root }}/usr"
+
+# Ansible 2: Use just the pip module, with the new virtualenv_python option
+- name: "Setup Virtualenv"
+  command: "virtualenv -p /usr/bin/python3 {{ venv }}"
+  args:
+      creates: "{{ venv }}"
+
+- name: "Install Python packages"
+  pip:
+    executable: "pip"
+    virtualenv: "{{ venv }}"
+    requirements: "{{ root }}/boot/requirements.txt"

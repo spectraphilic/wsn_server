@@ -1,0 +1,6 @@
+domain: "{{ ansible_default_ipv4.address }}.xip.io"
+user  : "{{ ansible_user_id }}"
+group : "{% if ansible_os_family == 'Debian' %}www-data{% else %}nginx{% endif %}"
+prefix: "{{ hostvars[inventory_hostname].prefix }}"
+target: "{{ hostvars[inventory_hostname].target }}"
+cwd   : "{{ playbook_dir|dirname|dirname }}"

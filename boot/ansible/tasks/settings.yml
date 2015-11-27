@@ -1,0 +1,12 @@
+#
+# Setup settings
+#
+# Input : root, target
+# Output:
+# Requires:
+#
+
+- name: "Copy settings file"
+  copy:
+    src: "files/settings.{{ target }}.py"
+    dest: "{{ root }}/project/local_settings.py"
