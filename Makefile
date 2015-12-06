@@ -103,7 +103,7 @@ reload:
 # Ansible
 #
 deploy:
-	ansible-playbook -i boot/ansible/hosts boot/ansible/deploy.yml
+	ansible-playbook -i ansible/hosts ansible/deploy.yml
 
 ansible-install:
-	ansible-playbook -i boot/ansible/hosts boot/ansible/install.yml
+	ansible-playbook -i ansible/hosts ansible/install.yml

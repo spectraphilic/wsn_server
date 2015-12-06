@@ -7,6 +7,6 @@
 #
 
 - name: "Copy settings file"
-  copy:
+  template:
     src: "files/settings.{{ target }}.py"
     dest: "{{ root }}/project/local_settings.py"
