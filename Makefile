@@ -91,7 +91,7 @@ switch: _lnk _req _bld
 update: _req _bld
 
 start:
-	uwsgi boot/active/uwsgi.ini
+	uwsgi etc/uwsgi.ini
 
 stop:
 	uwsgi --stop var/run/uwsgi.pid
@@ -102,8 +102,18 @@ reload:
 #
 # Ansible
 #
-deploy:
-	ansible-playbook -i ansible/hosts ansible/deploy.yml
 
-ansible-install:
-	ansible-playbook -i ansible/hosts ansible/install.yml
+#deploy:
+#	ansible-playbook -i ansible/hosts ansible/deploy.yml
+
+#ansible-install:
+#	ansible-playbook -i ansible/hosts ansible/install.yml
+
+development:
+	ansible-playbook -i ansible/hosts ansible/development.yml
+
+staging:
+	ansible-playbook -i ansible/hosts ansible/staging.yml
+
+production:
+	ansible-playbook -i ansible/hosts ansible/production.yml

@@ -1,0 +1,2 @@
+django_domain: "{{ ansible_default_ipv4.address }}.xip.io"
+django_prefix: "~"

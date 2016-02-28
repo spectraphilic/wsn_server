@@ -1,0 +1,11 @@
+- include: "init.yml"
+- include: "venv.yml"
+- include: "settings.yml"
+- include: "database.yml"
+- include: "uwsgi.yml"
+
+- include: "nginx.yml"
+  when: "target != 'development'"
+
+- include: "monit.yml"
+  when: "target != 'development'"

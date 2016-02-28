@@ -9,9 +9,17 @@
 - set_fact:
     venv: "{{ root }}/usr"
 
+# Internal variables
+- name: "Find out path to Python binary"
+  command: "which python3"
+  register: "python"
+  changed_when: false
+- set_fact:
+    python: "{{ python.stdout }}"
+
 # Ansible 2: Use just the pip module, with the new virtualenv_python option
 - name: "Setup Virtualenv"
-  command: "virtualenv -p /usr/bin/python3 {{ venv }}"
+  command: "virtualenv -p {{ python }} {{ venv }}"
   args:
       creates: "{{ venv }}"
 

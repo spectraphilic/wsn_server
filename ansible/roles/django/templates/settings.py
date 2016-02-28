@@ -1,9 +1,7 @@
 # encoding: utf-8
 
-DEBUG = False
-TEMPLATE_DEBUG = False
-
-
+# Database
+{% if target == 'production' %}
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -14,3 +12,15 @@ DATABASES = {
         'PORT': '',               # Set to empty string for default.
     }
 }
+{% endif %}
+
+# Email
+{% if target == 'development' %}
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+{% endif %}
+
+# Debug
+{% if target == 'development' %}
+DEBUG = True
+TEMPLATE_DEBUG = True
+{% endif %}

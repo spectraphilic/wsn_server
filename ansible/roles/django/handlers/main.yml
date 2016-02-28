@@ -1,0 +1,10 @@
+- name: "reload uwsgi"
+  command: "echo r > {{ fifo }}"
+
+- name: "reload nginx"
+  service: "name=nginx state=reloaded"
+  sudo: true
+
+- name: "restart monit"
+  service: "name=monit state=restarted"
+  sudo: true

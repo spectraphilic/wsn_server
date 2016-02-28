@@ -1,0 +1,26 @@
+#
+# Define vars from facts
+#
+# Input :
+# Output: root, name, sock, fifo, pid
+# Requires:
+#
+
+# Find out root & name
+- name: "Find out working tree root directory"
+  command: "git rev-parse --show-toplevel"
+  register: "root"
+  changed_when: false
+- set_fact:
+    root: "{{ root.stdout }}"
+
+- set_fact:
+    name: "{{ root|basename }}"
+
+#
+# Variables
+#
+- set_fact:
+    sock: "{{ root }}/var/run/uwsgi.socket"
+    fifo: "{{ root }}/var/run/uwsgi.fifo"
+    pid : "{{ root }}/var/run/uwsgi.pid"

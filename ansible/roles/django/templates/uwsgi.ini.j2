@@ -6,13 +6,19 @@ pythonpath   = {{ root }}
 module       = boot.wsgi
 pidfile      = {{ pid }}
 vacuum       = True
-env          = DJANGO_SETTINGS_MODULE=boot.active.settings
+env          = DJANGO_SETTINGS_MODULE=project.settings
 
 master       = true
 master-fifo  = {{ fifo }}
 processes    = 2
 
-xdaemonize    = {{ root }}/var/log/uwsgi.log
+{% if target == 'development' %}
+http         = 127.0.0.1:8000
+{% else %}
+# Run in the background
+daemonize    = {{ root }}/var/log/uwsgi.log
+# Use unix socket
 socket       = {{ sock }}
 chown-socket = {{ user }}:{{ group }}
 chmod-socket = 664
+{% endif %}

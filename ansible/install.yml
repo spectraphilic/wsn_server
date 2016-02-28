@@ -1,4 +1,4 @@
-- name: "Install locally, in-site"
+- name: "Install locally, in place"
   hosts: "local"
   vars_files:
   - "vars.yml"

@@ -1,0 +1,33 @@
+#
+# Git pull
+#
+# Input :
+# Output: root, name
+# Requires:
+#
+
+# Find out repo
+- name: "Find out Git url"
+  command: "git config --get remote.origin.url"
+  register: "repo"
+  changed_when: false
+- set_fact:
+    repo: "{{ repo.stdout }}"
+
+# Find out root & name
+- set_fact:
+    name: "{{ repo|basename|regex_replace('.git$', '') }}"
+
+- name: "Expand prefix"              # Ansible 2: not needed anymore (use ~)
+  command: "realpath {{ prefix }}"
+  register: "prefix"
+  changed_when: false
+- set_fact:
+    prefix: "{{ prefix.stdout }}"
+
+- set_fact:
+    root: "{{ prefix }}/{{ name }}"
+
+- name: "Git pull"
+  git: "repo=file:///{{ cwd }} dest={{ root }}"
+  #git: "repo={{ repo }} dest={{ root }}"

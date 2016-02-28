@@ -1,0 +1,7 @@
+- name: "Development"
+  hosts: "development"
+
+  roles:
+  - role: "django"
+    target: "development"
+#   django_domain: "staging.example.com"

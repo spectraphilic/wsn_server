@@ -1,0 +1,22 @@
+- name: "Create etc dir"
+  file:
+    path: "{{ root }}/etc"
+    state: "directory"
+
+- name: "Monit configuration"
+  template:
+    src: "templates/monit.conf.j2"
+    dest: "{{ root }}/etc/monit.conf"
+  notify: "restart monit"
+
+#- name: "(sudo) Monit: mkdir /etc/monit.d"
+#  file: "path=/etc/monit.d state=directory"
+#  sudo: true
+#
+#- name: "Monit symlink"
+#  file:
+#    path: "/etc/monit.d/{{ name }}.conf"
+#    state: "link"
+#    src: "{{ root }}/etc/monit.conf"
+#  notify: "restart monit"
+#  sudo: true
