@@ -1,5 +1,45 @@
+#
+# Ansible
+#
 
-TARGET=
+development:
+	ln -sfn development.yml ansible/active.yml
+	ansible-playbook -i ansible/hosts ansible/active.yml
+
+staging:
+	ln -sfn staging.yml ansible/active.yml
+	ansible-playbook -i ansible/hosts ansible/active.yml
+
+production:
+	ln -sfn production.yml ansible/active.yml
+	ansible-playbook -i ansible/hosts ansible/active.yml
+
+update:
+ifeq ("$(wildcard ansible/active)","")
+	ln -sn development.yml ansible/active.yml
+endif
+	ansible-playbook -i ansible/hosts ansible/active.yml
+
+# TODO Do with ansible, detect first install
+install: update
+	./manage.py createsuperuser
+
+#
+# Start, stop
+#
+
+start:
+	uwsgi var/etc/uwsgi.ini
+
+stop:
+	uwsgi --stop var/run/uwsgi.pid
+
+reload:
+	echo r > var/run/uwsgi.fifo
+
+#
+# Help
+#
 
 help:
 	@echo "Please use 'make <rule>' where <rule> is one of..."
@@ -16,104 +56,7 @@ help:
 	@echo "    make install BOOT=staging"
 	@echo "    make install BOOT=production"
 	@echo
-	@echo "make switch"
-	@echo "    Resets the boot/active symbolik link to the given target,"
-	@echo "    then installs the required software, etc. Use the TARGET"
-	@echo "    option. For example:"
-	@echo
-	@echo "    make switch BOOT=development"
-	@echo "    make switch BOOT=staging"
-	@echo "    make switch BOOT=production"
-	@echo
 	@echo "make update"
 	@echo "    Used mainly when deploying in a server. Install the"
 	@echo "    required software, etc."
 	@echo
-
-
-#
-# Stage 1 (_env) -- Virtual environment
-# Stage 2 (_lnk) -- Make the symbolic link to the right target
-# Stage 3 (_req) -- Install requirements
-# Stage 4 (_bld) -- Build templates, static, ..
-# Stage 5 (_syn) -- python manage.py migrate
-#
-# Install: 1 - 5
-# Switch : 2 - 4
-# Update : 3 - 4
-#
-
-_env:
-	virtualenv --setuptools -p /usr/bin/python3 usr
-	usr/bin/pip install --upgrade setuptools
-
-
-_lnk:
-ifeq ($(TARGET),)
-ifeq ("$(wildcard boot/active)","")
-	ln -sn development boot/active
-endif
-else
-ifeq ("$(wildcard boot/$(TARGET))","")
-	$(error "boot/$(TARGET)" no such file or directory)
-else
-	ln -sfn $(TARGET) boot/active
-endif
-endif
-
-
-_req:
-	usr/bin/pip install -r boot/requirements.txt
-ifneq ("$(wildcard boot/active/requirements.txt)","")
-	usr/bin/pip install -r boot/active/requirements.txt
-endif
-
-
-_bld:
-	./boot/boot.py build
-ifneq ("$(wildcard boot/active/Makefile)","")
-	$(MAKE) -C boot/active
-endif
-
-
-_syn:
-	./manage.py migrate
-
-
-#
-# Rules
-#
-install: _env _lnk _req _bld _syn
-	./manage.py createsuperuser
-
-switch: _lnk _req _bld
-
-update: _req _bld
-
-start:
-	uwsgi etc/uwsgi.ini
-
-stop:
-	uwsgi --stop var/run/uwsgi.pid
-
-reload:
-	echo r > var/run/uwsgi.fifo
-
-#
-# Ansible
-#
-
-#deploy:
-#	ansible-playbook -i ansible/hosts ansible/deploy.yml
-
-#ansible-install:
-#	ansible-playbook -i ansible/hosts ansible/install.yml
-
-development:
-	ansible-playbook -i ansible/hosts ansible/development.yml
-
-staging:
-	ansible-playbook -i ansible/hosts ansible/staging.yml
-
-production:
-	ansible-playbook -i ansible/hosts ansible/production.yml

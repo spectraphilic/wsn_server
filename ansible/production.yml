@@ -9,6 +9,7 @@
     django_database   : "postgres"
     django_debug      : false
     #django_domain    : "{{ ansible_default_ipv4.address }}.xip.io"
+    django_pull       : false
     django_with_nginx : true
     django_with_monit : true
     django_with_sudo  : false

@@ -2,7 +2,7 @@
 # Git pull
 #
 # Input :
-# Output: root, name
+# Output: dir_root, name
 # Requires:
 #
 
@@ -14,20 +14,21 @@
 - set_fact:
     repo: "{{ repo.stdout }}"
 
-# Find out root & name
-- set_fact:
-    name: "{{ repo|basename|regex_replace('.git$', '') }}"
-
-- name: "Expand prefix"              # Ansible 2: not needed anymore (use ~)
-  command: "realpath {{ prefix }}"
-  register: "prefix"
-  changed_when: false
-- set_fact:
-    prefix: "{{ prefix.stdout }}"
-
-- set_fact:
-    root: "{{ prefix }}/{{ name }}"
+# Find out dir_root & name
+#- set_fact:
+#    name: "{{ repo|basename|regex_replace('.git$', '') }}"
+#
+#- name: "Expand prefix"              # Ansible 2: not needed anymore (use ~)
+#  command: "realpath {{ prefix }}"
+#  register: "prefix"
+#  changed_when: false
+#- set_fact:
+#    prefix: "{{ prefix.stdout }}"
+#
+#- set_fact:
+#    dir_root: "{{ prefix }}/{{ name }}"
+#
 
 - name: "Git pull"
-  git: "repo=file:///{{ cwd }} dest={{ root }}"
-  #git: "repo={{ repo }} dest={{ root }}"
+  #git: "repo=file:///{{ cwd }} dest={{ dir_root }}"
+  git: "repo={{ repo }} dest={{ dir_root }}"

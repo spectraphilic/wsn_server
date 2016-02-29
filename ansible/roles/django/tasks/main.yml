@@ -1,4 +1,8 @@
 - include: "init.yml"
+
+- include: "pull.yml"
+  when: "django_pull"
+
 - include: "venv.yml"
 - include: "settings.yml"
 - include: "database.yml"

@@ -1,5 +1,0 @@
-active
-monit.conf
-nginx.conf
-uwsgi.ini
-*.bak
