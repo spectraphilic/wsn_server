@@ -1,7 +1,7 @@
 # encoding: utf-8
 
 # Database
-{% if target == 'production' %}
+{% if django_database == 'postgres' %}
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -15,12 +15,13 @@ DATABASES = {
 {% endif %}
 
 # Email
-{% if target == 'development' %}
+{% if django_debug %}
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 {% endif %}
 
 # Debug
-{% if target == 'development' %}
-DEBUG = True
-TEMPLATE_DEBUG = True
-{% endif %}
+DEBUG = {{ django_debug }}
+TEMPLATE_DEBUG = {{ django_debug }}
+
+# Security
+ALLOWED_HOSTS = ["{{ django_domain }}"]

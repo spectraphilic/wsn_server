@@ -1,2 +1,8 @@
-django_domain: "{{ ansible_default_ipv4.address }}.xip.io"
-django_prefix: "~"
+django_database   : "sqlite"
+django_debug      : true
+django_domain     : "{{ ansible_default_ipv4.address }}.xip.io"
+django_with_nginx : false
+django_with_monit : false
+django_with_sudo  : false
+
+django_prefix     : "~"

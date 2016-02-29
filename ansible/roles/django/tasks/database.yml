@@ -1,15 +1,15 @@
 #
 # Setup database
 #
-# Input : root, venv
+# Input : dir_root, dir_venv
 # Output:
-# Requires: venv, settings
+# Requires: dir_venv, settings
 #
 
 # FIXME It says 'ok' when it should say 'changed'
 - name: "Create database"
   django_manage:
-    virtualenv: "{{ venv }}"
-    app_path: "{{ root }}"
+    virtualenv: "{{ dir_venv }}"
+    app_path: "{{ dir_root }}"
     settings: "project.settings"
     command: "migrate"

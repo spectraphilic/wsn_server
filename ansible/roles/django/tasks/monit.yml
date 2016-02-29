@@ -1,22 +1,19 @@
-- name: "Create etc dir"
-  file:
-    path: "{{ root }}/etc"
-    state: "directory"
-
 - name: "Monit configuration"
   template:
-    src: "templates/monit.conf.j2"
-    dest: "{{ root }}/etc/monit.conf"
+    src: "monit.conf"
+    dest: "{{ dir_etc }}/monit.conf"
   notify: "restart monit"
 
-#- name: "(sudo) Monit: mkdir /etc/monit.d"
-#  file: "path=/etc/monit.d state=directory"
-#  sudo: true
-#
-#- name: "Monit symlink"
-#  file:
-#    path: "/etc/monit.d/{{ name }}.conf"
-#    state: "link"
-#    src: "{{ root }}/etc/monit.conf"
-#  notify: "restart monit"
-#  sudo: true
+- name: "(sudo) Monit: mkdir /etc/monit.d"
+  file: "path=/etc/monit.d state=directory"
+  sudo: true
+  when: "django_with_sudo"
+
+- name: "Monit symlink"
+  file:
+    path: "/etc/monit.d/{{ name }}.conf"
+    state: "link"
+    src: "{{ dir_etc }}/monit.conf"
+  notify: "restart monit"
+  sudo: true
+  when: "django_with_sudo"

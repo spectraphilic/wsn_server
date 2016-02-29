@@ -1,10 +1,5 @@
-- name: "Create etc dir"
-  file:
-    path: "{{ root }}/etc"
-    state: "directory"
-
 - name: "Uwsgi configuration"
   template:
-    src: "uwsgi.ini.j2"
-    dest: "{{ root }}/etc/uwsgi.ini"
+    src: "uwsgi.ini"
+    dest: "{{ dir_etc }}/uwsgi.ini"
   notify: "reload uwsgi"

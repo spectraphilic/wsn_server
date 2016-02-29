@@ -2,25 +2,47 @@
 # Define vars from facts
 #
 # Input :
-# Output: root, name, sock, fifo, pid
+# Output: name
+# Output: dir_root, dir_var, dir_run, dir_etc, dir_log
+# Output: file_sock, file_fifo, file_pid
 # Requires:
 #
 
-# Find out root & name
+# Find out root directory & projct name
 - name: "Find out working tree root directory"
   command: "git rev-parse --show-toplevel"
-  register: "root"
+  register: "dir_root"
   changed_when: false
 - set_fact:
-    root: "{{ root.stdout }}"
+    dir_root: "{{ dir_root.stdout }}"
 
 - set_fact:
-    name: "{{ root|basename }}"
+    name: "{{ dir_root|basename }}"
+
+#
+# Directories
+#
+
+- set_fact:
+    dir_var: "{{ dir_root }}/var"
+    dir_run: "{{ dir_root }}/var/run"
+    dir_etc: "{{ dir_root }}/var/etc"
+    dir_log: "{{ dir_root }}/var/log"
+
+- name: "Create directories"
+  file:
+    path: "{{ item }}"
+    state: "directory"
+  with_items:
+  - "{{ dir_var }}"
+  - "{{ dir_run }}"
+  - "{{ dir_etc }}"
+  - "{{ dir_log }}"
 
 #
 # Variables
 #
 - set_fact:
-    sock: "{{ root }}/var/run/uwsgi.socket"
-    fifo: "{{ root }}/var/run/uwsgi.fifo"
-    pid : "{{ root }}/var/run/uwsgi.pid"
+    file_sock: "{{ dir_run }}/uwsgi.socket"
+    file_fifo: "{{ dir_run }}/uwsgi.fifo"
+    file_pid : "{{ dir_run }}/uwsgi.pid"

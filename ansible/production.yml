@@ -1,7 +1,14 @@
+#
+# See roles/django/defaults/main.yml for the available options
+#
+
 - name: "Production"
   hosts: "production"
-
   roles:
   - role: "django"
-    target: "production"
-#   django_domain: "staging.example.com"
+    django_database   : "postgres"
+    django_debug      : false
+    #django_domain    : "{{ ansible_default_ipv4.address }}.xip.io"
+    django_with_nginx : true
+    django_with_monit : true
+    django_with_sudo  : false

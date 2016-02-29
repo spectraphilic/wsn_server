@@ -4,8 +4,11 @@
 - include: "database.yml"
 - include: "uwsgi.yml"
 
+- include: "static.yml"
+  when: "django_with_nginx"
+
 - include: "nginx.yml"
-  when: "target != 'development'"
+  when: "django_with_nginx"
 
 - include: "monit.yml"
-  when: "target != 'development'"
+  when: "django_with_monit"

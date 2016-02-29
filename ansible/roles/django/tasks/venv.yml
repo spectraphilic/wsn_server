@@ -1,13 +1,19 @@
 #
 # Setup virtual environment
 #
-# Input : root
-# Output: venv
+# Input : dir_root
+# Output: dir_venv
 # Requires:
 #
 
 - set_fact:
-    venv: "{{ root }}/usr"
+    dir_venv: "{{ dir_root }}/usr"
+
+# Requirements as a template
+- name: "Requirements file from template"
+  template:
+    src: "requirements.txt"
+    dest: "{{ dir_etc }}/requirements.txt"
 
 # Internal variables
 - name: "Find out path to Python binary"
@@ -19,12 +25,12 @@
 
 # Ansible 2: Use just the pip module, with the new virtualenv_python option
 - name: "Setup Virtualenv"
-  command: "virtualenv -p {{ python }} {{ venv }}"
+  command: "virtualenv -p {{ python }} {{ dir_venv }}"
   args:
-      creates: "{{ venv }}"
+      creates: "{{ dir_venv }}"
 
 - name: "Install Python packages"
   pip:
     executable: "pip"
-    virtualenv: "{{ venv }}"
-    requirements: "{{ root }}/boot/requirements.txt"
+    virtualenv: "{{ dir_venv }}"
+    requirements: "{{ dir_etc }}/requirements.txt"

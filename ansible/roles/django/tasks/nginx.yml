@@ -1,22 +1,19 @@
-- name: "Create etc dir"
-  file:
-    path: "{{ root }}/etc"
-    state: "directory"
-
 - name: "Nginx configuration"
   template:
-    src: "templates/nginx.conf.j2"
-    dest: "{{ root }}/etc/nginx.conf"
+    src: "nginx.conf"
+    dest: "{{ dir_etc }}/nginx.conf"
   notify: "reload nginx"
 
-#- name: "(sudo) Nginx: mkdir /etc/nginx/sites"
-#  file: "path=/etc/nginx/sites state=directory"
-#  sudo: true
-#
-#- name: "Nginx symlink"
-#  file:
-#    path: "/etc/nginx/sites/{{ name }}.conf"
-#    state: "link"
-#    src: "{{ root }}/etc/nginx.conf"
-#  notify: "reload nginx"
-#  sudo: true
+- name: "(sudo) Nginx: mkdir /etc/nginx/sites"
+  file: "path=/etc/nginx/sites state=directory"
+  sudo: true
+  when: "django_with_sudo"
+
+- name: "Nginx symlink"
+  file:
+    path: "/etc/nginx/sites/{{ name }}.conf"
+    state: "link"
+    src: "{{ dir_etc }}/nginx.conf"
+  notify: "reload nginx"
+  sudo: true
+  when: "django_with_sudo"
