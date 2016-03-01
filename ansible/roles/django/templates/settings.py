@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+from project.settings import *
+
 # Database
 {% if django_database == 'postgres' %}
 DATABASES = {

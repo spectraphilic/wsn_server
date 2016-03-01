@@ -5,6 +5,8 @@
 
 - include: "venv.yml"
 - include: "settings.yml"
+- include: "manage.yml"
+
 - include: "database.yml"
 - include: "uwsgi.yml"
 

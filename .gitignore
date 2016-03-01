@@ -1,7 +1,7 @@
-/etc/
 /local/
 /usr/
 /var/
+/manage.py
 *.pyc
 .*.swp
 *~

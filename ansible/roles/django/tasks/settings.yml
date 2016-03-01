@@ -2,11 +2,15 @@
 # Setup settings
 #
 # Input : dir_root, target
-# Output:
+# Output: settings, settings_file
 # Requires:
 #
+
+- set_fact:
+    settings: "project.local_settings"
+    settings_file: "{{ dir_root }}/project/local_settings.py"
 
 - name: "Copy settings file"
   template:
     src: "settings.py"
-    dest: "{{ dir_root }}/project/local_settings.py"
+    dest: "{{ settings_file }}"
