@@ -4,6 +4,8 @@
 
 - name: "Development"
   hosts: "development"
+  vars_files:
+  - "vars.yml"
   roles:
   - role              : "django"
     django_database   : "sqlite"
