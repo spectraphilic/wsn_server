@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 # Import from the Standard Library
-from os.path import join
 from socket import getfqdn
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -85,6 +84,7 @@ DATABASES = {
     }
 }
 
+
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
 
@@ -103,11 +103,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = join(BASE_DIR, 'var', 'static')
-
-# Media files
-MEDIA_ROOT = join(BASE_DIR, 'var', 'media')
-MEDIA_URL = '/media/'
 
 #
 # Emails
