@@ -2,5 +2,5 @@
   django_manage:
     virtualenv: "{{ dir_venv }}"
     app_path: "{{ dir_root }}"
-    settings: "project.settings"
+    settings: "{{ settings }}"
     command: "collectstatic"

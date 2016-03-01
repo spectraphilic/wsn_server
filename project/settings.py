@@ -11,10 +11,8 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 # Import from the Standard Library
-from os.path import dirname, join
-from random import choice
+from os.path import join
 from socket import getfqdn
-from string import ascii_letters, digits
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
@@ -117,14 +115,3 @@ MEDIA_URL = '/media/'
 ADMINS = ()
 MANAGERS = ADMINS
 SERVER_EMAIL = 'root@' + getfqdn()
-
-#
-# Handle the secret key automatically and securely
-#
-try:
-    from secret import SECRET_KEY
-except ImportError:
-    choices = ascii_letters + digits
-    SECRET_KEY = ''.join([ choice(choices) for x in range(50) ])
-    filename = join(dirname(__file__), 'secret.py')
-    open(filename, 'w').write("SECRET_KEY = '%s'\n" % SECRET_KEY)
