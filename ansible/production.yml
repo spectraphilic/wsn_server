@@ -4,6 +4,8 @@
 
 - name: "Production"
   hosts: "production"
+  vars_files:
+  - "vars.yml"
   roles:
   - role: "django"
     django_database   : "postgres"
@@ -13,3 +15,6 @@
     django_with_nginx : true
     django_with_monit : true
     django_with_sudo  : false
+
+    django_root       : "/tmp/django-boot-production"
+    django_name       : "django-boot-production"

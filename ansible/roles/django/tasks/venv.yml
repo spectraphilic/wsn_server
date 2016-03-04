@@ -1,13 +1,13 @@
 #
 # Setup virtual environment
 #
-# Input : dir_root
+# Input : django_root
 # Output: dir_venv
 # Requires:
 #
 
 - set_fact:
-    dir_venv: "{{ dir_root }}/usr"
+    dir_venv: "{{ django_root }}/usr"
 
 # Requirements as a template
 - name: "Requirements file from template"
@@ -18,10 +18,11 @@
 # Internal variables
 - name: "Find out path to Python binary"
   command: "which python{{ python_version }}"
-  register: "python"
+  register: "__aux"
   changed_when: false
+
 - set_fact:
-    python: "{{ python.stdout }}"
+    python: "{{ __aux.stdout }}"
 
 # Ansible 2: Use just the pip module, with the new virtualenv_python option
 - name: "Setup Virtualenv"

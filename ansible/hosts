@@ -2,11 +2,11 @@
 # Host is defined as ssh_host and ssh_user
 #
 
-#development ansible_connection=local prefix=.
-#staging     ansible_ssh_host=xxx ansible_ssh_user=xxx prefix=~/
-#production  ansible_ssh_host=xxx ansible_ssh_user=xxx prefix=~/
+development ansible_connection=local
 
 # To test ansible
-development ansible_connection=local target=development #prefix=/tmp/testing-ansible
-staging     ansible_connection=local target=staging #prefix=/tmp/testing-ansible
-production  ansible_connection=local target=production #prefix=/tmp/testing-ansible
+staging     ansible_connection=local
+production  ansible_connection=local
+
+#staging     ansible_ssh_host=xxx ansible_ssh_user=xxx
+#production  ansible_ssh_host=xxx ansible_ssh_user=xxx

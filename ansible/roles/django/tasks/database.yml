@@ -1,7 +1,7 @@
 #
 # Setup database
 #
-# Input : dir_root, dir_venv
+# Input : django_root, dir_venv
 # Output:
 # Requires: dir_venv, settings
 #
@@ -10,6 +10,6 @@
 - name: "Create database"
   django_manage:
     virtualenv: "{{ dir_venv }}"
-    app_path: "{{ dir_root }}"
+    app_path: "{{ django_root }}"
     settings: "{{ settings }}"
     command: "migrate"

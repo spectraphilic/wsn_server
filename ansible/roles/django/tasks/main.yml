@@ -1,13 +1,40 @@
-- include: "init.yml"
+#
+# Find out the root directory
+# 
+
+- include: "root_expand.yml"
+  when: "django_root != ''"
+
+- include: "root_from_workdir.yml"
+  when: "django_root == ''"
+
+#
+# Find out instance name if not given
+#
+- include: "name.yml"
+  when: "django_name == ''"
+
+#
+# Pull
+#
+- include: "repo.yml"
+  when: "django_repo == ''"
 
 - include: "pull.yml"
   when: "django_pull"
 
+#
+# Action
+#
+- include: "dirs.yml"
 - include: "venv.yml"
 - include: "settings.yml"
 - include: "manage.yml"
-
 - include: "database.yml"
+
+#
+# uwsgi, nginx, monit
+#
 - include: "uwsgi.yml"
 
 - include: "static.yml"

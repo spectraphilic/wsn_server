@@ -1,0 +1,14 @@
+#
+# Find out repository
+#
+# Input:
+# Output: django_repo
+#
+
+- name: "Find out Git url"
+  command: "git config --get remote.origin.url"
+  register: "__aux"
+  changed_when: false
+
+- set_fact:
+    django_repo: "{{ __aux.stdout }}"

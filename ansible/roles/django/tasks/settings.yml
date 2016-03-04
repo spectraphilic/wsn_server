@@ -1,14 +1,14 @@
 #
 # Setup settings
 #
-# Input : dir_root, target
+# Input : django_root
 # Output: settings, settings_file
 # Requires:
 #
 
 - set_fact:
     settings: "project.local_settings"
-    settings_file: "{{ dir_root }}/project/local_settings.py"
+    settings_file: "{{ django_root }}/project/local_settings.py"
     secret_key: "{{ lookup('password', dir_var + '/secret.txt length=50') }}"
 
 - name: "Copy settings file"

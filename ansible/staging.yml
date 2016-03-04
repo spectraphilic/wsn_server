@@ -4,6 +4,8 @@
 
 - name: "Staging"
   hosts: "staging"
+  vars_files:
+  - "vars.yml"
   roles:
   - role: "django"
     django_database   : "sqlite"
@@ -13,3 +15,6 @@
     django_with_nginx : true
     django_with_monit : true
     django_with_sudo  : false
+
+    django_root       : "/tmp/django-boot-staging"
+    django_name       : "django-boot-staging"

@@ -1,34 +1,14 @@
 #
 # Git pull
 #
-# Input :
-# Output: dir_root, name
+# Input   : django_repo, django_branch, django_root
+# Output  :
 # Requires:
 #
 
-# Find out repo
-- name: "Find out Git url"
-  command: "git config --get remote.origin.url"
-  register: "repo"
-  changed_when: false
-- set_fact:
-    repo: "{{ repo.stdout }}"
-
-# Find out dir_root & name
-#- set_fact:
-#    name: "{{ repo|basename|regex_replace('.git$', '') }}"
-#
-#- name: "Expand prefix"              # Ansible 2: not needed anymore (use ~)
-#  command: "realpath {{ prefix }}"
-#  register: "prefix"
-#  changed_when: false
-#- set_fact:
-#    prefix: "{{ prefix.stdout }}"
-#
-#- set_fact:
-#    dir_root: "{{ prefix }}/{{ name }}"
-#
-
 - name: "Git pull"
-  #git: "repo=file:///{{ cwd }} dest={{ dir_root }}"
-  git: "repo={{ repo }} dest={{ dir_root }}"
+  git:
+    #repo   : "file:///{{ cwd }}"
+    repo   : "{{ django_repo }}"
+    dest   : "{{ django_root }}"
+    version: "{{ django_branch }}"

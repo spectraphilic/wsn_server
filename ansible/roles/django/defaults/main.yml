@@ -1,3 +1,8 @@
+django_root       : ""
+django_name       : ""
+django_repo       : ""
+django_branch     : "master"
+
 django_database   : "sqlite"
 django_debug      : true
 django_domain     : "{{ ansible_default_ipv4.address }}.xip.io"
@@ -5,5 +10,3 @@ django_pull       : false
 django_with_nginx : false
 django_with_monit : false
 django_with_sudo  : false
-
-django_prefix     : "~"
