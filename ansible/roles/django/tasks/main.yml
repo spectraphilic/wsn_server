@@ -1,18 +1,8 @@
 #
-# Find out the root directory
-# 
-
-- include: "root_expand.yml"
-  when: "django_root != ''"
-
-- include: "root_from_workdir.yml"
-  when: "django_root == ''"
-
+# Find out the root directory and instance name
 #
-# Find out instance name if not given
-#
+- include: "root.yml"
 - include: "name.yml"
-  when: "django_name == ''"
 
 #
 # Pull

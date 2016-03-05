@@ -34,7 +34,8 @@ SECRET_KEY = "{{ secret_key }}"
 
 # Static
 STATIC_ROOT = "{{ dir_static }}"
+STATIC_URL = "{{ static_url }}"
 
 # Media
 MEDIA_ROOT = "{{ dir_media }}"
-MEDIA_URL = '/media/'
+MEDIA_URL = '{{ media_url }}'

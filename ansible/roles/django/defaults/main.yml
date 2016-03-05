@@ -10,3 +10,6 @@ django_pull       : false
 django_with_nginx : false
 django_with_monit : false
 django_with_sudo  : false
+
+static_url        : "/static/"
+media_url         : "/media/"
