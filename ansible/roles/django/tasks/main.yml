@@ -1,14 +1,9 @@
 #
-# Find out the root directory and instance name
+# Pull, and find out instance name
 #
+
 - include: "root.yml"
 - include: "name.yml"
-
-#
-# Pull
-#
-- include: "repo.yml"
-  when: "django_repo == ''"
 
 - include: "pull.yml"
   when: "django_pull"

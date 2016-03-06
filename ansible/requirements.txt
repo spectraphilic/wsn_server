@@ -1,6 +1,7 @@
-Django==1.8.9
+Django==1.8.11
 Pillow==3.1.1
 django-crispy-forms==1.6.0
+pip==8.1.0
 
 {% if django_database == 'postgres' %}
 psycopg2==2.6.1
