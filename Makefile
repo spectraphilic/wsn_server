@@ -19,13 +19,13 @@ help:
 #
 
 development:
-	ansible-playbook -i ansible/hosts ansible/active.yml
+	ansible-playbook -i ansible/hosts ansible/development.yml
 
 staging:
-	ansible-playbook -i ansible/hosts ansible/active.yml
+	ansible-playbook -i ansible/hosts ansible/staging.yml
 
 production:
-	ansible-playbook -i ansible/hosts ansible/active.yml
+	ansible-playbook -i ansible/hosts ansible/production.yml
 
 #
 # Start, stop
