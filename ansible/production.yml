@@ -8,13 +8,18 @@
   - "vars.yml"
   roles:
   - role: "django"
-    django_database   : "postgres"
     django_debug      : false
-    #django_domain    : "{{ ansible_default_ipv4.address }}.xip.io"
     django_pull       : false
     django_with_nginx : true
     django_with_monit : true
     django_with_sudo  : false
 
-    django_root       : "/tmp/django-boot-production"
+    #django_domain     : ""
     django_name       : "django-boot-production"
+    django_root       : "/tmp/django-boot-production"
+
+    django_database   :
+      engine          : "postgres"
+      name            : ""
+      user            : ""
+      password        : ""

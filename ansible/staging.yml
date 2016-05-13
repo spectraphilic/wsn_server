@@ -8,13 +8,15 @@
   - "vars.yml"
   roles:
   - role: "django"
-    django_database   : "sqlite"
     django_debug      : false
-    #django_domain    : "{{ ansible_default_ipv4.address }}.xip.io"
     django_pull       : true
     django_with_nginx : true
     django_with_monit : true
     django_with_sudo  : false
 
-    django_root       : "/tmp/django-boot-staging"
+    #django_domain     : ""
     django_name       : "django-boot-staging"
+    django_root       : "/tmp/django-boot-staging"
+
+    django_database   :
+      engine          : "sqlite"

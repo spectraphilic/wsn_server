@@ -8,7 +8,6 @@
   - "vars.yml"
   roles:
   - role              : "django"
-    django_database   : "sqlite"
     django_debug      : true
     django_domain     : "{{ ansible_default_ipv4.address }}.xip.io"
     django_pull       : false
@@ -18,3 +17,6 @@
 
     django_root       : ""
     django_name       : ""
+
+    django_database   :
+      engine          : "sqlite"

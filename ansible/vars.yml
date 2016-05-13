@@ -1,1 +1,7 @@
-python_version: "3.4"
+#
+# These variables are common to the project, independent of
+# the environment (development, staging, production, ...)
+#
+
+python_version : "3.4"
+django_repo    : "https://github.com/jdavid/django-boot.git"
