@@ -9,7 +9,7 @@
   roles:
   - role: "django"
     django_debug      : false
-    django_pull       : false
+    django_pull       : true
     django_with_nginx : true
     django_with_monit : true
     django_with_sudo  : false
