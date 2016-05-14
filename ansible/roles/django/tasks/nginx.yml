@@ -6,7 +6,7 @@
 
 - name: "(sudo) Nginx: mkdir /etc/nginx/sites"
   file: "path=/etc/nginx/sites state=directory"
-  sudo: true
+  become: true
   when: "django_with_sudo"
 
 - name: "Nginx symlink"
@@ -15,5 +15,5 @@
     state: "link"
     src: "{{ dir_etc }}/nginx.conf"
   notify: "reload nginx"
-  sudo: true
+  become: true
   when: "django_with_sudo"
