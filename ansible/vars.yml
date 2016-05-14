@@ -4,4 +4,6 @@
 #
 
 python_version : "3.4"
-django_repo    : "https://github.com/jdavid/django-boot.git"
+
+# This is automacally found, but can be explicetely set
+django_repo    : ""
