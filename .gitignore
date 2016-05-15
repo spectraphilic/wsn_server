@@ -1,8 +1,10 @@
-/local/
 /etc/
+/local/
+/manage.py
+/project/local_settings.py
 /usr/
 /var/
-/manage.py
-*.pyc
+
 .*.swp
+*.pyc
 *~
