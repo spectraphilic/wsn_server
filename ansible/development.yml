@@ -7,7 +7,7 @@
   vars_files:
   - "vars.yml"
   roles:
-  - role              : "django"
+  - role              : "jdavid.django"
     django_debug      : true
     django_pull       : false
     django_with_nginx : false
