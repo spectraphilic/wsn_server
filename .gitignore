@@ -4,6 +4,7 @@
 /project/local_settings.py
 /usr/
 /var/
+db.sqlite3
 
 .*.swp
 *.pyc
