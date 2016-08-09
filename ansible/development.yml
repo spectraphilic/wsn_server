@@ -15,8 +15,8 @@
     django_with_sudo  : false
 
     django_domain     : "{{ ansible_default_ipv4.address }}.xip.io"
-    django_root       : ""
-    django_name       : ""
+#   django_root       : ""
+#   django_name       : ""
 
     django_database   :
       engine          : "sqlite"
