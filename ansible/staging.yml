@@ -18,5 +18,9 @@
     django_name       : "django-boot-staging"
     django_root       : "/tmp/django-boot-staging"
 
+    django_http       : false
+    django_https      : true
+    certbot_email     : ""
+
     django_database   :
       engine          : "sqlite"

@@ -18,6 +18,10 @@
     django_name       : "django-boot-production"
     django_root       : "/tmp/django-boot-production"
 
+    django_http       : false
+    django_https      : true
+    certbot_email     : ""
+
     django_database   :
       engine          : "postgres"
       name            : ""
