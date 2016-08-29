@@ -1,3 +1,4 @@
+/ansible/*.retry
 /etc/
 /local/
 /manage.py
