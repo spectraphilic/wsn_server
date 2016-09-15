@@ -6,5 +6,5 @@ from .views import SendfileView
 
 
 urlpatterns = [
-    url(r'^sendfile/$', SendfileView.as_view(), name='sendfile'),
+    url(r'^sendfile/(?P<path>.*)$', SendfileView.as_view(), name='sendfile'),
 ]
