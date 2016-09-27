@@ -5,5 +5,5 @@ from django.core.files.storage import FileSystemStorage
 
 sendfile_storage = FileSystemStorage(
     location=settings.SENDFILE_ROOT,
-    base_url=settings.SENDFILE_URL,
+    base_url='/sendfile/',
 )
