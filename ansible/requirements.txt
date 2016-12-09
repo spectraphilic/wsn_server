@@ -1,9 +1,9 @@
-Pillow==3.3.1
-pip==8.1.2
+Pillow==3.4.2
+pip==9.0.1
 
 # Django
-Django==1.10.1
-django-crispy-forms==1.6.0
+Django==1.10.4
+django-crispy-forms==1.6.1
 django-sendfile==0.3.11
 
 {% if django_database.engine == 'postgres' %}
