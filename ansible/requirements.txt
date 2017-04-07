@@ -1,3 +1,5 @@
+ipdb==0.10.2
+ipython==5.3
 Pillow==4.1.0
 pip==9.0.1
 
