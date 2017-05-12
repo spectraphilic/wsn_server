@@ -14,9 +14,13 @@
     django_with_monit : false
     django_with_sudo  : false
 
+    django_prefix     : ""
+
 #   django_domain     : ""
 #   django_root       : ""
 #   django_name       : ""
 
     django_database   :
       engine          : "sqlite"
+
+    django_port       : 8000 # Used by uwsgi

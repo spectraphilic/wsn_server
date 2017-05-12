@@ -14,12 +14,15 @@
     django_with_monit : true
     django_with_sudo  : false
 
+    django_prefix     : ""
+
     #django_domain     : ""
     django_name       : "django-boot-production"
     django_root       : "/tmp/django-boot-production"
 
     django_http       : false
     django_https      : true
+    django_hsts       : 0
     certbot_email     : ""
 
     django_database   :
