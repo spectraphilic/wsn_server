@@ -1,0 +1,3 @@
+[submodule "ansible/jdavid.django"]
+	path = ansible/jdavid.django
+	url = https://github.com/jdavid/django.git

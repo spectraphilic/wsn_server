@@ -19,6 +19,8 @@ help:
 #
 
 development:
+	git submodule init
+	git submodule update
 	ansible-playbook -i ansible/hosts ansible/development.yml
 
 staging:
