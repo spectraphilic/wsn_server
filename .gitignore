@@ -2,7 +2,8 @@
 /etc/
 /local/
 /manage.py
-/project/local_settings.py
+/project/settings_ansible.py
+/project/settings_local.py
 /usr/
 /var/
 db.sqlite3
