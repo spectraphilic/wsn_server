@@ -1,12 +1,12 @@
 /ansible/*.retry
+/db.sqlite3
 /etc/
 /local/
 /manage.py
 /project/settings_ansible.py
 /project/settings_local.py
-/usr/
 /var/
-db.sqlite3
+/venv/
 
 .*.swp
 *.pyc
