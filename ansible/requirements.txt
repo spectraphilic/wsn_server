@@ -1,10 +1,10 @@
-ipdb==0.10.2
-ipython==5.3
-Pillow==4.1.0
+ipdb==0.10.3
+ipython==5.4.1
+Pillow==4.1.1
 pip==9.0.1
 
 # Django
-Django==1.11
+Django==1.11.2
 django-crispy-forms==1.6.1
 django-sendfile==0.3.11
 
