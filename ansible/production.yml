@@ -1,0 +1,32 @@
+#
+# See roles/django/defaults/main.yml for the available options
+#
+
+- name: "Production"
+  hosts: "production"
+  vars_files:
+  - "vars.yml"
+  roles:
+  - role: "jdavid.django"
+    django_debug      : false
+    django_pull       : true
+    django_with_nginx : true
+    django_with_monit : true
+    django_with_sudo  : false
+
+    django_prefix     : ""
+
+    #django_domain     : ""
+    django_name       : "django-boot-production"
+    django_root       : "/tmp/django-boot-production"
+
+    django_http       : false
+    django_https      : true
+    django_hsts       : 0
+    certbot_email     : ""
+
+    django_database   :
+      engine          : "postgres"
+      name            : ""
+      user            : ""
+      password        : ""

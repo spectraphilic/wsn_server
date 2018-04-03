@@ -99,3 +99,18 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# From django-boot
+/ansible/*.retry
+/db.sqlite3
+/etc/
+/local/
+/manage.py
+/project/settings_ansible.py
+/project/settings_local.py
+/var/
+/venv/
+
+.*.swp
+*.pyc
+*~

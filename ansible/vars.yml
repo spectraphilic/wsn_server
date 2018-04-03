@@ -1,0 +1,9 @@
+#
+# These variables are common to the project, independent of
+# the environment (development, staging, production, ...)
+#
+
+python_version : "3.5"
+
+# This is automacally found, but can be explicetely set
+django_repo    : ""
