@@ -18,13 +18,15 @@ help:
 # Ansible
 #
 
-development:
+dev:
 	git submodule init
 	git submodule update
-	ansible-playbook -i ansible/hosts ansible/development.yml
 
-staging:
-	ansible-playbook -i ansible/hosts ansible/staging.yml
+dev_conda: dev
+	ansible-playbook -i ansible/hosts ansible/dev_conda.yml
+
+dev_venv: dev
+	ansible-playbook -i ansible/hosts ansible/dev_venv.yml
 
 production:
 	ansible-playbook -i ansible/hosts ansible/production.yml

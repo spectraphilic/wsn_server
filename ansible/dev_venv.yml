@@ -1,0 +1,29 @@
+#
+# See roles/django/defaults/main.yml for the available options
+#
+
+- name: "Development"
+  hosts: "development"
+  vars_files:
+  - "vars.yml"
+  roles:
+  - role              : "jdavid.django"
+    django_debug      : true
+    django_pull       : false
+    django_with_nginx : false
+    django_with_monit : false
+    django_with_sudo  : false
+
+    django_prefix     : ""
+
+#   django_domain     : ""
+#   django_root       : ""
+#   django_name       : ""
+
+    django_database   :
+      engine          : "postgres"
+      name            : "wsn"
+      user            : "wsn"
+      password        : "wsn"
+
+    django_port       : 8000 # Used by uwsgi
