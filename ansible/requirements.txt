@@ -1,11 +1,12 @@
-ipdb!=0.10.3
-ipython==6.2.1
-pip==9.0.1
+ipdb==0.11
+ipython==6.3.0
+#Pillow==5.1.0
+pip==9.0.3
 
 # Django
-Django==2.0
+Django==2.0.4
 djangorestframework==3.7.7
 
 {% if django_database.engine == 'postgres' %}
-psycopg2==2.7.3.2
+psycopg2==2.7.4
 {% endif %}
