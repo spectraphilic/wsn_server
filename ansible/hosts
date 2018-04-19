@@ -4,6 +4,4 @@
 
 development ansible_connection=local
 
-# To test ansible
-#staging     ansible_ssh_host=xxx ansible_ssh_user=xxx ansible_python_interpreter=/usr/bin/python2
-#production  ansible_ssh_host=xxx ansible_ssh_user=xxx ansible_python_interpreter=/usr/bin/python2
+production  ansible_ssh_host=wsn ansible_ssh_user=wsn ansible_python_interpreter=/usr/bin/python3

@@ -16,18 +16,18 @@
 
     django_prefix     : ""
 
-    #django_domain     : ""
-    django_name       : "django-boot-production"
-    django_root       : "/tmp/django-boot-production"
+    django_domain     : "wsn.latice.eu"
+    django_name       : "wsn"
+    django_root       : "/home/wsn/wsn_server"
 
-    django_http       : false
-    django_https      : true
+    django_http       : true
+    django_https      : false
     django_hsts       : 0
     nginx_timeout     : "600s"
     certbot_email     : ""
 
     django_database   :
       engine          : "postgres"
-      name            : ""
-      user            : ""
-      password        : ""
+      name            : "wsn"
+      user            : "wsn"
+      password        : "change-this-one"
