@@ -45,8 +45,47 @@ Deployment is as simple as:
 
 ## Deploy: Set up a new server environment
 
-Create the database as seen above. Create a user in the server:
+System wide requirements:
+
+    $ sudo apt-get install uwsgi uwsgi-plugin-python3
+    $ sudo apt-get install nginx monit
+
+Create the database as seen above. If PostgreSQL is configured to allow *peer*
+connections, then the password doesn't matter: the wsn system user will be able
+to connect to the database as the wsn PostgreSQL user. This is the default in
+Debian.
+
+Create a user in the server:
 
     # adduser --disabled-password wsn
 
-TODO
+TODO Server parameters.
+
+Deploy for the first time, fromt the local machine:
+
+    $ make production
+
+Nginx and monit:
+
+    # ln -snf /home/wsn/wsn_server/etc/nginx.conf /etc/nginx/sites-enabled/wsn.conf
+    # nginx -t
+    # service nginx reload
+
+    # ln -snf /home/wsn/wsn_server/etc/monit.conf /etc/monit/conf-enabled/wsn.conf
+    # monit -t
+    # service monit reload
+
+Switching to HTTPS requires some more steps:
+
+    $ vi [...]
+    $ make production
+
+    # service nginx reload
+    # ln -snf /home/wsn/wsn_server/etc/certbot.conf /etc/letsencrypt/configs/wsn.conf
+    # certbot certonly --config /etc/letsencrypt/configs/wsn.conf --agree-tos --dry-run
+    # certbot certonly --config /etc/letsencrypt/configs/wsn.conf --agree-tos
+
+    $ vi [...]
+    $ make production
+
+    # service nginx reload

@@ -20,11 +20,11 @@
     django_name       : "wsn"
     django_root       : "/home/wsn/wsn_server"
 
-    django_http       : true
-    django_https      : false
+    django_http       : false
+    django_https      : true
     django_hsts       : 0
     nginx_timeout     : "600s"
-    certbot_email     : ""
+    certbot_email     : "jdavid@geo.uio.no"
 
     django_database   :
       engine          : "postgres"
