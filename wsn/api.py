@@ -3,6 +3,7 @@ import datetime
 import logging
 
 # Django
+from django.db.models import Q
 from django.utils import timezone
 
 # Rest framework
@@ -71,7 +72,13 @@ class MetadataSerializer(serializers.ModelSerializer):
         for frame_data in frames_data:
             time = frame_data['time']
             data = frame_data['data']
-            defaults = {'data': data}
+
+            defaults = {
+                name: data.pop(name) for name in Frame.get_data_fields()
+                if name in data}
+            if data:
+                defaults['data'] = data
+
             obj, created = Frame.objects.update_or_create(
                 metadata=metadata, time=time, defaults=defaults)
             if not created:
@@ -116,10 +123,16 @@ class Query2Serializer(serializers.ModelSerializer):
         fields = params.getlist('fields')
         if fields:
             for field in fields:
-                value = instance.data.get(field)
+                value = getattr(instance, field, None)
+                if value is None:
+                    value = instance.data.get(field)
                 if value is not None:
                     data[field] = value
         else:
+            for field in instance.get_data_fields():
+                value = getattr(instance, field, None)
+                if value is not None:
+                    data[field] = value
             data.update(instance.data)
 
         # Tags
@@ -142,6 +155,7 @@ class Query2Pagination(pagination.CursorPagination):
 class Query2View(generics.ListAPIView):
     serializer_class = Query2Serializer
     permission_classes = (permissions.IsAuthenticated,)
+    #permission_classes = (permissions.AllowAny,)
     pagination_class = Query2Pagination
 
     def get_queryset(self):
@@ -166,9 +180,10 @@ class Query2View(generics.ListAPIView):
         metadatas = Metadata.objects.filter(**kw)
         metadatas = list(metadatas.values_list('id', flat=True))
 
+        args, kw = [], {}
+
         # Frames
         queryset = Frame.objects.filter(metadata__in=metadatas)
-        kw = {}
         for key in 'time__gte', 'time__lte':
             value = params.get(key)
             if value is not None:
@@ -179,11 +194,17 @@ class Query2View(generics.ListAPIView):
         fields = params.getlist('fields')
         if fields:
             if len(fields) == 1:
-                kw['data__has_key'] = fields[0]
+                q = Q(data__has_key=fields[0])
             else:
-                kw['data__has_any_keys'] = fields
+                q = Q(data__has_any_keys=fields)
 
-        queryset = queryset.filter(**kw)
+            # Fields defined in the schema
+            for field in set(fields) & set(Frame.get_data_fields()):
+                q |= Q(**{'%s__isnull' % field: False})
+
+            args.append(q)
+
+        queryset = queryset.filter(*args, **kw)
 
         tags = params.getlist('tags')
         return queryset.select_related('metadata') if tags else queryset

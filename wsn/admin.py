@@ -52,8 +52,15 @@ class AddressFilter(SerialFilter):
 @admin.register(Frame)
 class FrameAdmin(admin.ModelAdmin):
     list_display = ['time_seconds', 'metadata', 'data']
-    readonly_fields = ['time_seconds', 'metadata', 'data']
     list_filter = [SerialFilter, AddressFilter]
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = ['time_seconds', 'metadata', 'data']
+        fields = [
+            name for name in obj.get_data_fields()
+            if getattr(obj, name) is not None]
+
+        return readonly_fields + fields
 
     def time_seconds(self, obj):
         return obj.time.strftime("%Y-%m-%d %H:%M:%S %z")
