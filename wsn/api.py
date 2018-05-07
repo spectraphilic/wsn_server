@@ -72,17 +72,7 @@ class MetadataSerializer(serializers.ModelSerializer):
         for frame_data in frames_data:
             time = frame_data['time']
             data = frame_data['data']
-
-            defaults = {
-                name: data.pop(name) for name in Frame.get_data_fields()
-                if name in data}
-            if data:
-                defaults['data'] = data
-
-            obj, created = Frame.objects.update_or_create(
-                metadata=metadata, time=time, defaults=defaults)
-            if not created:
-                logger.warning('Row updated pk=%s', obj.pk)
+            Frame.update_or_create(metadata, time, data)
 
         return metadata
 

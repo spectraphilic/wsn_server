@@ -1,8 +1,14 @@
+# Standard Library
+import logging
+
 # Django
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.utils.functional import cached_property
+
+
+logger = logging.getLogger(__name__)
 
 
 # {'source_addr_long': '', 'rf_data': "", 'source_addr': '', 'id': '', 'options': ''}
@@ -116,10 +122,33 @@ class Frame(models.Model):
 
     @classmethod
     def get_data_fields(self):
+        """
+        Return the sorted list of data fields.
+        """
         exclude = {'time', 'metadata', 'data'}
         return sorted([
             field.name for field in self._meta.fields
             if not field.editable and field.name not in exclude])
+
+    @classmethod
+    def update_or_create(self, metadata, time, data):
+        """
+        Update or create frame.
+
+        Data fields which do not have a column in the database are stored in
+        the 'data' column, of json datatype.
+        """
+        defaults = {
+            name: data.pop(name) for name in self.get_data_fields()
+            if name in data}
+        if data:
+            defaults['data'] = data
+
+        obj, created = self.objects.update_or_create(
+            metadata=metadata, time=time, defaults=defaults)
+        if not created:
+            logger.warning('Row updated pk=%s', obj.pk)
+        return obj, created
 
     @cached_property
     def address(self):
