@@ -13,7 +13,7 @@ from sendfile import sendfile
 class SendfileView(View):
 
     def get(self, request, **kwargs):
-        if request.user.is_anonymous():
+        if request.user.is_anonymous:
             raise Http404
 
         path = kwargs['path']
