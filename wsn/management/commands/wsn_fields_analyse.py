@@ -3,20 +3,21 @@ from django.core.management.base import BaseCommand
 from wsn.models import Frame
 
 
-MAX = 1000000
+MAX = 1500000
 
 class Command(BaseCommand):
 
     def handle(self, *args, **kw):
-        n = Frame.objects.count()
-        print(n)
+        #n = Frame.objects.count()
+        #print(n)
         types = {}
         freq = {}
         mins = {}
         maxs = {}
 
         i = 0
-        for data in Frame.objects.values_list('data', flat=True)[:MAX]:
+        frames = Frame.objects.exclude(data=None)
+        for data in frames.values_list('data', flat=True)[:MAX]:
             #print(i)
             i += 1
             for key in data:
@@ -45,8 +46,9 @@ class Command(BaseCommand):
                     if old_max is None or value > old_max:
                         maxs[key] = value
 
-        print(n)
+        #print(i)
         for key, f in sorted(freq.items(), key=lambda x: x[1]):
-            t = types[key]
-            t = {int: 'int', float: 'float'}.get(t, t)
-            print(key, f, t, mins.get(key), maxs.get(key))
+            if f > 100000:
+                t = types[key]
+                t = {int: 'int', float: 'float'}.get(t, t)
+                print(key, f, t, mins.get(key), maxs.get(key))

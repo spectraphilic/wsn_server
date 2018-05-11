@@ -12,8 +12,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kw):
         # Queryset
-        fields = Frame.get_data_fields()
-        frames = Frame.objects.filter(data__has_any_keys=fields)
+        fields = set(Frame.get_data_fields())
+        frames = Frame.objects.exclude(data=None).order_by('id')
+        start = 0
 
         # Number of chunks
         chunk_size = 5000
@@ -25,16 +26,24 @@ class Command(BaseCommand):
         # Go
         for i in tqdm(range(n_chunks)):
             with transaction.atomic():
-                for obj in frames[:chunk_size]:
+                for obj in frames.filter(id__gt=start)[:chunk_size]:
                     changed = False
-                    for key in fields:
-                        if key in obj.data:
+                    for src in list(obj.data):
+                        dst = Frame.normalize_name(src)
+                        if dst in fields:
                             changed = True
-                            value = obj.data.pop(key)
+                            value = obj.data.pop(src)
                             if value is not None:
                                 if value == "NAN":
                                     value = math.nan
-                                setattr(obj, key, value)
+                                setattr(obj, dst, value)
+
+                    if obj.data == {}:
+                        obj.data = None
+                        changed = True
 
                     if changed:
                         obj.save()
+
+                # Next chunk
+                start = obj.id
