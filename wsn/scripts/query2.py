@@ -3,7 +3,7 @@ import os
 import pprint
 import requests
 
-URL = 'https://hycamp.org/wsn/api/query/v2/'
+URL = 'https://wsn.latice.eu/api/query/v2/'
 #URL = 'http://localhost:8000/wsn/api/query/v2/'
 
 def query(
