@@ -3,13 +3,14 @@ import os
 import pprint
 import requests
 
-URL = 'https://wsn.latice.eu/api/query/v2/'
-#URL = 'http://localhost:8000/wsn/api/query/v2/'
+#URL = 'https://wsn.latice.eu/api/query/v2/'
+URL = 'http://localhost:8000/api/query/v2/'
 
 def query(
     limit=100,           # Pagination
     fields=None,         # Fields to return (all by default)
     tags=None,           # Tags to return (all by default)
+    interval=None,       # If given will return the average in the interval
     debug=False,         # Not sent to the API
     # Filters
     time__gte=None, time__lte=None, # Time is special
@@ -26,6 +27,7 @@ def query(
         'time__gte': time__gte, 'time__lte': time__lte, # Time filter
         'fields': fields,
         'tags': tags,
+        'interval': interval,
     }
 
     # Filter inside json
@@ -96,5 +98,13 @@ if __name__ == '__main__':
     response = query(limit=limit,
         serial=408520806,
         fields=['received'],
+        debug=True,
+    )
+
+    # Example 5: Get the battery once every hour
+    response = query(limit=10,
+        serial=0x1F566F057C105487,
+        fields=['bat'],
+        interval=3600,
         debug=True,
     )

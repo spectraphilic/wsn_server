@@ -3,7 +3,9 @@ import datetime
 import logging
 
 # Django
-from django.db.models import Q
+from django.db.models import IntegerField
+from django.db.models import F, Func, Min, Q
+from django.db.models.functions import Cast
 from django.utils import timezone
 
 # Rest framework
@@ -142,6 +144,11 @@ class Query2Pagination(pagination.CursorPagination):
     page_size_query_param = 'limit'
 
 
+class Epoch(Func):
+   function = 'EXTRACT'
+   template = "%(function)s('epoch' from %(expressions)s)"
+
+
 class Query2View(generics.ListAPIView):
     serializer_class = Query2Serializer
     permission_classes = (permissions.IsAuthenticated,)
@@ -155,7 +162,7 @@ class Query2View(generics.ListAPIView):
         # TODO Optimize using data__contains when key does not end by __gte/__lte
         # because __contains will trigger usage of the GIN index.
         kw = {}
-        exclude = {'format', 'limit', 'fields', 'tags', 'time__gte', 'time__lte'}
+        exclude = {'format', 'limit', 'fields', 'tags', 'interval', 'time__gte', 'time__lte'}
         for key, value in params.items():
             if key not in exclude:
                 if key.endswith(':int'):
@@ -196,6 +203,14 @@ class Query2View(generics.ListAPIView):
             args.append(q)
 
         queryset = queryset.filter(*args, **kw)
+
+        # Interval
+        interval = params.get('interval')
+        if interval:
+            subquery = queryset.order_by().annotate(
+                key=Cast(Epoch(F('time')), IntegerField()) / int(interval)
+            ).values('key').annotate(t=Min('time')).values('t')
+            queryset = queryset.filter(time__in=subquery)
 
         tags = params.getlist('tags')
         return queryset.select_related('metadata') if tags else queryset
