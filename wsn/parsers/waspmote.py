@@ -63,18 +63,25 @@ class frameObj(object):
 
 def search_frame(data):
     """
-    Search the frame start delimiter <=> and return the data just after the
-    delimter.  Anything found before is considered garbage and discarded. If
-    the delimeter is not found return None.
+    Search the frame starting with the delimiter <=>, return a tuple with:
+
+    - the data found before the delimiter (garbage)
+    - the data starting from the delimiter
     """
+    # End of data
+    if not data:
+        return '', ''
+
     index = data.find(b'<=>')
+
+    # Not found
     if index == -1:
-        return None
+        return data, ''
 
     if index > 0:
-        print('Warning: garbage before frame found and discarded')
+        return data[:index], data[index:]
 
-    return data
+    return '', data
 
 
 def parse_frame(line):
@@ -196,19 +203,33 @@ def parse_frame(line):
     return frame, rest
 
 
-def read_wasp_data(filename, data):
-    src = open(filename, 'rb').read()
+def read_wasp_data(f):
+    src = f.read()
+
     while src:
-        src = search_frame(src)
-        if src:
-            frame, src = parse_frame(src)
-            if frame is not None:
-                frame = frameObj(frame)
-                data.append(frame.__dict__)
+        bad, good = search_frame(src)
+        if bad:
+            print('Warning: %d bytes of garbage found and discarded' % len(bad))
+            print(bad[:50])
+
+        if good:
+            aux = parse_frame(good)
+            if aux is None:
+                break
+
+            frame, src = aux
+            yield frame
 
             # read end of frame: \n
             if src and src[0] == '\n':
                 src = src[1:]
+
+
+def read_wasp_file(filename, data):
+    with open(filename, 'rb') as f:
+        for frame in read_wasp_data(f):
+            frame = frameObj(frame)
+            data.append(frame.__dict__)
 
 
 if __name__ == '__main__':
@@ -240,9 +261,9 @@ if __name__ == '__main__':
         if os.path.isdir(name):
             for filename in os.listdir(name):
                 filename = os.path.join(name, filename)
-                read_wasp_data(filename, data)
+                read_wasp_file(filename, data)
         else:
-            read_wasp_data(name, data)
+            read_wasp_file(name, data)
     data_frame = pd.DataFrame(data)
 
     data_frame.sort_values(by='tst', inplace=True)
