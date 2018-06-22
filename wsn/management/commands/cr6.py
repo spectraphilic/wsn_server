@@ -30,6 +30,10 @@ class Command(BaseCommand):
             self.stdout.write("{} skip for now, will handle later".format(filepath))
             return
 
+        if stat.st_size == 0:
+            self.stdout.write("{} WARNING file is empty".format(filepath))
+            return
+
         try:
             self.uploader.upload(filepath)
         except Exception:

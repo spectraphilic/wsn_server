@@ -1,5 +1,3 @@
-import os
-
 from wsn.models import Metadata, Frame
 from wsn.parsers.cr6 import CR6Parser
 from wsn.parsers.licor import LicorParser
@@ -8,9 +6,6 @@ from wsn.parsers.licor import LicorParser
 class CR6Uploader:
 
     def upload(self, filepath):
-        if os.stat(filepath).st_size == 0:
-            return
-
         with CR6Parser(filepath) as parser:
             # Create Metadata
             metadata, created = Metadata.objects.get_or_create(tags=parser.tags)
