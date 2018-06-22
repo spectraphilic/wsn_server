@@ -1,3 +1,5 @@
+import os
+
 from wsn.models import Metadata, Frame
 from wsn.parsers.cr6 import CR6Parser
 from wsn.parsers.licor import LicorParser
@@ -5,8 +7,11 @@ from wsn.parsers.licor import LicorParser
 
 class CR6Uploader:
 
-    def upload(self, file):
-        with CR6Parser(file) as parser:
+    def upload(self, filepath):
+        if os.stat(filepath).st_size == 0:
+            return
+
+        with CR6Parser(filepath) as parser:
             # Create Metadata
             metadata, created = Metadata.objects.get_or_create(tags=parser.tags)
             # Frames
@@ -16,11 +21,11 @@ class CR6Uploader:
 
 class LicorUploader:
 
-    def upload(self, file):
+    def upload(self, filepath):
         # Do not upload biomet frames, as these are just a copy of the CR6
         # frames (1 of 12 actually)
 
-        with LicorParser(file) as parser:
+        with LicorParser(filepath) as parser:
             # Data frames
             datafile = parser.data
             metadata, created = Metadata.objects.get_or_create(tags=datafile.header)
