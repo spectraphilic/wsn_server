@@ -6,7 +6,9 @@ import logging
 from django.db.models import IntegerField
 from django.db.models import F, Func, Min, Q
 from django.db.models.functions import Cast
+from django.http import HttpResponse
 from django.utils import timezone
+from django.views import View
 
 # Rest framework
 from rest_framework import generics
@@ -98,6 +100,25 @@ class CreateView(generics.CreateAPIView):
     queryset = Metadata.objects.all()
     serializer_class = MetadataSerializer
     permission_classes = (CreatePermission,)
+
+
+#
+# Create frames sent through 4G by the waspmotes
+#
+
+class MeshliumView(View):
+    def get(self, request, *args, **kwargs):
+        return HttpResponse('Hello, World!')
+
+    def post(self, request, *args, **kwargs):
+        x = request.body
+        logger.debug("body: %s %s" % (type(x), repr(x)))
+        x = request.POST
+        logger.debug("body: %s %s" % (type(x), repr(x)))
+        x = request.FILES
+        logger.debug("body: %s %s" % (type(x), repr(x)))
+
+        return HttpResponse('My name is POST, HTTP POST')
 
 #
 # Query v2

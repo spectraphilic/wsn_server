@@ -31,3 +31,5 @@
       name            : "wsn"
       user            : "wsn"
       password        : "change-this-one"
+
+    nginx_template    : "{{ playbook_dir }}/templates/nginx.conf"
