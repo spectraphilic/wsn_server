@@ -1,4 +1,5 @@
 # Standard Library
+import base64
 import datetime
 import logging
 
@@ -114,12 +115,10 @@ class MeshliumView(View):
         return HttpResponse('Hello, World!')
 
     def post(self, request, *args, **kwargs):
-        x = request.body
-        logger.debug("body: %s %s" % (type(x), repr(x)))
-        x = request.POST
-        logger.debug("body: %s %s" % (type(x), repr(x)))
-        x = request.FILES
-        logger.debug("body: %s %s" % (type(x), repr(x)))
+        frame = request.POST.get('frame')
+        frame = frame[0]
+        logger.debug("body: %s" % repr(frame))
+        frame = base64.decode(frame)
 
         return HttpResponse('My name is POST, HTTP POST')
 
