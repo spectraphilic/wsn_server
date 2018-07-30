@@ -8,7 +8,9 @@ from django.db.models import F, Func, Min, Q
 from django.db.models.functions import Cast
 from django.http import HttpResponse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 
 # Rest framework
 from rest_framework import generics
@@ -106,6 +108,7 @@ class CreateView(generics.CreateAPIView):
 # Create frames sent through 4G by the waspmotes
 #
 
+@method_decorator(csrf_exempt, name='dispatch')
 class MeshliumView(View):
     def get(self, request, *args, **kwargs):
         return HttpResponse('Hello, World!')
