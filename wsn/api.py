@@ -7,7 +7,7 @@ import logging
 from django.db.models import IntegerField
 from django.db.models import F, Func, Min, Q
 from django.db.models.functions import Cast
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -106,23 +106,22 @@ class CreateView(generics.CreateAPIView):
 class MeshliumView(View):
 
     def post(self, request, *args, **kwargs):
-        logger.debug("request.POST: %s" % repr(request.POST))
+        frames = request.POST.get('frame')
+        if type(frames) is str:
+            frames = [frames]
 
-        frame = request.POST.get('frame')
-        if type(frame) is not str:
-            return HttpResponseBadRequest()
+        for frame in frames:
+            # Parse frame
+            frame = base64.b16decode(frame)
+            frame = waspmote.parse_frame(frame)
+            validated_data = waspmote.data_to_json(frame)
 
-        # Parse frame
-        frame = base64.b16decode(frame)
-        frame = waspmote.parse_frame(frame)
-        validated_data = waspmote.data_to_json(frame)
+            # Add remote addr to tags
+            remote_addr = request.META.get('REMOTE_ADDR', '')
+            validated_data['tags']['remote_addr'] = remote_addr
 
-        # Add remote addr to tags
-        remote_addr = request.META.get('REMOTE_ADDR', '')
-        validated_data['tags']['remote_addr'] = remote_addr
-
-        # Save to database
-        frame_to_database(validated_data)
+            # Save to database
+            frame_to_database(validated_data)
 
         return HttpResponse(status=200)
 
