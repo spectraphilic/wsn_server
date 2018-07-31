@@ -113,7 +113,7 @@ class MeshliumView(View):
         for frame in frames:
             # Parse frame
             frame = base64.b16decode(frame)
-            frame = waspmote.parse_frame(frame)
+            frame, _ = waspmote.parse_frame(frame)
             validated_data = waspmote.data_to_json(frame)
 
             # Add remote addr to tags
