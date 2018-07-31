@@ -106,19 +106,23 @@ class CreateView(generics.CreateAPIView):
 class MeshliumView(View):
 
     def post(self, request, *args, **kwargs):
-        frames = request.POST.get('frame')
+        logger.debug("request.POST: %s" % repr(request.POST))
 
-        logger.debug("request.META: %s" % repr(request.META))
-        logger.debug("frames %s %s" % (type(frames), repr(frames)))
+        frame = request.POST.get('frame')
+        if type(frame) is not str:
+            return HttpResponseBadRequest()
 
-#       if type(frames) is not list:
-#           return HttpResponseBadRequest()
+        # Parse frame
+        frame = base64.b16decode(frame)
+        frame = waspmote.parse_frame(frame)
+        validated_data = waspmote.data_to_json(frame)
 
-        for frame in frames:
-            frame = base64.b16decode(frame)
-            frame = waspmote.parse_frame(frame)
-            validated_data = waspmote.data_to_json(frame)
-            frame_to_database(validated_data)
+        # Add remote addr to tags
+        remote_addr = request.META.get('REMOTE_ADDR', '')
+        validated_data['tags']['remote_addr'] = remote_addr
+
+        # Save to database
+        frame_to_database(validated_data)
 
         return HttpResponse(status=200)
 
