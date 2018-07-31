@@ -1,5 +1,4 @@
 # Standard Library
-from datetime import datetime, timezone
 import zipfile
 
 import tqdm
@@ -8,28 +7,8 @@ import tqdm
 from django.core.management.base import BaseCommand
 
 # Project
-from wsn.models import Frame, Metadata
-from wsn.parsers.waspmote import read_wasp_data
-
-
-def data_to_json(data):
-    """
-    Adapt the data to the structure expected by Django.
-    """
-    # Tags
-    tags = {}
-    for key in 'source_addr_long', 'serial', 'name':
-        value = data.pop(key, None)
-        if value is not None:
-            tags[key] = value
-
-    # Time
-    time = data.pop('tst', None)
-    if time is None:
-        time = data['received']
-    time = datetime.fromtimestamp(time, timezone.utc).isoformat()
-
-    return {'tags': tags, 'frames': [{'time': time, 'data': data}]}
+from wsn.api import frame_to_database
+from wsn.parsers import waspmote
 
 
 class Command(BaseCommand):
@@ -49,8 +28,8 @@ class Command(BaseCommand):
                 for name in tqdm.tqdm(names):
                     if name.startswith('DATA/') and name.endswith('.TXT'):
                         with zf.open(name) as data_file:
-                            for frame in read_wasp_data(data_file):
-                                frame = data_to_json(frame)
+                            for frame in waspmote.read_wasp_data(data_file):
+                                frame = waspmote.data_to_json(frame)
                                 frames.append(frame)
 
         # Sort by time
@@ -65,9 +44,4 @@ class Command(BaseCommand):
 
         # Insert
         for frame in tqdm.tqdm(frames):
-            frames_data = frame.pop('frames')
-            metadata, created = Metadata.objects.get_or_create(**frame)
-            for frame_data in frames_data:
-                time = frame_data['time']
-                data = frame_data['data']
-                Frame.update_or_create(metadata, time, data)
+            frame_to_database(frame)

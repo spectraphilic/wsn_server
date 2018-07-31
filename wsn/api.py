@@ -7,7 +7,7 @@ import logging
 from django.db.models import IntegerField
 from django.db.models import F, Func, Min, Q
 from django.db.models.functions import Cast
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -21,21 +21,21 @@ from rest_framework import serializers
 
 # App
 from .models import Metadata, Frame
+from .parsers import waspmote
 
 
 logger = logging.getLogger(__name__)
 
 
-# https://stackoverflow.com/questions/22881067/django-rest-framework-post-array-of-objects
-class ManyModelMixin(object):
-    def get_serializer(self, *args, **kwargs):
-        if 'many' not in kwargs:
-            data = kwargs.get('data')
-            if type(data) is list:
-                kwargs['many'] = True
+def frame_to_database(validated_data):
+    frames_data = validated_data.pop('frames')
+    metadata, created = Metadata.objects.get_or_create(**validated_data)
+    for frame_data in frames_data:
+        time = frame_data['time']
+        data = frame_data['data']
+        Frame.update_or_create(metadata, time, data)
 
-        return super().get_serializer(*args, **kwargs)
-
+    return metadata
 
 #
 # Create
@@ -74,14 +74,7 @@ class MetadataSerializer(serializers.ModelSerializer):
         extra_kwargs = {'tags': {'read_only': False}}
 
     def create(self, validated_data):
-        frames_data = validated_data.pop('frames')
-        metadata, created = Metadata.objects.get_or_create(**validated_data)
-        for frame_data in frames_data:
-            time = frame_data['time']
-            data = frame_data['data']
-            Frame.update_or_create(metadata, time, data)
-
-        return metadata
+        return frame_to_database(validated_data)
 
     # Override to_representation, otherwise the list of *all* frames attached
     # to the metadata will be returned
@@ -111,16 +104,21 @@ class CreateView(generics.CreateAPIView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class MeshliumView(View):
-    def get(self, request, *args, **kwargs):
-        return HttpResponse('Hello, World!')
 
     def post(self, request, *args, **kwargs):
-        frame = request.POST.get('frame')
-        frame = frame[0]
-        logger.debug("body: %s" % repr(frame))
-        frame = base64.decode(frame)
+        frames = request.POST.get('frame')
+        if type(frames) is not list:
+            return HttpResponseBadRequest()
 
-        return HttpResponse('My name is POST, HTTP POST')
+        logger.debug("request.META: %s" % repr(request.META))
+
+        for frame in frames:
+            frame = base64.b16decode(frame)
+            frame = waspmote.parse_frame(frame)
+            validated_data = waspmote.data_to_json(frame)
+            frame_to_database(validated_data)
+
+        return HttpResponse(status=200)
 
 #
 # Query v2

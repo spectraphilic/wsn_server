@@ -4,7 +4,7 @@ Script to parse frames from waspmote
 Simon Filhol
 '''
 
-from __future__ import print_function, unicode_literals
+from datetime import datetime, timezone
 import os
 import struct
 
@@ -45,20 +45,6 @@ SENSORS = {
 }
 
 SENSORS_STR = {v[0]: v for k, v in SENSORS.items()}
-
-
-class frameObj(object):
-    def __init__(self, kw):
-        # Set defaults (XXX Do we need this?)
-        import numpy as np
-        self.tst = np.nan
-        self.bat = np.nan
-        self.tcb = np.nan
-        self.in_temp = np.nan
-        self.humb = np.nan
-
-        for key, value in kw.items():
-            setattr(self, key, value)
 
 
 def search_frame(data):
@@ -223,6 +209,45 @@ def read_wasp_data(f):
             # read end of frame: \n
             if src and src[0] == '\n':
                 src = src[1:]
+
+
+def data_to_json(data):
+    """
+    Adapt the data to the structure expected by Django.
+    """
+    # Tags
+    tags = {}
+    for key in 'source_addr_long', 'serial', 'name':
+        value = data.pop(key, None)
+        if value is not None:
+            tags[key] = value
+
+    # Time
+    time = data.pop('tst', None)
+    if time is None:
+        time = data['received']
+    time = datetime.fromtimestamp(time, timezone.utc).isoformat()
+
+    return {'tags': tags, 'frames': [{'time': time, 'data': data}]}
+
+
+#
+# Old code that may be removed
+# May still be usefull if we want to plot raw files
+#
+
+class frameObj(object):
+    def __init__(self, kw):
+        # Set defaults (XXX Do we need this?)
+        import numpy as np
+        self.tst = np.nan
+        self.bat = np.nan
+        self.tcb = np.nan
+        self.in_temp = np.nan
+        self.humb = np.nan
+
+        for key, value in kw.items():
+            setattr(self, key, value)
 
 
 def read_wasp_file(filename, data):
