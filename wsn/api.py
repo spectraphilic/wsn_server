@@ -107,10 +107,12 @@ class MeshliumView(View):
 
     def post(self, request, *args, **kwargs):
         frames = request.POST.get('frame')
-        if type(frames) is not list:
-            return HttpResponseBadRequest()
 
         logger.debug("request.META: %s" % repr(request.META))
+        logger.debug("frames %s %s" % (type(frames), repr(frames)))
+
+#       if type(frames) is not list:
+#           return HttpResponseBadRequest()
 
         for frame in frames:
             frame = base64.b16decode(frame)
