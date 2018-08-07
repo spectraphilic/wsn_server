@@ -9,39 +9,42 @@ import os
 import struct
 
 
-USHORT = 0 # uint8_t
-INT    = 1 # int16_t
-FLOAT  = 2 # double
-STR    = 3 # char*
-ULONG  = 4 # uint32_t
-LIST_INT = 5 # Array of integers
+"""
+f - float
+j - int16_t
+u - uint8_t
+w - uint32_t
+s - char*
+n - Array of int16_t (specially compressed)
+"""
 
 SENSORS = {
-     15: (b'PA', FLOAT, ['pa']),
-     33: (b'TCB', FLOAT, ['tcb']),
-     35: (b'HUMB', FLOAT, ['humb']),
-     38: (b'LW', FLOAT, ['lw']),
-     52: (b'BAT', USHORT, ['bat']),
-     53: (b'GPS', FLOAT, ['latitude', 'longitude']),
-     54: (b'RSSI', INT, ['rssi']),
-     55: (b'MAC', STR, ['mac']),
-     62: (b'IN_TEMP', FLOAT, ['in_temp']),
+     15: (b'PA', 'f', ['pa']),
+     33: (b'TCB', 'f', ['tcb']),
+     35: (b'HUMB', 'f', ['humb']),
+     38: (b'LW', 'f', ['lw']),
+     52: (b'BAT', 'u', ['bat']),
+     53: (b'GPS', 'ff', ['latitude', 'longitude']),
+     54: (b'RSSI', 'j', ['rssi']),
+     55: (b'MAC', 's', ['mac']),
+     62: (b'IN_TEMP', 'f', ['in_temp']),
 #    63: (b'ACC', ),
-     65: (b'STR', STR, ['str']),
-     74: (b'BME_TC', FLOAT, ['bme_tc']),
-     76: (b'BME_HUM', FLOAT, ['bme_hum']),
-     77: (b'BME_PRES', FLOAT, ['bme_pres']),
-     85: (b'TX_PWR', USHORT, ['tx_pwr']),
+     65: (b'STR', 's', ['str']),
+     74: (b'BME_TC', 'f', ['bme_tc']),
+     76: (b'BME_HUM', 'f', ['bme_hum']),
+     77: (b'BME_PRES', 'f', ['bme_pres']),
+     85: (b'TX_PWR', 'u', ['tx_pwr']),
 #    89: (b'SPEED_OG', ),
 #    90: (b'COURSE_OG', ),
 #    91: (b'ALT', ),
-    123: (b'TST', ULONG, ['tst']),
-    200: (b'SDI12_CTD10', FLOAT, ['ctd_depth', 'ctd_temp', 'ctd_cond']),
-    201: (b'SDI12_DS2_1', FLOAT, ['ds2_speed', 'ds2_dir', 'ds2_temp']),
-    202: (b'SDI12_DS2_2', FLOAT, ['ds2_meridional', 'ds2_zonal', 'ds2_gust']),
-    203: (b'DS18B20', LIST_INT, 'ds1820'),
-    204: (b'MB73XX', ULONG, ['mb_median', 'mb_sd']),
-    206: (b'VOLTS', FLOAT, ['volts']),
+    123: (b'TST', 'w', ['tst']),
+    200: (b'SDI12_CTD10', 'fff', ['ctd_depth', 'ctd_temp', 'ctd_cond']),
+    201: (b'SDI12_DS2_1', 'fff', ['ds2_speed', 'ds2_dir', 'ds2_temp']),
+    202: (b'SDI12_DS2_2', 'fff', ['ds2_meridional', 'ds2_zonal', 'ds2_gust']),
+    203: (b'DS18B20', 'n', ['ds1820']),
+    204: (b'MB73XX', 'ww', ['mb_median', 'mb_sd']),
+    206: (b'VOLTS', 'f', ['volts']),
+    207: (b'WS100', 'fffuf', ['precip_abs', 'precip_dif', 'precip_int_h', 'precip_type', 'precip_int_min']),
 }
 
 SENSORS_STR = {v[0]: v for k, v in SENSORS.items()}
@@ -134,57 +137,54 @@ def parse_frame(line):
             print("Warning: %d sensor type not supported" % sensor_id)
             return None
 
-        key, sensor_type, names = sensor
+        key, form, names = sensor
 
-        # Variable list of values (done for the DS18B20 string)
-        if sensor_type == LIST_INT:
-            name = names.lower()
-            values = []
-            n_values = struct.unpack_from("B", line)[0]
-            line = line[1:]
-            for i in range(n_values):
-                if i > 0:
-                    value = struct.unpack_from("b", line)[0]
-                    line = line[1:]
-                    if value != -128:
-                        value = values[-1] + value
-                        values.append(value)
-                        continue
-
-                value = struct.unpack_from("h", line)[0]
-                line = line[2:]
-                values.append(value)
-
-            # DS18B20
-            if key == b'DS18B20':
-                #f = lambda x: x if (-100 < x < 100) else None # None if out of range
-                #values = [f(value / 16) for value in values]
-                values = [value / 16 for value in values]
-
-            frame[name] = frame.get(name, []) + values
-            continue
-
-        # Fixed number of values
-        for name in names:
-            if sensor_type == USHORT:
-                value = struct.unpack_from("B", line)[0]
-                line = line[1:]
-            elif sensor_type == INT:
-                value = struct.unpack_from("h", line)[0]
-                line = line[2:]
-            elif sensor_type == FLOAT:
+        for c, name in zip(form, names):
+            name = name.lower()
+            if c == 'f':
                 value = struct.unpack_from("f", line)[0]
                 line = line[4:]
-            elif sensor_type == ULONG:
+            elif c == 'j':
+                value = struct.unpack_from("h", line)[0]
+                line = line[2:]
+            elif c == 'u':
+                value = struct.unpack_from("B", line)[0]
+                line = line[1:]
+            elif c == 'w':
                 value = struct.unpack_from("I", line)[0]
                 line = line[4:]
-            elif sensor_type == STR:
+            elif c == 'str':
                 length = struct.unpack_from("B", line)[0]
                 line = line[1:]
                 value = line[:length]
                 line = line[length:]
+            elif c == 'n':
+                # Variable list of values (done for the DS18B20 string)
+                values = []
+                n_values = struct.unpack_from("B", line)[0]
+                line = line[1:]
+                for j in range(n_values):
+                    if j > 0:
+                        value = struct.unpack_from("b", line)[0]
+                        line = line[1:]
+                        if value != -128:
+                            value = values[-1] + value
+                            values.append(value)
+                            continue
 
-            frame[name.lower()] = value
+                    value = struct.unpack_from("h", line)[0]
+                    line = line[2:]
+                    values.append(value)
+
+                # DS18B20
+                if key == b'DS18B20':
+                    #f = lambda x: x if (-100 < x < 100) else None # None if out of range
+                    #values = [f(value / 16) for value in values]
+                    values = [value / 16 for value in values]
+
+                value = frame.get(name, []) + values
+
+            frame[name] = value
 
     return frame, rest
 
