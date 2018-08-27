@@ -1,12 +1,14 @@
 '''
 Script to parse frames from waspmote
 
-Simon Filhol
+Simon Filhol, J. David Ibáñez
 '''
 
+# Standard Library
 from datetime import datetime, timezone
-import os
 import struct
+
+from Crypto.Cipher import AES
 
 
 """
@@ -47,8 +49,6 @@ SENSORS = {
     207: (b'WS100', 'fffuf', ['precip_abs', 'precip_dif', 'precip_int_h', 'precip_type', 'precip_int_min']),
 }
 
-SENSORS_STR = {v[0]: v for k, v in SENSORS.items()}
-
 
 def search_frame(data):
     """
@@ -73,11 +73,27 @@ def search_frame(data):
     return '', data
 
 
-def parse_frame(line):
+ciphers = {}
+def get_cipher(key):
+    if key is None:
+        return None
+
+    cipher = ciphers.get(key)
+    if cipher is None:
+        cipher = AES.new(key, AES.MODE_ECB)
+        ciphers[key] = cipher
+
+    return cipher
+
+
+def parse_frame(line, cipher_key=None):
     """
     Parse the frame starting at the given byte string. We consider that the
     frame start delimeter has already been read.
     """
+
+    if cipher_key is not None and type(cipher_key) is not bytes:
+        raise TypeError('cipher_key must be None or bytes, got %s' % type(cipher_key))
 
     # Start delimiter
     if not line.startswith(b'<=>'):
@@ -90,22 +106,33 @@ def parse_frame(line):
     frame_type = struct.unpack_from("B", line)[0]
     line = line[1:]
 
-    # Frame types
-    # 0 -  5 : v12
-    # 6 - 11 : v15
-    # From 7 to 11 are "Reserved types" in Libellium's lib. But we use the
-    # event type, and need to tell apart v12 from v15 (otherwise we cannot know
-    # whether the serial number is 32 or 64 bits long).
-    if frame_type > 11:
-        print("Warning: %d frame type not supported" % frame_type)
+    if frame_type & 128: # b7
+        print("Warning: text frames not supported (%d)" % frame_type)
         return None
 
-    v15 = frame_type > 5
-    if v15:
-        # Discard version
-        # From 0 (info) to 5 (low battery). We only use 0 and 2
-        frame_type -= 6
-    frame = {'type': frame_type}
+    if frame_type == 96:
+        encrypted = True
+        v15 = True
+    elif 96 < frame_type < 100:
+        encrypted = True
+        v15 = False
+    elif frame_type > 11:
+        print("Warning: %d frame type not supported" % frame_type)
+        return None
+    else:
+        encrypted = False
+        # 0 -  5 : v12
+        # 6 - 11 : v15
+        # From 7 to 11 are "Reserved types" in Libellium's lib. But we use the
+        # event type, and need to tell apart v12 from v15 (otherwise we cannot
+        # know whether the serial number is 32 or 64 bits long).
+        v15 = frame_type > 5
+        if v15:
+            # Discard version
+            # From 0 (info) to 5 (low battery). We only use 0 and 2
+            frame_type -= 6
+
+        frame = {'type': frame_type}
 
     # Number of bytes (Binary)
     n = struct.unpack_from("B", line)[0]
@@ -121,13 +148,39 @@ def parse_frame(line):
         serial_id = struct.unpack_from(">I", line)[0]
         line = line[4:]
 
-    waspmote_id, line = line.split(b'#', 1)
+    # Encrypted
+    if encrypted:
+        if not v15:
+            name, line = line.split(b'#', 1)
+            name = name.decode()
+
+        cipher = get_cipher(cipher_key)
+        if cipher is None:
+            print('Warning: encrypted frames not supported because no key provided')
+            return None
+
+        line = cipher.decrypt(line)
+        frame, _ = parse_frame(line) # _ may contain zeroes
+        if frame['serial'] != serial_id:
+            print("Warning: serial numbers do not match %d != %d", serial_id, frame['serial'])
+            return None
+
+        if not v15 and frame['name'] != name:
+            print("Warning: name do not match %s != %s", name, frame['name'])
+            return None
+
+        return frame, rest
+
+    # Name
+    name, line = line.split(b'#', 1)
+    name = name.decode() # bytes to str
+    # Sequence
     sequence = struct.unpack_from("B", line)[0]
     line = line[1:] # Payload
 
     frame['serial'] = serial_id
     frame['frame'] = sequence # Frame sequence
-    frame['name'] = waspmote_id.decode() # bytes to str
+    frame['name'] = name
 
     while line:
         sensor_id = struct.unpack_from("B", line)[0]
@@ -229,87 +282,3 @@ def data_to_json(data):
     time = datetime.fromtimestamp(time, timezone.utc).isoformat()
 
     return {'tags': tags, 'frames': [{'time': time, 'data': data}]}
-
-
-#
-# Old code that may be removed
-# May still be usefull if we want to plot raw files
-#
-
-class frameObj(object):
-    def __init__(self, kw):
-        # Set defaults (XXX Do we need this?)
-        import numpy as np
-        self.tst = np.nan
-        self.bat = np.nan
-        self.tcb = np.nan
-        self.in_temp = np.nan
-        self.humb = np.nan
-
-        for key, value in kw.items():
-            setattr(self, key, value)
-
-
-def read_wasp_file(filename, data):
-    with open(filename, 'rb') as f:
-        for frame in read_wasp_data(f):
-            frame = frameObj(frame)
-            data.append(frame.__dict__)
-
-
-if __name__ == '__main__':
-    import pandas as pd
-    #import matplotlib as mpl
-    #mpl.use('PS')
-    import matplotlib.pyplot as plt
-
-    names = [
-#       '../../data/data_20170710/TMP.TXT',
-#       '../../data/data_20170710/DATA/170706.TXT',
-
-        #'test/170925/DATA',
-        #'test/170926/DATA',
-        #'test/170929/DATA',
-        #'test/171002/DATA',
-        'test/171107/DATA',
-
-        #'test/middalselvi/20171010/DATA',
-
-#       'test/170924-finse/DATA/170921.TXT',
-#       'test/170924-finse/DATA/170922.TXT',
-#       'test/170924-finse/DATA/170923.TXT',
-#       'test/170924-finse/DATA/170924.TXT',
-    ]
-
-    data = []
-    for name in names:
-        if os.path.isdir(name):
-            for filename in os.listdir(name):
-                filename = os.path.join(name, filename)
-                read_wasp_file(filename, data)
-        else:
-            read_wasp_file(name, data)
-    data_frame = pd.DataFrame(data)
-
-    data_frame.sort_values(by='tst', inplace=True)
-    data_frame['timestamp'] = pd.to_datetime(data_frame['tst'], unit='s')
-    data_frame = data_frame.set_index('timestamp')
-
-    #plt.ion()
-
-    # CTD
-    graphs = [
-        ('bat', 'Battery level (%)'),
-        ('in_temp', 'Internal Temperature (degC)'), # tcb
-        #('ctd_depth', 'CTD Water depth'),
-        #('ctd_temp', 'CTD Water temperature'),
-        #('ctd_cond', 'CTD Water conductivity')
-    ]
-    fig, ax = plt.subplots(len(graphs), sharex=True)
-    for i, (name, title) in enumerate(graphs):
-        getattr(data_frame, name).dropna().plot(ax=ax[i])
-        ax[i].set_title(i)
-
-    # Plot
-    plt.plot()
-    plt.show()
