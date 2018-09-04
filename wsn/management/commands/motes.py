@@ -47,4 +47,4 @@ class Command(BaseCommand):
 
         # Insert
         for frame in tqdm.tqdm(frames):
-            frame_to_database(frame)
+            frame_to_database(frame, update=False)

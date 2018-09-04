@@ -27,13 +27,13 @@ from .parsers import waspmote
 logger = logging.getLogger(__name__)
 
 
-def frame_to_database(validated_data):
+def frame_to_database(validated_data, update=True):
     frames_data = validated_data.pop('frames')
     metadata, created = Metadata.objects.get_or_create(**validated_data)
     for frame_data in frames_data:
         time = frame_data['time']
         data = frame_data['data']
-        Frame.update_or_create(metadata, time, data)
+        Frame.create(metadata, time, data, update=update)
 
     return metadata
 

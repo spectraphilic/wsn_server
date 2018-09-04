@@ -181,9 +181,15 @@ class Frame(Model):
         return name.translate(trans).rstrip('_')
 
     @classmethod
-    def update_or_create(self, metadata, time, data):
+    def create(self, metadata, time, data, update=True):
         """
-        Update or create frame.
+        Create a new frame:
+
+        - If update is True (default) and there's already a row with the given
+          metadata and time, then update the row.
+
+        - If update is False and there's already a row with the given metadata
+          and time, then skip the row.
 
         Data fields which do not have a column in the database are stored in
         the 'data' column, of json datatype.
@@ -194,10 +200,18 @@ class Frame(Model):
         if data:
             defaults['data'] = data
 
-        obj, created = self.objects.update_or_create(
-            metadata=metadata, time=time, defaults=defaults)
+        kw = {'metadata': metadata, 'time': time, 'defaults': defaults}
+
+        if update:
+            obj, created = self.objects.update_or_create(**kw)
+            msg = 'Row updated pk=%s'
+        else:
+            obj, created = self.objects.get_or_create(**kw)
+            msg = 'Row skipped pk=%s'
+
         if not created:
-            logger.warning('Row updated pk=%s', obj.pk)
+            logger.warning(msg, obj.pk)
+
         return obj, created
 
     @cached_property
