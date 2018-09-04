@@ -1,4 +1,5 @@
 # Standard Library
+import re
 import zipfile
 
 import tqdm
@@ -18,6 +19,8 @@ class Command(BaseCommand):
                             help='Path to file or directory')
 
     def handle(self, *args, **kw):
+        expr = re.compile('.*DATA/[0-9]{6}\.TXT$')
+
         # Parse
         frames = []
         for path in kw['paths']:
@@ -26,7 +29,7 @@ class Command(BaseCommand):
             with zipfile.ZipFile(path, 'r') as zf:
                 names = zf.namelist()
                 for name in tqdm.tqdm(names):
-                    if name.startswith('DATA/') and name.endswith('.TXT'):
+                    if expr.match(name):
                         with zf.open(name) as data_file:
                             for frame in waspmote.read_wasp_data(data_file):
                                 frame = waspmote.data_to_json(frame)
