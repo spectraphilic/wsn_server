@@ -142,7 +142,7 @@ class Query2Serializer(serializers.ModelSerializer):
         if fields:
             for field in fields:
                 value = getattr(instance, field, None)
-                if value is None:
+                if value is None and instance.data:
                     value = instance.data.get(field)
                 if value is not None:
                     data[field] = value
@@ -151,7 +151,8 @@ class Query2Serializer(serializers.ModelSerializer):
                 value = getattr(instance, field, None)
                 if value is not None:
                     data[field] = value
-            data.update(instance.data)
+            if instance.data:
+                data.update(instance.data)
 
         # Tags
         tags = params.getlist('tags')
