@@ -37,7 +37,7 @@ class Command(BaseCommand):
         try:
             self.uploader.upload(filepath)
         except Exception:
-            self.stdout.write("{} ERROR".format(filepath))
+            self.stderr.write("{} ERROR".format(filepath))
             traceback.print_exc()
         else:
             self.stdout.write("{} file uploaded".format(filepath))
