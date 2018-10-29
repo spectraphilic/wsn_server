@@ -1,7 +1,11 @@
 import csv
 import datetime
+import logging
 import math
 import sys
+
+
+logger = logging.getLogger(__name__)
 
 
 class CR6Parser:
@@ -15,7 +19,12 @@ class CR6Parser:
 
     def __enter__(self):
         self.file = open(self.filepath)
-        self.parse()
+        try:
+            self.parse()
+        except Exception:
+            self.__exit__(None, None, None)
+            raise
+
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -41,6 +50,8 @@ class CR6Parser:
         self.reader.__next__() # abbreviations
 
     def __convert(self, value, unit):
+        assert value, 'unexpected empty string'
+
         if unit == 'TS':
             value = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
             return value.replace(tzinfo=datetime.timezone.utc)
@@ -54,17 +65,30 @@ class CR6Parser:
             return float(value)
 
     def __iter__(self):
+        # FIXME Should reject a line if it doesn't have an end-of-line, because
+        # then the last value is probably truncated.  Better to reject the
+        # whole line than to import a bad value, right?
+        # But the csv module has already stripped the end-of-line, so we cannot
+        # know.
         for row in self.reader:
             data = {}
             for i, value in enumerate(row):
                 name = self.fields[i]
-                value = self.__convert(value, self.units[i])
+                try:
+                    value = self.__convert(value, self.units[i])
+                except Exception:
+                    lineno = self.reader.line_num
+                    logger.exception(
+                        f'error in file {self.filepath} at row {lineno} column {i}'
+                    )
+                    break
+
                 if name == 'TIMESTAMP':
                     time = value
                 else:
                     data[name] = value
-
-            yield (time, data)
+            else:
+                yield (time, data)
 
 
 # For trying purposes

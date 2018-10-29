@@ -31,7 +31,7 @@ class Command(BaseCommand):
             return
 
         if stat.st_size == 0:
-            self.stdout.write("{} WARNING file is empty".format(filepath))
+            self.stderr.write("{} WARNING file is empty".format(filepath))
             return
 
         try:
