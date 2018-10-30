@@ -109,7 +109,7 @@ ENV/
 /project/settings_ansible.py
 /project/settings_local.py
 /var/
-/venv/
+/venv*/
 
 .*.swp
 *.pyc
