@@ -27,22 +27,23 @@ class Command(BaseCommand):
         # is a safety measure, just in case the file has not been completely
         # uploaded.
         if stat.st_mtime > self.upto:
-            self.stdout.write("{} skip for now, will handle later".format(filepath))
+            self.stdout.write(f"{filepath} skip for now, will handle later")
             return
 
         if stat.st_size == 0:
-            self.stderr.write("{} WARNING file is empty".format(filepath))
+            self.stderr.write(f'{filepath} WARNING file is empty')
+            os.rename(filepath, f'{filepath}.empty')
             return
 
         try:
             self.uploader.upload(filepath)
         except Exception:
-            self.stderr.write("{} ERROR".format(filepath))
+            self.stderr.write(f"{filepath} ERROR")
             traceback.print_exc()
         else:
-            self.stdout.write("{} file uploaded".format(filepath))
+            self.stdout.write(f"{filepath} file uploaded")
             archive(filepath)
-            self.stdout.write("{} file archived".format(filepath))
+            self.stdout.write(f"{filepath} file archived")
 
     def handle(self, *args, **kw):
         self.uploader = CR6Uploader()
