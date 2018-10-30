@@ -1,9 +1,14 @@
 import math
+
+from tabulate import tabulate
+
 from django.core.management.base import BaseCommand
+
 from wsn.models import Frame
 
 
-MAX = 1500000
+MAX = 1500000 # Maximum number of rows to analyse
+MIN = 100000 # Minimum number of occurrences to print
 
 class Command(BaseCommand):
 
@@ -47,8 +52,12 @@ class Command(BaseCommand):
                         maxs[key] = value
 
         #print(i)
+        table = []
         for key, f in sorted(freq.items(), key=lambda x: x[1]):
-            if f > 100000:
+            if f > MIN:
                 t = types[key]
                 t = {int: 'int', float: 'float'}.get(t, t)
-                print(key, f, t, mins.get(key), maxs.get(key))
+                table.append((key, f, t, mins.get(key), maxs.get(key)))
+
+        print()
+        print(tabulate(table, headers=['Name', 'Count', 'Type', 'Min', 'Max']))

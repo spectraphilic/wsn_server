@@ -157,6 +157,10 @@ class Frame(Model):
     FC2WSmean_16_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
     FC2WSmax_16_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
 
+    # Other
+    TiltX_Avg = FloatField(null=True, editable=False)
+    TiltY_Avg = FloatField(null=True, editable=False)
+
 
     class Meta:
         unique_together = [('time', 'metadata')]
