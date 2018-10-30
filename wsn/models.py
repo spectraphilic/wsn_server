@@ -203,6 +203,13 @@ class Frame(Model):
         defaults = {
             name: data.pop(name) for name in self.get_data_fields()
             if name in data}
+
+        # The JSON datatype does not support NAN values, so we replace them by
+        # the 'NAN' string
+        for key, value in data.items():
+            if value is math.nan:
+                data[key] = 'NAN'
+
         if data:
             defaults['data'] = data
 
