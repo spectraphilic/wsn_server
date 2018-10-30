@@ -1,6 +1,8 @@
 # Standard Library
 import logging
 
+import math
+
 # Django
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.indexes import GinIndex
@@ -225,3 +227,27 @@ class Frame(Model):
 
         value = self.metadata.tags.get('source_addr_long')
         return ('%016X' % value) if value else None
+
+    def extract_from_json(self, fields=None):
+        if fields is None:
+            fields = set(self.get_data_fields())
+
+        changed = False
+        for src in list(self.data):
+            dst = Frame.normalize_name(src)
+            if dst in fields:
+                changed = True
+                value = self.data.pop(src)
+                if value is not None:
+                    if value == "NAN":
+                        value = math.nan
+                    setattr(self, dst, value)
+
+        if self.data == {}:
+            self.data = None
+            changed = True
+
+        if changed:
+            self.save()
+
+        return changed

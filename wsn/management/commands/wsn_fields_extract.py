@@ -1,5 +1,3 @@
-import math
-
 from tqdm import tqdm
 
 from django.core.management.base import BaseCommand
@@ -27,23 +25,7 @@ class Command(BaseCommand):
         for i in tqdm(range(n_chunks)):
             with transaction.atomic():
                 for obj in frames.filter(id__gt=start)[:chunk_size]:
-                    changed = False
-                    for src in list(obj.data):
-                        dst = Frame.normalize_name(src)
-                        if dst in fields:
-                            changed = True
-                            value = obj.data.pop(src)
-                            if value is not None:
-                                if value == "NAN":
-                                    value = math.nan
-                                setattr(obj, dst, value)
-
-                    if obj.data == {}:
-                        obj.data = None
-                        changed = True
-
-                    if changed:
-                        obj.save()
+                    obj.extract_from_json(fields)
 
                 # Next chunk
                 start = obj.id
