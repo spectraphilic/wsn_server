@@ -38,15 +38,16 @@ SENSORS = {
      85: (b'TX_PWR', 'u', ['tx_pwr']),
 #    89: (b'SPEED_OG', ),
 #    90: (b'COURSE_OG', ),
-#    91: (b'ALT', ),
+     91: (b'ALT', 'f', ['altitude']),
     123: (b'TST', 'w', ['tst']),
-    200: (b'SDI12_CTD10', 'fff', ['ctd_depth', 'ctd_temp', 'ctd_cond']),
-    201: (b'SDI12_DS2_1', 'fff', ['ds2_speed', 'ds2_dir', 'ds2_temp']),
-    202: (b'SDI12_DS2_2', 'fff', ['ds2_meridional', 'ds2_zonal', 'ds2_gust']),
+    200: (b'CTD-10', 'fff', ['ctd_depth', 'ctd_temp', 'ctd_cond']),
+    201: (b'DS-2_1', 'fff', ['ds2_speed', 'ds2_dir', 'ds2_temp']), # Legacy
+    202: (b'DS-2_2', 'fff', ['ds2_meridional', 'ds2_zonal', 'ds2_gust']), # Legacy
     203: (b'DS18B20', 'n', ['ds1820']),
     204: (b'MB73XX', 'ww', ['mb_median', 'mb_sd']),
     206: (b'VOLTS', 'f', ['volts']),
     207: (b'WS100', 'fffuf', ['precip_abs', 'precip_dif', 'precip_int_h', 'precip_type', 'precip_int_min']),
+    208: (b'DS-2', 'ffffff', ['ds2_speed', 'ds2_dir', 'ds2_temp', 'ds2_meridional', 'ds2_zonal', 'ds2_gust']),
 }
 
 
