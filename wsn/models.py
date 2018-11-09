@@ -73,7 +73,7 @@ class Frame(Model):
     panel_tmpr = FloatField(null=True, editable=False) # IEEE4
     A116_panel_tmpr = FloatField(null=True, editable=False) # IEEE4
     batt_CR6 = FloatField(null=True, editable=False) # IEEE4
-#   process_time 467169 int 2857531 5000096 # IEEE4
+    process_time = IntegerField(null=True, editable=False) # IEEE4 microseconds
 #   buff_depth 467169 int 0 0 # IEEE4
     # CR6 Status FTP_push
     FTPResult_Biomet = SmallIntegerField(null=True, editable=False) # FP2
