@@ -11,11 +11,19 @@ from wsn.models import Frame
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
-        parser.add_argument('field', nargs='*',
-                            help='Fields to extract from data (json)')
+        default = 15000
+        parser.add_argument(
+            '--chunk', type=int, default=default,
+            help=f'Commit to the database every <chunk> rows, default={default}'
+        )
+        parser.add_argument(
+            'field', nargs='*',
+            help='Fields to extract from data (json)'
+        )
 
-    def handle(self, *args, **kw):
-        fields = kw['field']
+    def handle(self, *args, **options):
+        chunk_size = options['chunk']
+        fields = options['field']
 
         #
         # Verify input
@@ -46,7 +54,6 @@ class Command(BaseCommand):
             frames = frames.filter(data__has_any_keys=fields)
 
         # Number of chunks
-        chunk_size = 5000
         n_frames = frames.count()
         n_chunks = n_frames // chunk_size
         if n_frames % chunk_size:
