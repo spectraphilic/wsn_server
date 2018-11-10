@@ -90,7 +90,7 @@ class Frame(Model):
     T_K_nr = FloatField(null=True, editable=False) # IEEE4
     Rl_down_meas = FloatField(null=True, editable=False) # IEEE4
     Rl_up_meas = FloatField(null=True, editable=False) # IEEE4
-#   pulse_CNR4_Tot 467169 int 922 1257 # FP2
+    pulse_CNR4_Tot = SmallIntegerField(null=True, editable=False) # FP2
     # CR6 Status HFP01SC
     shf_cal_1 = FloatField(null=True, editable=False) # IEEE4
     shf_cal_2 = FloatField(null=True, editable=False) # IEEE4
