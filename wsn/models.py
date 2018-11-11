@@ -1,6 +1,5 @@
 # Standard Library
 import logging
-
 import math
 
 # Django
@@ -79,8 +78,8 @@ class Frame(Model):
     FTPResult_Biomet = SmallIntegerField(null=True, editable=False) # FP2
     FTPResult_StationStatus = SmallIntegerField(null=True, editable=False) # FP2
     # CR6 Status Crydom_relay
-#   LicorOn 292518 int 0 0 # FP2
-#   PowLicor 292518 int -1 -1 # FP2
+    LicorOn = SmallIntegerField(null=True, editable=False) # FP2
+    PowLicor = SmallIntegerField(null=True, editable=False) # FP2
     # CR6 Status Tilt
     CXTLA_tilt_X = FloatField(null=True, editable=False) # IEEE4
     CXTLA_tilt_Y = FloatField(null=True, editable=False) # IEEE4
@@ -94,8 +93,8 @@ class Frame(Model):
     # CR6 Status HFP01SC
     shf_cal_1 = FloatField(null=True, editable=False) # IEEE4
     shf_cal_2 = FloatField(null=True, editable=False) # IEEE4
-#   shf_cal_on_f 174651 int -1 0 # FP2
-#   sw12_1_state 174651 int -1 0 # FP2
+    shf_cal_on_f = SmallIntegerField(null=True, editable=False) # FP2
+    sw12_1_state = SmallIntegerField(null=True, editable=False) # FP2
 
     # CR6 Biomet
     PA_4_2_1_1_1 = FloatField(null=True, editable=False) # IEEE4
