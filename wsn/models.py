@@ -61,7 +61,7 @@ class Frame(Model):
 #   ds2_zonal 2057 float -13.25 23.889999389648438
 #   ds2_meridional 2057 float -26.579999923706055 6.849999904632568
 #   ds1820 4153 <class 'list'> None None
-#   bat 6238 int 87 100
+    bat = SmallIntegerField(null=True, editable=False)
 #   frame 6238 int 0 255
     received = IntegerField(null=True, editable=False)
 
