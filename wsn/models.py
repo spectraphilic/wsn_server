@@ -62,7 +62,7 @@ class Frame(Model):
 #   ds2_meridional 2057 float -26.579999923706055 6.849999904632568
 #   ds1820 4153 <class 'list'> None None
     bat = SmallIntegerField(null=True, editable=False)
-#   frame 6238 int 0 255
+    frame = SmallIntegerField(null=True, editable=False)
     received = IntegerField(null=True, editable=False)
 
     # CR common
@@ -161,6 +161,8 @@ class Frame(Model):
     # Other
     TiltX_Avg = FloatField(null=True, editable=False)
     TiltY_Avg = FloatField(null=True, editable=False)
+    RH1_19_3_1_1_1 = FloatField(null=True, editable=False)
+    TA1_2_1_1_1 = FloatField(null=True, editable=False)
 
 
     class Meta:
