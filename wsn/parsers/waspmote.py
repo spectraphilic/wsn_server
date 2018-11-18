@@ -5,7 +5,6 @@ Simon Filhol, J. David Ibáñez
 '''
 
 # Standard Library
-from datetime import datetime, timezone
 import struct
 
 from Crypto.Cipher import AES
@@ -280,6 +279,5 @@ def data_to_json(data):
     time = data.pop('tst', None)
     if time is None:
         time = data['received']
-    time = datetime.fromtimestamp(time, timezone.utc).isoformat()
 
     return {'tags': tags, 'frames': [{'time': time, 'data': data}]}

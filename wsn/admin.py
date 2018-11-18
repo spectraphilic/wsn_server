@@ -1,8 +1,22 @@
+import datetime
+
 from django.contrib import admin
 #from django.urls import reverse
 #from django.utils.safestring import mark_safe
 
 from .models import Frame, Metadata
+
+
+#
+# Utilities
+#
+def attrs(**kw):
+    def f(func):
+        for k, v in kw.items():
+            setattr(func, k, v)
+        return func
+    return f
+
 
 #
 # Metadata
@@ -74,25 +88,30 @@ class FrameAddressFilter(FrameSerialFilter):
     title = 'address'
     parameter_name = 'source_addr_long'
 
-
 @admin.register(Frame)
 class FrameAdmin(admin.ModelAdmin):
-    list_display = ['time_seconds', 'metadata', 'data']
+    list_display = ['time_str', 'metadata', 'data']
     list_filter = [FrameNameFilter, FrameSerialFilter, FrameAddressFilter]
 
     def get_readonly_fields(self, request, obj=None):
-        readonly_fields = ['time_seconds', 'metadata', 'data']
+        readonly_fields = ['time_str_plus', 'metadata', 'data']
         fields = [
             name for name in obj.get_data_fields()
             if getattr(obj, name) is not None]
 
         return readonly_fields + fields
 
-    def time_seconds(self, obj):
-        return obj.time.strftime("%Y-%m-%d %H:%M:%S %z")
+    @attrs(short_description='Time', admin_order_field='time')
+    def time_str(self, obj):
+        dt = datetime.datetime.utcfromtimestamp(obj.time)
+        return dt.strftime("%Y-%m-%d %H:%M:%S %z")
 
-    time_seconds.admin_order_field = 'time'
-    time_seconds.short_description = 'Time'
+    @attrs(short_description='Time')
+    def time_str_plus(self, obj):
+        dt = datetime.datetime.utcfromtimestamp(obj.time)
+        dt = dt.strftime("%Y-%m-%d %H:%M:%S %z")
+        return f'{dt} ({obj.time})'
+
 
 #   def metadata_link(self, obj):
 #       pk = obj.metadata_id

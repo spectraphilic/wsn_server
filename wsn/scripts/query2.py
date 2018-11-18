@@ -18,9 +18,9 @@ def query(
 
     # Parameters
     if time__gte:
-        time__gte = time__gte.timestamp()
+        time__gte = int(time__gte.timestamp())
     if time__lte:
-        time__lte = time__lte.timestamp()
+        time__lte = int(time__lte.timestamp())
 
     params = {
         'limit': limit,                                 # Pagination

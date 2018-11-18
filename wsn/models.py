@@ -1,4 +1,5 @@
 # Standard Library
+from datetime import datetime
 import logging
 import math
 
@@ -7,9 +8,9 @@ from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.indexes import GinIndex
 from django.db.models import Model, CASCADE
 from django.db.models import ForeignKey
-from django.db.models import DateTimeField # 8 bytes
 from django.db.models import FloatField # 8 bytes
-from django.db.models import IntegerField # 5 bytes (signed)
+from django.db.models import IntegerField # 4 bytes (signed)
+from django.db.models import PositiveIntegerField # 4 bytes (signed)
 from django.db.models import SmallIntegerField # 2 bytes (signed)
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
@@ -45,7 +46,7 @@ class Metadata(Model):
 
 
 class Frame(Model):
-    time = DateTimeField(null=True, editable=False)
+    time = IntegerField(null=True, editable=False) # unix epoch
     data = JSONField(null=True, editable=False)
     metadata = ForeignKey(Metadata, on_delete=CASCADE, editable=False,
                           related_name='frames', null=True)
@@ -201,6 +202,11 @@ class Frame(Model):
         Data fields which do not have a column in the database are stored in
         the 'data' column, of json datatype.
         """
+        if type(time) is datetime:
+            if time.tzinfo is None:
+                raise ValueError('unexpected naive datetime, expected integer (epoch) or aware datetime')
+            time = int(time.timestamp())
+
         defaults = {
             name: data.pop(name) for name in self.get_data_fields()
             if name in data}

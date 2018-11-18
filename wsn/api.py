@@ -1,12 +1,9 @@
 # Standard Library
 import base64
-import datetime
 import logging
 
 # Django
-from django.db.models import IntegerField
 from django.db.models import F, Func, Min, Q
-from django.db.models.functions import Cast
 from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -54,7 +51,7 @@ class DateTimeField(serializers.DateTimeField):
 
 class FrameSerializer(serializers.ModelSerializer):
 
-    time = DateTimeField()
+    time = serializers.IntegerField()
 
     class Meta:
         model = Frame
@@ -212,8 +209,7 @@ class Query2View(generics.ListAPIView):
         for key in 'time__gte', 'time__lte':
             value = params.get(key)
             if value is not None:
-                value = datetime.datetime.utcfromtimestamp(float(value))
-                kw[key] = value.replace(tzinfo=datetime.timezone.utc)
+                kw[key] = int(value)
 
         # Fields
         fields = params.getlist('fields')
@@ -234,9 +230,13 @@ class Query2View(generics.ListAPIView):
         # Interval
         interval = params.get('interval')
         if interval:
-            subquery = queryset.order_by().annotate(
-                key=Cast(Epoch(F('time')), IntegerField()) / int(interval)
-            ).values('key').annotate(t=Min('time')).values('t')
+            subquery = queryset\
+                .order_by()\
+                .annotate(key=F('time') / int(interval))\
+                .values('key')\
+                .annotate(t=Min('time'))\
+                .values('t')
+
             queryset = queryset.filter(time__in=subquery)
 
         tags = params.getlist('tags')
