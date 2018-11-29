@@ -65,7 +65,7 @@ class Command(BaseCommand):
         for i in tqdm(range(n_chunks)):
             with transaction.atomic():
                 for obj in frames.filter(id__gt=start)[:chunk_size]:
-                    obj.extract_from_json(fields)
+                    obj.extract_from_json(fields, dryrun=False)
 
                 # Next chunk
                 start = obj.id

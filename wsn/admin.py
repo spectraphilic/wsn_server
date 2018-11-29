@@ -70,17 +70,14 @@ class SerialFilter(NameFilter):
 
 @admin.register(Metadata)
 class MetadataAdmin(admin.ModelAdmin):
-    list_display = ['tags']
-    readonly_fields = ['tags']
-    list_filter = [NameFilter, SerialFilter]
+    list_display = ['name', 'tags']
+    readonly_fields = ['name', 'tags']
+    list_filter = ['name', SerialFilter]
 
 
 #
 # Frames
 #
-class FrameNameFilter(NameFilter):
-    prefix = 'metadata__'
-
 class FrameSerialFilter(SerialFilter):
     prefix = 'metadata__'
 
@@ -91,7 +88,7 @@ class FrameAddressFilter(FrameSerialFilter):
 @admin.register(Frame)
 class FrameAdmin(admin.ModelAdmin):
     list_display = ['time_str', 'metadata', 'data']
-    list_filter = [FrameNameFilter, FrameSerialFilter, FrameAddressFilter]
+    list_filter = ['metadata__name', FrameSerialFilter, FrameAddressFilter]
 
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = ['time_str_plus', 'metadata', 'data']

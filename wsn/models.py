@@ -6,11 +6,12 @@ import math
 # Django
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.indexes import GinIndex
-from django.db.models import Model, CASCADE
-from django.db.models import ForeignKey
+from django.db import models
+from django.db.models import CASCADE, ForeignKey
+from django.db.models import CharField
 from django.db.models import FloatField # 8 bytes
 from django.db.models import IntegerField # 4 bytes (signed)
-from django.db.models import PositiveIntegerField # 4 bytes (signed)
+#from django.db.models import PositiveIntegerField # 4 bytes (signed)
 from django.db.models import SmallIntegerField # 2 bytes (signed)
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
@@ -35,17 +36,97 @@ class Float4Field(FloatField):
         return 'real'
 
 
-class Metadata(Model):
-    tags = JSONField(default=dict, unique=True, editable=False)
+class FlexQuerySet(models.QuerySet):
+    def extract_from_json(self, fields=None, dryrun=True):
+        for obj in self:
+            obj.extract_from_json(fields, dryrun)
+
+
+class FlexModel(models.Model):
+    """
+    Abstract model.
+    """
+
+    class Meta:
+        abstract = True
+
+    objects = FlexQuerySet.as_manager()
+
+    # Override in subclasses
+    json_field = None
+    non_data_fields = {}
+
+    @classmethod
+    def get_data_fields(self):
+        """
+        Return the sorted list of data fields.
+        """
+        exclude = self.non_data_fields
+        return sorted([
+            field.name for field in self._meta.fields
+            if not field.editable and field.name not in exclude])
+
+    @classmethod
+    def normalize_name(self, name):
+        """
+        Some names are not valid Python identifiers, so we replace the
+        offending chars. For examle 'shf_cal(1)' will become 'shf_cal_1_'
+        """
+        trans = str.maketrans('()', '__')
+        return name.translate(trans).rstrip('_')
+
+    def extract_from_json(self, fields=None, dryrun=True):
+        if fields is None:
+            fields = set(self.get_data_fields())
+
+        data = getattr(self, self.json_field)
+        new_values = {}
+
+        changed = False
+        for src in list(data):
+            dst = self.normalize_name(src)
+            if dst in fields:
+                changed = True
+                value = data.pop(src)
+                if value is not None:
+                    if value == "NAN": # FIXME Only if target field is float
+                        value = math.nan
+                    new_values[dst] = value
+                    setattr(self, dst, value)
+
+        if data == {}:
+            setattr(self, self.json_field, None)
+            changed = True
+
+        if changed:
+            if dryrun:
+                print(f'{data} {new_values}')
+            else:
+                self.save()
+
+        return changed
+
+
+class Metadata(FlexModel):
+    tags = JSONField(null=True, editable=False)
+    name = CharField(max_length=255, null=True, editable=False)
 
     class Meta:
         indexes = [GinIndex(fields=['tags'])]
+        unique_together = [('name', 'tags')]
 
     def __str__(self):
-        return str(self.tags)
+        return f'{self.name} {self.tags}'
+
+    json_field = 'tags'
+    non_data_fields = {json_field}
+
+    def get_or_create(self, tags):
+        name = tags.pop('name', '')
+        return Metadata.objects.get_or_create(name=name, tags=tags)
 
 
-class Frame(Model):
+class Frame(FlexModel):
     time = IntegerField(null=True, editable=False) # unix epoch
     data = JSONField(null=True, editable=False)
     metadata = ForeignKey(Metadata, on_delete=CASCADE, editable=False,
@@ -169,24 +250,8 @@ class Frame(Model):
     class Meta:
         unique_together = [('time', 'metadata')]
 
-    @classmethod
-    def get_data_fields(self):
-        """
-        Return the sorted list of data fields.
-        """
-        exclude = {'time', 'metadata', 'data'}
-        return sorted([
-            field.name for field in self._meta.fields
-            if not field.editable and field.name not in exclude])
-
-    @classmethod
-    def normalize_name(self, name):
-        """
-        Some names are not valid Python identifiers, so we replace the
-        offending chars. For examle 'shf_cal(1)' will become 'shf_cal_1_'
-        """
-        trans = str.maketrans('()', '__')
-        return name.translate(trans).rstrip('_')
+    json_field = 'data'
+    non_data_fields = {'time', 'metadata', json_field}
 
     @classmethod
     def create(self, metadata, time, data, update=True):
@@ -241,27 +306,3 @@ class Frame(Model):
 
         value = self.metadata.tags.get('source_addr_long')
         return ('%016X' % value) if value else None
-
-    def extract_from_json(self, fields=None):
-        if fields is None:
-            fields = set(self.get_data_fields())
-
-        changed = False
-        for src in list(self.data):
-            dst = Frame.normalize_name(src)
-            if dst in fields:
-                changed = True
-                value = self.data.pop(src)
-                if value is not None:
-                    if value == "NAN":
-                        value = math.nan
-                    setattr(self, dst, value)
-
-        if self.data == {}:
-            self.data = None
-            changed = True
-
-        if changed:
-            self.save()
-
-        return changed

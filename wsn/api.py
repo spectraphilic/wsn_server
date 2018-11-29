@@ -25,11 +25,12 @@ logger = logging.getLogger(__name__)
 
 
 def frame_to_database(validated_data, update=True):
-    frames_data = validated_data.pop('frames')
-    metadata, created = Metadata.objects.get_or_create(**validated_data)
-    for frame_data in frames_data:
-        time = frame_data['time']
-        data = frame_data['data']
+    tags = validated_data['tags']
+    frames = validated_data['frames']
+    metadata, created = Metadata.get_or_create(tags)
+    for frame in frames:
+        time = frame['time']
+        data = frame['data']
         Frame.create(metadata, time, data, update=update)
 
     return metadata

@@ -8,7 +8,7 @@ class CR6Uploader:
     def upload(self, filepath):
         with CR6Parser(filepath) as parser:
             # Create Metadata
-            metadata, created = Metadata.objects.get_or_create(tags=parser.tags)
+            metadata, created = Metadata.get_or_create(parser.tags)
             # Frames
             for time, data in parser:
                 Frame.create(metadata, time, data)
@@ -23,6 +23,6 @@ class LicorUploader:
         with LicorParser(filepath) as parser:
             # Data frames
             datafile = parser.data
-            metadata, created = Metadata.objects.get_or_create(tags=datafile.header)
+            metadata, created = Metadata.get_or_create(datafile.header)
             for time, data in datafile:
                 Frame.create(metadata, time, data)
