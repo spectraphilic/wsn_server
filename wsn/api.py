@@ -194,12 +194,12 @@ class Query2View(generics.ListAPIView):
                     key = key[:-4]
                     value = int(value)
 
-                kw['tags__{}'.format(key)] = value
+                kw[key] = value
 
 #       if not kw:
 #           raise serializers.ValidationError('must narrow down the query')
 
-        metadatas = Metadata.objects.filter(**kw)
+        metadatas = Metadata.filter(**kw)
         metadatas = list(metadatas.values_list('id', flat=True))
 
         args, kw = [], {}

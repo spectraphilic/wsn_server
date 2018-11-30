@@ -121,9 +121,23 @@ class Metadata(FlexModel):
     json_field = 'tags'
     non_data_fields = {json_field}
 
+    @classmethod
     def get_or_create(self, tags):
-        name = tags.pop('name', '')
+        name = tags.pop('name', None)
         return Metadata.objects.get_or_create(name=name, tags=tags)
+
+    @classmethod
+    def filter(self, **kw):
+        fields = set(self.get_data_fields())
+
+        search = {}
+        for name, value in kw.items():
+            if name in fields:
+                search[name] = value
+            else:
+                search[f'tags__{name}'] = value
+
+        return self.objects.filter(**search)
 
 
 class Frame(FlexModel):

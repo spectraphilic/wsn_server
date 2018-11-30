@@ -68,6 +68,7 @@ if __name__ == '__main__':
 
     # Example 1: Get all the fields and tags of a given mote from a given time.
     # This is good to explore the data, but bad on performance.
+    print('==============================================')
     response = query(limit=limit,
         serial=0x1F566F057C105487,
         time__gte=datetime.datetime(2017, 11, 15),
@@ -102,9 +103,18 @@ if __name__ == '__main__':
     )
 
     # Example 5: Get the battery once every hour
+    print('==============================================')
     response = query(limit=10,
         serial=0x1F566F057C105487,
         fields=['bat'],
         interval=3600,
+        debug=True,
+    )
+
+    # Example 6: Query by name
+    print('==============================================')
+    response = query(limit=limit,
+        name='v15@CS',
+        time__gte=datetime.datetime(2017, 11, 15),
         debug=True,
     )
