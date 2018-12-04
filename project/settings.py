@@ -160,6 +160,11 @@ LOGGING = {
     }
 }
 
+#
+# Security related
+#
+
+LOGIN_URL = '/admin/login/'
 
 #
 # API

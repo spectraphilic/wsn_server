@@ -1,3 +1,4 @@
+bokeh==1.0.2
 ipdb==0.11
 ipython==7.0.1
 pip==18.1
