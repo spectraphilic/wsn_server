@@ -87,7 +87,7 @@ class FrameAddressFilter(FrameSerialFilter):
 
 @admin.register(Frame)
 class FrameAdmin(admin.ModelAdmin):
-    list_display = ['time_str', 'metadata', 'data']
+    list_display = ['time_str', 'frame', 'metadata', 'data']
     list_filter = ['metadata__name', FrameSerialFilter, FrameAddressFilter]
 
     def get_readonly_fields(self, request, obj=None):

@@ -31,7 +31,8 @@ def frame_to_database(validated_data, update=True):
     for frame in frames:
         time = frame['time']
         data = frame['data']
-        Frame.create(metadata, time, data, update=update)
+        seq = data.pop('frame', None)
+        Frame.create(metadata, time, seq, data, update=update)
 
     return metadata
 

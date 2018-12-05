@@ -141,10 +141,12 @@ class Metadata(FlexModel):
 
 
 class Frame(FlexModel):
-    time = IntegerField(null=True, editable=False) # unix epoch
+    metadata = ForeignKey(Metadata, on_delete=CASCADE, related_name='frames',
+                          null=True, editable=False)
+    time = IntegerField(null=True, editable=False) # Unix epoch
+    frame = SmallIntegerField(null=True, editable=False) # Sequence number (motes)
+
     data = JSONField(null=True, editable=False)
-    metadata = ForeignKey(Metadata, on_delete=CASCADE, editable=False,
-                          related_name='frames', null=True)
 
     # Extracted from .data to save memory space
 #   mb_sd 573 int 0 31
@@ -158,7 +160,6 @@ class Frame(FlexModel):
 #   ds2_meridional 2057 float -26.579999923706055 6.849999904632568
 #   ds1820 4153 <class 'list'> None None
     bat = SmallIntegerField(null=True, editable=False)
-    frame = SmallIntegerField(null=True, editable=False)
     received = IntegerField(null=True, editable=False)
 
     # CR common
@@ -262,13 +263,13 @@ class Frame(FlexModel):
 
 
     class Meta:
-        unique_together = [('time', 'metadata')]
+        unique_together = [('metadata', 'time', 'frame')]
 
     json_field = 'data'
     non_data_fields = {'time', 'metadata', json_field}
 
     @classmethod
-    def create(self, metadata, time, data, update=True):
+    def create(self, metadata, time, seq, data, update=True):
         """
         Create a new frame:
 
@@ -299,7 +300,10 @@ class Frame(FlexModel):
         if data:
             defaults['data'] = data
 
-        kw = {'metadata': metadata, 'time': time, 'defaults': defaults}
+        kw = {
+            'metadata': metadata, 'time': time, 'frame': seq, # Unique
+            'defaults': defaults, # Data
+        }
 
         if update:
             obj, created = self.objects.update_or_create(**kw)

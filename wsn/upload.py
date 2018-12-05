@@ -11,7 +11,7 @@ class CR6Uploader:
             metadata, created = Metadata.get_or_create(parser.tags)
             # Frames
             for time, data in parser:
-                Frame.create(metadata, time, data)
+                Frame.create(metadata, time, None, data)
 
 
 class LicorUploader:
@@ -25,4 +25,4 @@ class LicorUploader:
             datafile = parser.data
             metadata, created = Metadata.get_or_create(datafile.header)
             for time, data in datafile:
-                Frame.create(metadata, time, data)
+                Frame.create(metadata, time, None, data)
