@@ -3,7 +3,7 @@ Pillow==5.3.0
 pip==18.1
 
 # Django
-Django==2.1.4
+Django==2.1.5
 django-sendfile==0.3.11
 
 {% if django_database.engine == 'postgres' %}
