@@ -128,7 +128,7 @@ STATIC_URL = '/static/'
 from socket import getfqdn
 
 ADMINS = (
-  ('J. David Ibanez', 'jdavid@geo.uio.no'),
+  ('J. David Ibanez', 'jdavid.ibp@gmail.com'),
 )
 MANAGERS = ADMINS
 SERVER_EMAIL = 'root@' + getfqdn()
