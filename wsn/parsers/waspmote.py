@@ -5,9 +5,25 @@ Simon Filhol, J. David Ibáñez
 '''
 
 # Standard Library
+import itertools
+import math
 import struct
 
 from Crypto.Cipher import AES
+
+
+def post_noop(value):
+    return value
+
+def post_acc(value):
+    if (value > 1000): value = 1000
+    if (value < -1000): value = -1000
+    return (180/math.pi) * math.asin(value/1000)
+
+def post_ds1820(value):
+    #f = lambda x: x if (-100 < x < 100) else None # None if out of range
+    #values = [f(value / 16) for value in values]
+    return [value / 16 for value in value]
 
 
 """
@@ -29,25 +45,28 @@ SENSORS = {
      54: (b'RSSI', 'j', ['rssi']),
      55: (b'MAC', 's', ['mac']),
      62: (b'IN_TEMP', 'f', ['in_temp']),
-#    63: (b'ACC', ),
+     63: (b'ACC', 'jjj', ['acc_x', 'acc_y', 'acc_z'], post_acc),
      65: (b'STR', 's', ['str']),
      74: (b'BME_TC', 'f', ['bme_tc']),
      76: (b'BME_HUM', 'f', ['bme_hum']),
      77: (b'BME_PRES', 'f', ['bme_pres']),
      85: (b'TX_PWR', 'u', ['tx_pwr']),
-#    89: (b'SPEED_OG', ),
-#    90: (b'COURSE_OG', ),
      91: (b'ALT', 'f', ['altitude']),
     123: (b'TST', 'w', ['tst']),
     200: (b'CTD-10', 'fff', ['ctd_depth', 'ctd_temp', 'ctd_cond']),
     201: (b'DS-2_1', 'fff', ['ds2_speed', 'ds2_dir', 'ds2_temp']), # Legacy
     202: (b'DS-2_2', 'fff', ['ds2_meridional', 'ds2_zonal', 'ds2_gust']), # Legacy
-    203: (b'DS18B20', 'n', ['ds1820']),
+    203: (b'DS18B20', 'n', ['ds1820'], post_ds1820),
     204: (b'MB73XX', 'ww', ['mb_median', 'mb_sd']),
     206: (b'VOLTS', 'f', ['volts']),
     207: (b'WS100', 'fffuf', ['precip_abs', 'precip_dif', 'precip_int_h', 'precip_type', 'precip_int_min']),
     208: (b'DS-2', 'ffffff', ['ds2_speed', 'ds2_dir', 'ds2_temp', 'ds2_meridional', 'ds2_zonal', 'ds2_gust']),
 }
+
+
+def unpack(n, iterable):
+    infinite = itertools.chain(iterable, itertools.repeat(None))
+    return itertools.islice(infinite, n)
 
 
 def search_frame(data):
@@ -190,7 +209,9 @@ def parse_frame(line, cipher_key=None):
             print("Warning: %d sensor type not supported" % sensor_id)
             return None
 
-        key, form, names = sensor
+        key, form, names, post = unpack(4, sensor)
+        if post is None:
+            post = post_noop
 
         for c, name in zip(form, names):
             name = name.lower()
@@ -229,15 +250,9 @@ def parse_frame(line, cipher_key=None):
                     line = line[2:]
                     values.append(value)
 
-                # DS18B20
-                if key == b'DS18B20':
-                    #f = lambda x: x if (-100 < x < 100) else None # None if out of range
-                    #values = [f(value / 16) for value in values]
-                    values = [value / 16 for value in values]
-
                 value = frame.get(name, []) + values
 
-            frame[name] = value
+            frame[name] = post(value)
 
     return frame, rest
 
