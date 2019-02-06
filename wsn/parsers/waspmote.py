@@ -47,15 +47,15 @@ SENSORS = {
      62: (b'IN_TEMP', 'f', ['in_temp']),   # Legacy, v12 RTC
      63: (b'ACC', 'jjj', ['acc_x', 'acc_y', 'acc_z'], post_acc),
      65: (b'STR', 's', ['str']),
-     74: (b'BME_TC', 'f', ['bme_tc']),     # Legacy
-     76: (b'BME_HUM', 'f', ['bme_hum']),   # Legacy
-     77: (b'BME_PRES', 'f', ['bme_pres']), # Legacy
+     74: (b'BME_TC', 'f', ['bme_tc']),     # Legacy, see 210
+     76: (b'BME_HUM', 'f', ['bme_hum']),   # Legacy, see 210
+     77: (b'BME_PRES', 'f', ['bme_pres']), # Legacy, see 210
      85: (b'TX_PWR', 'u', ['tx_pwr']),     # Legacy
      91: (b'ALT', 'f', ['altitude']),
     123: (b'TST', 'w', ['tst']),
     200: (b'CTD-10', 'fff', ['ctd_depth', 'ctd_temp', 'ctd_cond']),
-    201: (b'DS-2_1', 'fff', ['ds2_speed', 'ds2_dir', 'ds2_temp']),        # Legacy
-    202: (b'DS-2_2', 'fff', ['ds2_meridional', 'ds2_zonal', 'ds2_gust']), # Legacy
+    201: (b'DS-2_1', 'fff', ['ds2_speed', 'ds2_dir', 'ds2_temp']),        # Legacy, see 208
+    202: (b'DS-2_2', 'fff', ['ds2_meridional', 'ds2_zonal', 'ds2_gust']), # Legacy, see 208
     203: (b'DS18B20', 'n', ['ds1820'], post_ds1820),
     204: (b'MB73XX', 'ww', ['mb_median', 'mb_sd']),
     206: (b'VOLTS', 'f', ['volts']),
@@ -63,6 +63,9 @@ SENSORS = {
     208: (b'DS-2', 'ffffff', ['ds2_speed', 'ds2_dir', 'ds2_temp', 'ds2_meridional', 'ds2_zonal', 'ds2_gust']),
     209: (b'INT', 'fff', ['int_tc', 'int_hum', 'int_pres']), # 0x76
     210: (b'BME', 'fff', ['bme_tc', 'bme_hum', 'bme_pres']), # 0x77
+    211: (b'MLX90614', 'ff', ['mlx_object', 'mlx_ambient']),
+    212: (b'TMP102', 'f', ['tmp_temperature']),
+    213: (b'VL53L1X', 'v', ['vl_distance']),
 }
 
 
@@ -226,6 +229,9 @@ def parse_frame(line, cipher_key=None):
             elif c == 'u':
                 value = struct.unpack_from("B", line)[0]
                 line = line[1:]
+            elif c == 'v':
+                value = struct.unpack_from("H", line)[0]
+                line = line[2:]
             elif c == 'w':
                 value = struct.unpack_from("I", line)[0]
                 line = line[4:]
