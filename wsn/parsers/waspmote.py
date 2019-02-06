@@ -36,31 +36,33 @@ n - Array of int16_t (specially compressed)
 """
 
 SENSORS = {
-     15: (b'PA', 'f', ['pa']),
-     33: (b'TCB', 'f', ['tcb']),
-     35: (b'HUMB', 'f', ['humb']),
-     38: (b'LW', 'f', ['lw']),
+     15: (b'PA', 'f', ['pa']),             # Legacy (agr board)
+     33: (b'TCB', 'f', ['tcb']),           # Legacy (agr board)
+     35: (b'HUMB', 'f', ['humb']),         # Legacy (agr board)
+     38: (b'LW', 'f', ['lw']),             # Legacy (agr board)
      52: (b'BAT', 'u', ['bat']),
      53: (b'GPS', 'ff', ['latitude', 'longitude']),
      54: (b'RSSI', 'j', ['rssi']),
-     55: (b'MAC', 's', ['mac']),
-     62: (b'IN_TEMP', 'f', ['in_temp']),
+     55: (b'MAC', 's', ['mac']),           # Legacy
+     62: (b'IN_TEMP', 'f', ['in_temp']),   # Legacy, v12 RTC
      63: (b'ACC', 'jjj', ['acc_x', 'acc_y', 'acc_z'], post_acc),
      65: (b'STR', 's', ['str']),
-     74: (b'BME_TC', 'f', ['bme_tc']),
-     76: (b'BME_HUM', 'f', ['bme_hum']),
-     77: (b'BME_PRES', 'f', ['bme_pres']),
-     85: (b'TX_PWR', 'u', ['tx_pwr']),
+     74: (b'BME_TC', 'f', ['bme_tc']),     # Legacy
+     76: (b'BME_HUM', 'f', ['bme_hum']),   # Legacy
+     77: (b'BME_PRES', 'f', ['bme_pres']), # Legacy
+     85: (b'TX_PWR', 'u', ['tx_pwr']),     # Legacy
      91: (b'ALT', 'f', ['altitude']),
     123: (b'TST', 'w', ['tst']),
     200: (b'CTD-10', 'fff', ['ctd_depth', 'ctd_temp', 'ctd_cond']),
-    201: (b'DS-2_1', 'fff', ['ds2_speed', 'ds2_dir', 'ds2_temp']), # Legacy
+    201: (b'DS-2_1', 'fff', ['ds2_speed', 'ds2_dir', 'ds2_temp']),        # Legacy
     202: (b'DS-2_2', 'fff', ['ds2_meridional', 'ds2_zonal', 'ds2_gust']), # Legacy
     203: (b'DS18B20', 'n', ['ds1820'], post_ds1820),
     204: (b'MB73XX', 'ww', ['mb_median', 'mb_sd']),
     206: (b'VOLTS', 'f', ['volts']),
     207: (b'WS100', 'fffuf', ['precip_abs', 'precip_dif', 'precip_int_h', 'precip_type', 'precip_int_min']),
     208: (b'DS-2', 'ffffff', ['ds2_speed', 'ds2_dir', 'ds2_temp', 'ds2_meridional', 'ds2_zonal', 'ds2_gust']),
+    209: (b'INT', 'fff', ['int_tc', 'int_hum', 'int_pres']), # 0x76
+    210: (b'BME', 'fff', ['bme_tc', 'bme_hum', 'bme_pres']), # 0x77
 }
 
 
