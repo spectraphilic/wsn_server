@@ -211,7 +211,7 @@ class Query2View(generics.ListAPIView):
         for key in 'time__gte', 'time__lte':
             value = params.get(key)
             if value is not None:
-                kw[key] = int(value)
+                kw[key] = int(float(value))
 
         # Fields
         fields = params.getlist('fields')
