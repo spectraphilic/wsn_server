@@ -25,6 +25,10 @@ def post_ds1820(value):
     #values = [f(value / 16) for value in values]
     return [value / 16 for value in value]
 
+def post_dist(value):
+    #f = lambda x: x if (-100 < x < 100) else None # None if out of range
+    #values = [f(value / 16) for value in values]
+    return [value / 16 for value in value]
 
 """
 f - float
@@ -57,7 +61,7 @@ SENSORS = {
     201: (b'DS-2_1', 'fff', ['ds2_speed', 'ds2_dir', 'ds2_temp']),        # Legacy, see 208
     202: (b'DS-2_2', 'fff', ['ds2_meridional', 'ds2_zonal', 'ds2_gust']), # Legacy, see 208
     203: (b'DS18B20', 'n', ['ds1820'], post_ds1820),
-    204: (b'MB73XX', 'ww', ['mb_median', 'mb_sd']),
+    204: (b'MB73XX_old', 'ww', ['mb_median', 'mb_sd']),
     206: (b'VOLTS', 'f', ['volts']),
     207: (b'WS100', 'fffuf', ['precip_abs', 'precip_dif', 'precip_int_h', 'precip_type', 'precip_int_min']),
     208: (b'DS-2', 'ffffff', ['ds2_speed', 'ds2_dir', 'ds2_temp', 'ds2_meridional', 'ds2_zonal', 'ds2_gust']),
@@ -65,7 +69,8 @@ SENSORS = {
     210: (b'BME', 'fff', ['bme_tc', 'bme_hum', 'bme_pres']), # 0x77
     211: (b'MLX90614', 'ff', ['mlx_object', 'mlx_ambient']),
     212: (b'TMP102', 'f', ['tmp_temperature']),
-    213: (b'VL53L1X', 'v', ['vl_distance']),
+    213: (b'VL53L1X', 'n', ['vl_distance'],post_dist),
+    214: (b'MB73XX', 'n', ['mb_distance'],post_dist),
 }
 
 
