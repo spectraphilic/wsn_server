@@ -25,10 +25,6 @@ def post_ds1820(value):
     #values = [f(value / 16) for value in values]
     return [value / 16 for value in value]
 
-def post_dist(value):
-    #f = lambda x: x if (-100 < x < 100) else None # None if out of range
-    #values = [f(value / 16) for value in values]
-    return [value / 16 for value in value]
 
 """
 f - float
@@ -69,8 +65,8 @@ SENSORS = {
     210: (b'BME', 'fff', ['bme_tc', 'bme_hum', 'bme_pres']), # 0x77
     211: (b'MLX90614', 'ff', ['mlx_object', 'mlx_ambient']),
     212: (b'TMP102', 'f', ['tmp_temperature']),
-    213: (b'VL53L1X', 'n', ['vl_distance'],post_dist),
-    214: (b'MB73XX', 'n', ['mb_distance'],post_dist),
+    213: (b'VL53L1X', 'n', ['vl_distance']),
+    214: (b'MB73XX', 'n', ['mb_distance']),
 }
 
 
