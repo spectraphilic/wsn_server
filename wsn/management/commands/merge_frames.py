@@ -19,8 +19,11 @@ class Command(BaseCommand):
 
     def handle(self, *arg, **kw):
         t0 = time()
+        # The algo to work properly requires the variable received, this means
+        # that it only is able to merge frames uploaded via the Raspberry Pi.
         dups = (
             Frame.objects
+            .exclude(received=None)
             .values('metadata', 'time')
             .annotate(ids=ArrayAgg('id'))
             .annotate(c=Func('ids', Value(1), function='array_length'))
@@ -40,10 +43,14 @@ class Command(BaseCommand):
             t = dup['time']
             print(f'{i+1}/{n}: metadata={metadata} time={t}')
             first = None
-            for frame in Frame.objects.filter(id__in=dup['ids']).order_by('frame'):
+            # We order by received instead of frame sequence because the frame
+            # sequence can wrap (255 + 1 = 0)
+            # This relies on frames to be sent in order, which has been true
+            # for a long time, before we started splitting frames.
+            for frame in Frame.objects.filter(id__in=dup['ids']).order_by('received'):
                 assert frame.metadata_id == metadata
                 assert frame.time == t
-                print(frame.pk, frame.frame, frame.data)
+                print(frame.pk, frame.frame, frame.received, frame.data)
                 if first is None:
                     first = frame
                     continue
@@ -52,7 +59,7 @@ class Command(BaseCommand):
                 # Ideally we should keep the range or list of frame sequences,
                 # but the frame field is an integer, so we can keep only one
                 # value, it will be the last one.
-                assert frame.frame == first.frame + 1
+                assert (first.frame + 1) % 255 == frame.frame
 
                 # Data fields
                 override = {'frame', 'received'}
