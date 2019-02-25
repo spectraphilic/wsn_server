@@ -33,7 +33,7 @@ class Command(BaseCommand):
 
         data_fields = Frame.get_data_fields()
         for i, dup in enumerate(dups):
-            if i >= kw['max']:
+            if kw['max'] is not None and i >= kw['max']:
                 break
 
             metadata = dup['metadata']
