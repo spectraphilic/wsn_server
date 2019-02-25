@@ -59,7 +59,7 @@ class Command(BaseCommand):
                 # Ideally we should keep the range or list of frame sequences,
                 # but the frame field is an integer, so we can keep only one
                 # value, it will be the last one.
-                assert (first.frame + 1) % 255 == frame.frame
+                assert (first.frame + 1) % 256 == frame.frame
 
                 # Data fields
                 override = {'frame', 'received'}
