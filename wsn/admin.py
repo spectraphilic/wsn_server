@@ -91,12 +91,12 @@ class FrameAdmin(admin.ModelAdmin):
     list_filter = ['metadata__name', FrameSerialFilter, FrameAddressFilter]
 
     def get_readonly_fields(self, request, obj=None):
-        readonly_fields = ['time_str_plus', 'metadata', 'data']
+        readonly_fields = ['metadata', 'time_str_plus', 'frame', 'frame_max']
         fields = [
             name for name in obj.get_data_fields()
-            if getattr(obj, name) is not None]
+            if getattr(obj, name) is not None and name not in readonly_fields]
 
-        return readonly_fields + fields
+        return readonly_fields + fields + ['data']
 
     @attrs(short_description='Time', admin_order_field='time')
     def time_str(self, obj):

@@ -7,6 +7,7 @@ import math
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
+from django.db import transaction
 from django.db.models import CASCADE, ForeignKey
 from django.db.models import CharField
 from django.db.models import FloatField # 8 bytes
@@ -144,7 +145,12 @@ class Frame(FlexModel):
     metadata = ForeignKey(Metadata, on_delete=CASCADE, related_name='frames',
                           null=True, editable=False)
     time = IntegerField(null=True, editable=False) # Unix epoch
-    frame = SmallIntegerField(null=True, editable=False) # Sequence number (motes)
+
+    # Sequence number (motes)
+    # Because the XBee frame is so small we have to split the logical frame,
+    # these are merged back in the server.
+    frame = SmallIntegerField(null=True, editable=False)
+    frame_max = SmallIntegerField(null=True, editable=False)
 
     data = JSONField(null=True, editable=False)
 
@@ -266,7 +272,7 @@ class Frame(FlexModel):
         unique_together = [('metadata', 'time', 'frame')]
 
     json_field = 'data'
-    non_data_fields = {'time', 'metadata', json_field}
+    non_data_fields = {'time', 'metadata', json_field, 'frame_max'}
 
     @classmethod
     def create(self, metadata, time, seq, data, update=True):
@@ -315,7 +321,86 @@ class Frame(FlexModel):
         if not created:
             logger.warning(msg, obj.pk)
 
+        # Merge
+        if created and seq is not None:
+            try:
+                self.merge_frames(metadata, time, save=True)
+            except Exception as ex:
+                logger.exception(f'failed to merge frames metadata={metadata.id} time={time}')
+
         return obj, created
+
+
+    @classmethod
+    def merge_frames(self, metadata, time, save=False, debug=None):
+        frames = self.objects.filter(metadata=metadata, time=time)
+
+        # TODO Instead of ordering by received, order by frame, in a smart way
+        # because the frame sequence wraps (0, .., 255, 0, ..)
+        # Then we will support:
+        # - parsing old unordered frames
+        # - parsing frames from the SD card (they don't have received)
+        frames = frames.order_by('received')
+
+        first = None
+        for frame in frames:
+            if debug is not None:
+                debug(frame)
+
+            if first is None:
+                first = frame
+            else:
+                first.merge_frame(frame, save=save)
+
+        return first
+
+    def merge_frame(self, frame, save=False):
+        # Merge only if same metadata and time
+        assert self.metadata is not None and self.time is not None
+        assert frame.metadata_id == self.metadata_id
+        assert frame.time == self.time
+
+        # Support merging frames comming from motes via Pi
+        assert self.frame is not None and self.received is not None
+        assert frame.frame is not None and frame.received is not None
+
+        # Only consecutive frames
+        frame_max = self.frame_max if self.frame_max is not None else self.frame
+        assert (frame_max + 1) % 256 == frame.frame
+        self.frame_max = frame.frame
+
+        # Data fields
+        ignore = {'frame', 'received'}
+        for name in self.get_data_fields():
+            first_value = getattr(self, name)
+            value = getattr(frame, name)
+            if value is None or name in ignore:
+                pass
+            elif type(first_value) is list and type(value) is list:
+                raise NotImplementedError(f'{name} is a list')
+            elif first_value is None:
+                setattr(self, name, value)
+            elif first_value != value:
+                assert first_value is None, f'field={name} duped'
+
+        # JSON
+        for name in frame.data:
+            first_value = self.data.get(name)
+            value = frame.data.get(name)
+            if value is None:
+                pass
+            elif type(first_value) is list and type(value) is list:
+                self.data[name].extend(value) # The case of DS18B20 and similar
+            elif first_value is None:
+                self.data[name] = value
+            elif first_value != value:
+                assert first_value is None, f'field=data.{name} duped'
+
+        if save:
+            with transaction.atomic():
+                self.save()
+                frame.delete()
+
 
     @cached_property
     def address(self):
