@@ -275,15 +275,15 @@ class Frame(FlexModel):
     non_data_fields = {'time', 'metadata', json_field, 'frame_max'}
 
     @classmethod
-    def create(self, metadata, time, seq, data, update=True):
+    def create(self, metadata, time, seq, data, update=False):
         """
         Create a new frame:
 
-        - If update is True (default) and there's already a row with the given
-          metadata and time, then update the row.
+        - If update is True and there's already a row with the given metadata
+          and time, then update the row.
 
-        - If update is False and there's already a row with the given metadata
-          and time, then skip the row.
+        - If update is False (default) and there's already a row with the given
+          metadata and time, then skip the row.
 
         Data fields which do not have a column in the database are stored in
         the 'data' column, of json datatype.

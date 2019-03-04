@@ -24,7 +24,7 @@ from .parsers import waspmote
 logger = logging.getLogger(__name__)
 
 
-def frame_to_database(validated_data, update=True):
+def frame_to_database(validated_data, update=False):
     tags = validated_data['tags']
     frames = validated_data['frames']
     metadata, created = Metadata.get_or_create(tags)
