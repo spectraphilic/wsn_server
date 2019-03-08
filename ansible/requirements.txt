@@ -1,11 +1,11 @@
-ipython==7.2.0
+ipython==7.3.0
 Pillow==5.4.1
-pip==18.1
+pip==19.0.3
 
 # Django
-Django==2.1.5
+Django==2.1.7
 django-sendfile==0.3.11
 
 {% if django_database.engine == 'postgres' %}
-psycopg2==2.7.6.1
+psycopg2==2.7.7
 {% endif %}
