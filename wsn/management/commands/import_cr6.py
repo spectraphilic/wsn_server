@@ -7,7 +7,8 @@ import traceback
 # Django
 from django.core.management.base import BaseCommand
 
-from wsn.upload import CR6Uploader
+from wsn.parsers.cr6 import CR6Parser
+from wsn.upload import upload
 
 
 def archive(filename):
@@ -18,6 +19,9 @@ def archive(filename):
 
 
 class Command(BaseCommand):
+
+    parser = CR6Parser
+
     def add_arguments(self, parser):
         parser.add_argument('paths', nargs='+',
                             help='Path to file or directory')
@@ -36,7 +40,7 @@ class Command(BaseCommand):
             return
 
         try:
-            self.uploader.upload(filepath)
+            upload(self.parser, filepath)
         except Exception:
             self.stderr.write(f"{filepath} ERROR")
             traceback.print_exc()
@@ -46,7 +50,6 @@ class Command(BaseCommand):
             self.stdout.write(f"{filepath} file archived")
 
     def handle(self, *args, **kw):
-        self.uploader = CR6Uploader()
         self.upto = time.time() - 60 * 15 # 15 minutes ago
 
         for path in kw['paths']:

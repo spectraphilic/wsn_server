@@ -1,28 +1,41 @@
+# Standard Library
+import lzma
+import os
+
+# Django
+from django.conf import settings
+
+# App
 from wsn.models import Metadata, Frame
-from wsn.parsers.cr6 import CR6Parser
-from wsn.parsers.licor import LicorParser
+from wsn.parsers.base import BaseParser
 
 
-class CR6Uploader:
-
-    def upload(self, filepath):
-        with CR6Parser(filepath) as parser:
-            # Create Metadata
-            metadata, created = Metadata.get_or_create(parser.tags)
-            # Frames
-            for time, data in parser:
-                Frame.create(metadata, time, None, data, update=False)
+ARCHIVE = os.path.join(settings.BASE_DIR, 'var', 'archive')
 
 
-class LicorUploader:
+def upload(parser_class, file, filename=None, metadata=None):
+    """
+    The metadata may be provided externally, as some files don't include
+    metadata.
+    """
+    assert issubclass(parser_class, BaseParser)
+    assert metadata is None or type(metadata) is dict
 
-    def upload(self, filepath):
-        # Do not upload biomet frames, as these are just a copy of the CR6
-        # frames (1 of 12 actually)
+    with parser_class(file) as parser:
+        metadata = parser.metadata or metadata
+        metadata, created = Metadata.get_or_create(metadata)
+        for time, data in parser:
+            Frame.create(metadata, time, None, data, update=False)
 
-        with LicorParser(filepath) as parser:
-            # Data frames
-            datafile = parser.data
-            metadata, created = Metadata.get_or_create(datafile.header)
-            for time, data in datafile:
-                Frame.create(metadata, time, None, data, update=False)
+    return metadata
+
+
+def archive(name, filename, data):
+    # Create parent dirs
+    dirpath = os.path.join(ARCHIVE, name)
+    os.makedirs(dirpath, exist_ok=True)
+
+    # Compress and save file
+    filepath = os.path.join(dirpath, filename) + '.xz'
+    with lzma.open(filepath, 'w') as f:
+        f.write(data)

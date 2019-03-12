@@ -79,14 +79,21 @@ class LicorParser:
     https://github.com/JeremyRueffer/ClimateDataIO.jl#licor
     """
 
+    @property
+    def metadata(self):
+        return self._data.header
+
+    def __iter__(self):
+        yield from self._data
+
     def __init__(self, filepath):
         self.filepath = filepath
         self.file = None
         # Files inside
-        self.metadata = configparser.ConfigParser()
-        self.data = DataFile(self)
-        self.biomet_metadata = configparser.ConfigParser()
-        self.biomet_data = DataFile(self)
+        self._metadata = configparser.ConfigParser()
+        self._data = DataFile(self)
+        self._biomet_metadata = configparser.ConfigParser()
+        self._biomet_data = DataFile(self)
 
     def __read_metadata(self, config, filepath):
         with self.file.open(filepath) as file:
@@ -97,16 +104,16 @@ class LicorParser:
         filename = os.path.basename(self.filepath)
         root, ext = os.path.splitext(filename)
         # Read metadata files
-        self.__read_metadata(self.metadata, root + '.metadata')
-        self.__read_metadata(self.biomet_metadata, root + '-biomet.metadata')
+        self.__read_metadata(self._metadata, root + '.metadata')
+        self.__read_metadata(self._biomet_metadata, root + '-biomet.metadata')
         # Open data files
-        self.data.open(root + '.data')
-        self.biomet_data.open(root + '-biomet.data')
+        self._data.open(root + '.data')
+        self._biomet_data.open(root + '-biomet.data')
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.data.close()
-        self.biomet_data.close()
+        self._data.close()
+        self._biomet_data.close()
         self.file.close()
 
 
@@ -114,8 +121,8 @@ class LicorParser:
 if __name__ == '__main__':
     filepath = sys.argv[1]
     with LicorParser(filepath) as parser:
-        print(parser.biomet_metadata.sections())
-        print(parser.biomet_data.header)
-        print(parser.biomet_data.fields)
-        for time, data in parser.biomet_data:
+        print(parser._biomet_metadata.sections())
+        print(parser._biomet_data.header)
+        print(parser._biomet_data.fields)
+        for time, data in parser._biomet_data:
             print(time)

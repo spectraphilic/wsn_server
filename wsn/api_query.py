@@ -1,128 +1,15 @@
-# Standard Library
-import base64
-import logging
-
 # Django
 from django.db.models import F, Func, Min, Q
-from django.http import HttpResponse
-from django.utils import timezone
-from django.utils.decorators import method_decorator
-from django.views import View
-from django.views.decorators.csrf import csrf_exempt
 
 # Rest framework
-from rest_framework import generics
 from rest_framework import pagination
-from rest_framework import permissions
 from rest_framework import serializers
 
 # App
+from rest_framework import generics
+from rest_framework import permissions
 from .models import Metadata, Frame
-from .parsers import waspmote
 
-
-logger = logging.getLogger(__name__)
-
-
-def frame_to_database(validated_data, update=False):
-    tags = validated_data['tags']
-    frames = validated_data['frames']
-    metadata, created = Metadata.get_or_create(tags)
-    for frame in frames:
-        time = frame['time']
-        data = frame['data']
-        seq = data.pop('frame', None)
-        Frame.create(metadata, time, seq, data, update=update)
-
-    return metadata
-
-#
-# Create
-#
-
-class DateTimeField(serializers.DateTimeField):
-    default_error_messages = {
-        'naive': 'Datetime value is missing a timezone.'
-    }
-
-    def enforce_timezone(self, value):
-        if timezone.is_naive(value):
-            self.fail('naive')
-        return super().enforce_timezone(value)
-
-
-class FrameSerializer(serializers.ModelSerializer):
-
-    time = serializers.IntegerField()
-
-    class Meta:
-        model = Frame
-        fields = ['time', 'data']
-        extra_kwargs = {
-            'time': {'read_only': False},
-            'data': {'read_only': False},
-        }
-
-
-class MetadataSerializer(serializers.ModelSerializer):
-    frames = FrameSerializer(many=True)
-
-    class Meta:
-        model = Metadata
-        fields = ['tags', 'frames']
-        extra_kwargs = {'tags': {'read_only': False}}
-
-    def create(self, validated_data):
-        return frame_to_database(validated_data)
-
-    # Override to_representation, otherwise the list of *all* frames attached
-    # to the metadata will be returned
-    def to_representation(self, instance):
-        return {}
-
-
-class CreatePermission(permissions.BasePermission):
-    """
-    Only the special user "api" is allowed to create frames.
-    """
-
-    def has_permission(self, request, view):
-        user = request.user
-        return user and user.username == 'api'
-
-
-class CreateView(generics.CreateAPIView):
-    queryset = Metadata.objects.all()
-    serializer_class = MetadataSerializer
-    permission_classes = (CreatePermission,)
-
-
-#
-# Create frames sent through 4G by the waspmotes
-#
-
-@method_decorator(csrf_exempt, name='dispatch')
-class MeshliumView(View):
-
-    def post(self, request, *args, **kwargs):
-        frames = request.POST.get('frame')
-        if type(frames) is str:
-            frames = [frames]
-
-        for frame in frames:
-            # Parse frame
-            frame = base64.b16decode(frame)
-            frame, _ = waspmote.parse_frame(frame)
-            validated_data = waspmote.data_to_json(frame)
-
-            # Add remote addr to tags
-            remote_addr = request.META.get('REMOTE_ADDR', '')
-            validated_data['tags']['remote_addr'] = remote_addr
-
-            # Save to database
-            frame_to_database(validated_data)
-
-        return HttpResponse(status=200)
 
 #
 # Query v2
