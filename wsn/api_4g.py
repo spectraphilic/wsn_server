@@ -20,21 +20,25 @@ from .parsers import waspmote
 class MeshliumView(View):
 
     def post(self, request, *args, **kwargs):
-        frames = request.POST.get('frame')
-        if type(frames) is str:
-            frames = [frames]
+        datas = request.POST.get('frame')
+        if type(datas) is str:
+            datas = [datas]
 
-        for frame in frames:
+        for data in datas:
             # Parse frame
-            frame = base64.b16decode(frame)
-            frame, _ = waspmote.parse_frame(frame)
-            validated_data = waspmote.data_to_json(frame)
+            data = base64.b16decode(data)
+            while data:
+                frame, data = waspmote.parse_frame(data)
+                if frame is None:
+                    break
 
-            # Add remote addr to tags
-            remote_addr = request.META.get('REMOTE_ADDR', '')
-            validated_data['tags']['remote_addr'] = remote_addr
+                validated_data = waspmote.data_to_json(frame)
 
-            # Save to database
-            frame_to_database(validated_data)
+                # Add remote addr to tags
+                remote_addr = request.META.get('REMOTE_ADDR', '')
+                validated_data['tags']['remote_addr'] = remote_addr
+
+                # Save to database
+                frame_to_database(validated_data)
 
         return HttpResponse(status=200)

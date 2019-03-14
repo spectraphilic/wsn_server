@@ -67,6 +67,7 @@ SENSORS = {
     212: (b'TMP102', 'f', ['tmp_temperature']),
     213: (b'VL53L1X', 'n', ['vl_distance']),
     214: (b'MB73XX', 'n', ['mb_distance']),
+    215: (b'ATMOS', 'ffffff', ['wind_speed', 'wind_dir', 'wind_gust', 'wind_temp', 'wind_x', 'wind_y']),
 }
 
 
@@ -111,11 +112,12 @@ def get_cipher(key):
     return cipher
 
 
-def parse_frame(line, cipher_key=None):
+def parse_frame(src, cipher_key=None):
     """
     Parse the frame starting at the given byte string. We consider that the
     frame start delimeter has already been read.
     """
+    line = src
 
     if cipher_key is not None and type(cipher_key) is not bytes:
         raise TypeError('cipher_key must be None or bytes, got %s' % type(cipher_key))
@@ -123,7 +125,7 @@ def parse_frame(line, cipher_key=None):
     # Start delimiter
     if not line.startswith(b'<=>'):
         print('Warning: expected frame not found')
-        return None
+        return None, src
 
     line = line[3:]
 
@@ -133,7 +135,7 @@ def parse_frame(line, cipher_key=None):
 
     if frame_type & 128: # b7
         print("Warning: text frames not supported (%d)" % frame_type)
-        return None
+        return None, src
 
     if frame_type == 96:
         encrypted = True
@@ -143,7 +145,7 @@ def parse_frame(line, cipher_key=None):
         v15 = False
     elif frame_type > 11:
         print("Warning: %d frame type not supported" % frame_type)
-        return None
+        return None, src
     else:
         encrypted = False
         # 0 -  5 : v12
@@ -182,17 +184,17 @@ def parse_frame(line, cipher_key=None):
         cipher = get_cipher(cipher_key)
         if cipher is None:
             print('Warning: encrypted frames not supported because no key provided')
-            return None
+            return None, src
 
         line = cipher.decrypt(line)
         frame, _ = parse_frame(line) # _ may contain zeroes
         if frame['serial'] != serial_id:
             print("Warning: serial numbers do not match %d != %d", serial_id, frame['serial'])
-            return None
+            return None, src
 
         if not v15 and frame['name'] != name:
             print("Warning: name do not match %s != %s", name, frame['name'])
-            return None
+            return None, src
 
         return frame, rest
 
@@ -213,7 +215,7 @@ def parse_frame(line, cipher_key=None):
         sensor = SENSORS.get(sensor_id, ())
         if not sensor:
             print("Warning: %d sensor type not supported" % sensor_id)
-            return None
+            return None, src
 
         key, form, names, post = unpack(4, sensor)
         if post is None:
@@ -276,11 +278,10 @@ def read_wasp_data(f):
             print(bad[:50])
 
         if good:
-            aux = parse_frame(good)
-            if aux is None:
+            frame, src = parse_frame(good)
+            if frame is None:
                 break
 
-            frame, src = aux
             yield frame
 
             # read end of frame: \n
