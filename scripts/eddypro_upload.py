@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # Upload
     url = f'{args.baseurl}/api/upload/eddypro/'
     metadata = {'name': f'eddypro_{args.name}'}
-    metadata = json.dumpx(metadata)
+    metadata = json.dumps(metadata)
     for path in args.paths:
         print(path)
         with open(path, 'rb') as f:
