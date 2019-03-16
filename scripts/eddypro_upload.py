@@ -1,5 +1,7 @@
 import argparse
 import json
+import sys
+
 import requests
 
 
@@ -35,4 +37,7 @@ if __name__ == '__main__':
         with open(path, 'rb') as f:
             files = {'data': (path, f), 'metadata': metadata}
             response = session.post(url, files=files)
-        print(response.status_code)
+
+        if response.status_code != 201:
+            print(f'unexpected response status code: {response.status_code}')
+            sys.exit(1)
