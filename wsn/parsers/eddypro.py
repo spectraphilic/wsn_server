@@ -1,5 +1,6 @@
 import csv
 import datetime
+import math
 import sys
 
 from .base import CSVParser
@@ -19,6 +20,9 @@ class EddyproParser(CSVParser):
         self.units = self.reader.__next__()
 
     def parse_value(self, name, unit, value):
+        if value == 'NaN':
+            return math.nan
+
         for t in int, float:
             try:
                 return t(value)
