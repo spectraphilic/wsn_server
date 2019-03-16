@@ -24,6 +24,7 @@
     django_https      : true
     django_hsts       : 0
     nginx_timeout     : "600s"
+    nginx_max_body_size: "30m"
     certbot_email     : "jdavid@geo.uio.no"
 
     django_database   :
