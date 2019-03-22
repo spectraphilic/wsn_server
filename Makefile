@@ -47,3 +47,11 @@ restart:
 
 reload:
 	echo r > var/run/uwsgi.fifo
+
+
+#
+# Celery
+#
+
+celery:
+	celery -A project worker -Q celery_wsn --loglevel=info

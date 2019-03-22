@@ -197,3 +197,9 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {
     'interval_max': 3,    # Max 3s
     'max_retries': 3,     # 0 + 0.5 + 1 = 1.5s
 }
+
+# To be extra sure the messages are not handled by a worker from another
+# project: do not use the default 'celery' queue.
+CELERY_TASK_ROUTES = {
+    '*': {'queue': 'celery_wsn'},
+}
