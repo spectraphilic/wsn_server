@@ -183,3 +183,17 @@ REST_FRAMEWORK = {
     #'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'STRICT_JSON': False,
 }
+
+#
+# Celery
+#
+
+# If not defined the producer will hang forever when the broker is not
+# available. Iridium requires the callback to run in less than 3s.
+# https://github.com/celery/celery/issues/4296#issuecomment-444104961
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    'interval_start': 0,  # Retry immediately (1st retry)
+    'interval_step': 0.5, # Add .5s to every subsequent retry
+    'interval_max': 3,    # Max 3s
+    'max_retries': 3,     # 0 + 0.5 + 1 = 1.5s
+}

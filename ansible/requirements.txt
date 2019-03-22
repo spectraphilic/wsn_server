@@ -5,10 +5,13 @@ pycryptodome==3.6.6
 tabulate==0.8.2
 tqdm==4.25.0
 
+{% if django_database.engine == 'postgres' %}
+psycopg2==2.7.7
+{% endif %}
+
 # Django
 Django==2.1.7
 djangorestframework==3.7.7
 
-{% if django_database.engine == 'postgres' %}
-psycopg2==2.7.7
-{% endif %}
+# Celery
+celery==4.1.0
