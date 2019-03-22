@@ -1,5 +1,5 @@
 # Standard Library
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 import time
 
 #import dateutil
@@ -26,7 +26,7 @@ class CreateTestCase(APITestCase):
         return self.client.post(url, data, format='json', **extra)
 
     def test_create_time_required(self):
-        response = self.post('/wsn/api/create/',
+        response = self.post('/api/create/',
             {
                 'tags': {'serial': 42},
                 'frames':
@@ -38,9 +38,9 @@ class CreateTestCase(APITestCase):
             }, self.extra)
         self.assertEqual(response.status_code, 400)
 
-    def test_create_timezone_required(self):
+    def test_create_time_badtype(self):
         ts = datetime.utcnow()
-        response = self.post('/wsn/api/create/',
+        response = self.post('/api/create/',
             {
                 'tags': {'serial': 42},
                 'frames':
@@ -52,17 +52,16 @@ class CreateTestCase(APITestCase):
 
     def test_create(self):
         # Create
-        now = datetime.utcnow().replace(tzinfo=timezone.utc)
-        s = timedelta(seconds=1)
+        now = int(time.time())
         t = int(time.time())
-        response = self.post('/wsn/api/create/',
+        response = self.post('/api/create/',
             {
                 'tags': {'serial': 42},
                 'frames':
                     [
-                        {'time': (now + s*0).isoformat(), 'data': {'battery': 50, 'received': t+0}},
-                        {'time': (now + s*1).isoformat(), 'data': {'battery': 75, 'received': t+1}},
-                        {'time': (now + s*2).isoformat(), 'data': {'battery': 30, 'received': t+2}},
+                        {'time': now + 0, 'data': {'battery': 50, 'received': t+0}},
+                        {'time': now + 1, 'data': {'battery': 75, 'received': t+1}},
+                        {'time': now + 2, 'data': {'battery': 30, 'received': t+2}},
                     ]
             }, self.extra)
         self.assertEqual(response.status_code, 201)
@@ -72,13 +71,13 @@ class CreateTestCase(APITestCase):
         self.assertEqual(last.data['battery'], 30)
 
         # Query (miss)
-        response = self.client.get('/wsn/api/query/v2/', {'serial:int': 1234}, **self.extra)
+        response = self.client.get('/api/query/v2/', {'serial:int': 1234}, **self.extra)
         self.assertEqual(response.status_code, 200)
         json = response.json()
         self.assertEqual(len(json['results']), 0)
 
         # Query (hit)
-        response = self.client.get('/wsn/api/query/v2/', {'serial:int': 42}, **self.extra)
+        response = self.client.get('/api/query/v2/', {'serial:int': 42}, **self.extra)
         self.assertEqual(response.status_code, 200)
         results = response.json()['results']
         self.assertEqual(len(results), 3)
@@ -88,13 +87,13 @@ class CreateTestCase(APITestCase):
         #self.assertEqual(now, dateutil.parser.parse(last['time']))
 
         # Time
-        query = {'serial:int': 42, 'time__gte': (now + s*1).timestamp()}
-        response = self.client.get('/wsn/api/query/v2/', query, **self.extra)
+        query = {'serial:int': 42, 'time__gte': now + 1}
+        response = self.client.get('/api/query/v2/', query, **self.extra)
         self.assertEqual(response.status_code, 200)
         json = response.json()
         self.assertEqual(len(json['results']), 2)
 
 
 #   def test_query_bad_request(self):
-#       response = self.client.get('/wsn/api/query/v2/', {}, **self.extra)
+#       response = self.client.get('/api/query/v2/', {}, **self.extra)
 #       self.assertEqual(response.status_code, 400)
