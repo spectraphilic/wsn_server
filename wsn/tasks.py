@@ -52,7 +52,16 @@ def in_iridium(POST):
     transmit_time = datetime.strptime(transmit_time, '%y-%m-%d %H:%M:%S')
     transmit_time = int(transmit_time.timestamp())
 
+    # Catch test messages
+    ignore = {
+        'One small step for a man one giant leap for mankind',
+    }
+    if data in ignore:
+        print(f'Ignore test message "{data})')
+        return
+
     # Parse data
+    n = 0
     while data:
         frame, data = waspmote.parse_frame(data)
         if frame is None:
@@ -76,3 +85,6 @@ def in_iridium(POST):
 
         # Save to database
         frame_to_database(validated_data)
+        n += 1
+
+    print(f'Imported {n} frames')
