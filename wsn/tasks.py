@@ -17,18 +17,38 @@ from .parsers import waspmote
     default_retry_delay=300,    # Retry after 5min (default is 3 minutes)
 )
 def in_iridium(POST):
-    print(POST)
+    """
+    Real example:
+    {
+      'device_type': ['ROCKBLOCK'],
+      'serial': ['10003'],
+      'momsn': ['694'],
+      'transmit_time': ['19-03-23 10:30:29'],
+      'imei': ['300234063769210'],
+      'iridium_latitude': ['49.7932'],
+      'iridium_longitude': ['142.5998'],
+      'iridium_cep': ['98.0'],
+      'data': ['48656c6c6f21205468697320697320612074657374206d6573736167652066726f6d20526f636b424c4f434b21']
+    }
+    """
 
-    imei = POST['imei'] # 300234010753370
-    momsn = POST['momsn'] # 12345
-    transmit_time = POST['transmit_time'] # 12-10-10 10:41:50
-    iridium_latitude = POST['iridium_latitude'] # 52.3867
-    iridium_longitude = POST['iridium_longitude'] # 0.2938
-    iridium_cep = POST['iridium_cep'] # 8
-    data = POST['data'] # 48656c6c6f20576f726c6420526f636b424c4f434b
+    def get(name, t):
+        value = POST[name]
+        assert type(value) is list and len(value) == 0
+        return t(value[0])
+
+    device_type = get('device_type', str) # ROCKBLOCK
+    serial = get('serial', int ) # 10003
+    momsn = get('momsn', int) # 694
+    transmit_time = get('transmit_time', str) # 19-03-23 10:30:29
+    imei = get('imei', int) # 300234063769210
+    iridium_latitude = get('iridium_latitude', float) # 49.7932
+    iridium_longitude = get('iridium_longitude', float) # 142.5998
+    iridium_cep = get('iridium_cep', float) # 98.0
+    data = get('data', str) # 48656c6c6f20576f726c6420526f636b424c4f434b
+
+    # Convert
     data = codecs.decode(data, 'hex')
-
-    # To epoch
     transmit_time = datetime.strptime(transmit_time, '%y-%m-%d %H:%M:%S')
     transmit_time = int(transmit_time).timestamp()
 
@@ -41,7 +61,9 @@ def in_iridium(POST):
 
     # Add metadata
     tags = validated_data['tags']
+    tags['device_type'] = device_type
     tags['imei'] = imei
+    tags['serial'] = serial
 
     # Add data
     frame = validated_data['frames'][0]
