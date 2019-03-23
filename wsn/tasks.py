@@ -34,7 +34,7 @@ def in_iridium(POST):
 
     def get(name, t):
         value = POST[name]
-        assert type(value) is list and len(value) == 0
+        assert type(value) is list and len(value) == 1
         return t(value[0])
 
     device_type = get('device_type', str) # ROCKBLOCK
