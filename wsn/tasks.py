@@ -50,7 +50,7 @@ def in_iridium(POST):
     # Convert
     data = codecs.decode(data, 'hex')
     transmit_time = datetime.strptime(transmit_time, '%y-%m-%d %H:%M:%S')
-    transmit_time = int(transmit_time).timestamp()
+    transmit_time = int(transmit_time.timestamp())
 
     # Parse data
     frame, data = waspmote.parse_frame(data)
