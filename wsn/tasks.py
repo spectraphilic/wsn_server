@@ -60,6 +60,7 @@ def in_iridium(POST):
     ignore = {
         b'Hello! This is a test message from RockBLOCK!',
         b'One small step for a man one giant leap for mankind',
+        b'Abcdefghijklmnopqrstuvwxyz1234567890',
     }
     if data in ignore:
         logger.info(f'Ignore test message "{data.decode()}')
