@@ -62,7 +62,7 @@ def in_iridium(POST):
         b'One small step for a man one giant leap for mankind',
     }
     if data in ignore:
-        logger.info(f'Ignore test message "{data})')
+        logger.info(f'Ignore test message "{data.decode()}')
         return
 
     # Parse data
