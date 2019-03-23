@@ -17,6 +17,8 @@ from .parsers import waspmote
     default_retry_delay=300,    # Retry after 5min (default is 3 minutes)
 )
 def in_iridium(POST):
+    print(POST)
+
     imei = POST['imei'] # 300234010753370
     momsn = POST['momsn'] # 12345
     transmit_time = POST['transmit_time'] # 12-10-10 10:41:50
