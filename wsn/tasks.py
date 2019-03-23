@@ -4,10 +4,14 @@ from datetime import datetime
 
 # Celery
 from celery import shared_task
+from celery.utils.log import get_task_logger
 
 # App
 from .models import frame_to_database
 from .parsers import waspmote
+
+
+logger = get_task_logger(__name__)
 
 
 @shared_task(
@@ -54,10 +58,11 @@ def in_iridium(POST):
 
     # Catch test messages
     ignore = {
-        'One small step for a man one giant leap for mankind',
+        b'Hello! This is a test message from RockBLOCK!',
+        b'One small step for a man one giant leap for mankind',
     }
     if data in ignore:
-        print(f'Ignore test message "{data})')
+        logger.info(f'Ignore test message "{data})')
         return
 
     # Parse data
@@ -87,4 +92,4 @@ def in_iridium(POST):
         frame_to_database(validated_data)
         n += 1
 
-    print(f'Imported {n} frames')
+    logger.info(f'Imported {n} frames')
