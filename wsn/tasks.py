@@ -53,25 +53,26 @@ def in_iridium(POST):
     transmit_time = int(transmit_time.timestamp())
 
     # Parse data
-    frame, data = waspmote.parse_frame(data)
-    if frame is None:
-        raise ValueError('error parsing frame')
+    while data:
+        frame, data = waspmote.parse_frame(data)
+        if frame is None:
+            raise ValueError(f'error parsing frame: {data}')
 
-    validated_data = waspmote.data_to_json(frame)
+        validated_data = waspmote.data_to_json(frame)
 
-    # Add metadata
-    tags = validated_data['tags']
-    tags['device_type'] = device_type
-    tags['imei'] = imei
-    tags['serial'] = serial
+        # Add metadata
+        tags = validated_data['tags']
+        tags['device_type'] = device_type
+        tags['imei'] = imei
+        tags['serial'] = serial
 
-    # Add data
-    frame = validated_data['frames'][0]
-    frame['momsn'] = momsn # This is a lot like motes 'frame' but uses 2 bytes
-    frame['received'] = transmit_time # FIXME Convert to epoch
-    frame['iridium_latitude'] = iridium_latitude
-    frame['iridium_longitude'] = iridium_longitude
-    frame['iridium_cep'] = iridium_cep
+        # Add data
+        frame = validated_data['frames'][0]
+        frame['momsn'] = momsn # This is a lot like motes 'frame' but uses 2 bytes
+        frame['received'] = transmit_time # FIXME Convert to epoch
+        frame['iridium_latitude'] = iridium_latitude
+        frame['iridium_longitude'] = iridium_longitude
+        frame['iridium_cep'] = iridium_cep
 
-    # Save to database
-    frame_to_database(validated_data)
+        # Save to database
+        frame_to_database(validated_data)
