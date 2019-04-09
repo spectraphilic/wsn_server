@@ -58,6 +58,7 @@ def in_iridium(POST):
 
     # Catch test messages
     ignore = {
+        b'ping',
         b'Hello! This is a test message from RockBLOCK!',
         b'One small step for a man one giant leap for mankind',
         b'Abcdefghijklmnopqrstuvwxyz1234567890',
