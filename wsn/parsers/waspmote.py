@@ -36,38 +36,39 @@ n - Array of int16_t (specially compressed)
 """
 
 SENSORS = {
-     15: (b'PA', 'f', ['pa']),             # Legacy (agr board)
-     33: (b'TCB', 'f', ['tcb']),           # Legacy (agr board)
-     35: (b'HUMB', 'f', ['humb']),         # Legacy (agr board)
-     38: (b'LW', 'f', ['lw']),             # Legacy (agr board)
-     52: (b'BAT', 'u', ['bat']),
-     53: (b'GPS', 'ff', ['latitude', 'longitude']),
-     54: (b'RSSI', 'j', ['rssi']),
-     55: (b'MAC', 's', ['mac']),           # Legacy
-     62: (b'IN_TEMP', 'f', ['in_temp']),   # Legacy, v12 RTC
-     63: (b'ACC', 'jjj', ['acc_x', 'acc_y', 'acc_z'], post_acc),
-     65: (b'STR', 's', ['str']),
-     74: (b'BME_TC', 'f', ['bme_tc']),     # Legacy, see 210
-     76: (b'BME_HUM', 'f', ['bme_hum']),   # Legacy, see 210
-     77: (b'BME_PRES', 'f', ['bme_pres']), # Legacy, see 210
-     85: (b'TX_PWR', 'u', ['tx_pwr']),     # Legacy
-     91: (b'ALT', 'f', ['altitude']),
-    123: (b'TST', 'w', ['tst']),
-    200: (b'CTD-10', 'fff', ['ctd_depth', 'ctd_temp', 'ctd_cond']),
-    201: (b'DS-2_1', 'fff', ['ds2_speed', 'ds2_dir', 'ds2_temp']),        # Legacy, see 208
-    202: (b'DS-2_2', 'fff', ['ds2_meridional', 'ds2_zonal', 'ds2_gust']), # Legacy, see 208
-    203: (b'DS18B20', 'n', ['ds1820'], post_ds1820),
-    204: (b'MB73XX_old', 'ww', ['mb_median', 'mb_sd']),
-    206: (b'VOLTS', 'f', ['volts']),
-    207: (b'WS100', 'fffuf', ['precip_abs', 'precip_dif', 'precip_int_h', 'precip_type', 'precip_int_min']),
-    208: (b'DS-2', 'ffffff', ['ds2_speed', 'ds2_dir', 'ds2_temp', 'ds2_meridional', 'ds2_zonal', 'ds2_gust']),
-    209: (b'INT', 'fff', ['int_tc', 'int_hum', 'int_pres']), # 0x76
-    210: (b'BME', 'fff', ['bme_tc', 'bme_hum', 'bme_pres']), # 0x77
-    211: (b'MLX90614', 'ff', ['mlx_object', 'mlx_ambient']),
-    212: (b'TMP102', 'f', ['tmp_temperature']),
-    213: (b'VL53L1X', 'n', ['vl_distance']),
-    214: (b'MB73XX', 'n', ['mb_distance']),
-    215: (b'ATMOS', 'ffffff', ['wind_speed', 'wind_dir', 'wind_gust', 'wind_temp', 'wind_x', 'wind_y']),
+     15: ('f', ['pa']),                                  # Legacy (agr board: pressure)
+     33: ('f', ['tcb']),                                 # Legacy (agr board: temperature)
+     35: ('f', ['humb']),                                # Legacy (agr board: humidity)
+     38: ('f', ['lw']),                                  # Legacy (agr board: leaf-wetness)
+     52: ('u', ['bat']),                                 # Battery level %
+     53: ('ff', ['latitude', 'longitude']),              # GPS location
+     54: ('j', ['rssi']),                                # RSSI
+     55: ('s', ['mac']),                                 # Legacy (MAC address)
+     62: ('f', ['in_temp']),                             # Legacy (v12 RTC: internal temp)
+     63: ('jjj', ['acc_x', 'acc_y', 'acc_z'], post_acc), # Accelerometer
+     65: ('s', ['str']),                                 # Legacy (string field)
+     74: ('f', ['bme_tc']),                              # Legacy (BME, see 210)
+     76: ('f', ['bme_hum']),                             # Legacy (BME, see 210)
+     77: ('f', ['bme_pres']),                            # Legacy (BME, see 210)
+     85: ('u', ['tx_pwr']),                              # Legacy (transmission power)
+     91: ('f', ['altitude']),                            # GPS altitude
+    123: ('w', ['tst']),                                 # Time stamp (epoch)
+    200: ('fff', ['ctd_depth', 'ctd_temp', 'ctd_cond']), # CTD-10
+    201: ('fff', ['ds2_speed', 'ds2_dir', 'ds2_temp']),  # Legacy (DS-2, see 208)
+    202: ('fff', ['ds2_meridional', 'ds2_zonal', 'ds2_gust']), # Legacy (DS-2, see 208)
+    203: ('n', ['ds1820'], post_ds1820),                 # DS18B20 string, array of temperatures
+    204: ('ww', ['mb_median', 'mb_sd']),                 # Legacy (MB73XX, see 214)
+    205: ('uf', ['gps_satellites', 'gps_accuracy']),     # GPS number of satellites and (horizontal) accuracy
+    206: ('f', ['volts']),                               # Battery level volts
+    207: ('fffuf', ['precip_abs', 'precip_dif', 'precip_int_h', 'precip_type', 'precip_int_min']), # WS-100
+    208: ('ffffff', ['ds2_speed', 'ds2_dir', 'ds2_temp', 'ds2_meridional', 'ds2_zonal', 'ds2_gust']), # DS-2 (wind)
+    209: ('fff', ['int_tc', 'int_hum', 'int_pres']),     # BME internal 0x76
+    210: ('fff', ['bme_tc', 'bme_hum', 'bme_pres']),     # BME external 0x77
+    211: ('ff', ['mlx_object', 'mlx_ambient']),          # MLX90614 temperature
+    212: ('f', ['tmp_temperature']),                     # TMP102 temperature
+    213: ('n', ['vl_distance']),                         # VL53L1X distance
+    214: ('n', ['mb_distance']),                         # MB73XX array of distances
+    215: ('ffffff', ['wind_speed', 'wind_dir', 'wind_gust', 'wind_temp', 'wind_x', 'wind_y']), # ATMOS (wind)
 }
 
 
@@ -217,7 +218,7 @@ def parse_frame(src, cipher_key=None):
             print("Warning: %d sensor type not supported" % sensor_id)
             return None, src
 
-        key, form, names, post = unpack(4, sensor)
+        form, names, post = unpack(3, sensor)
         if post is None:
             post = post_noop
 
