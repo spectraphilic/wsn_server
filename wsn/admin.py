@@ -89,6 +89,7 @@ class FrameAddressFilter(FrameSerialFilter):
 class FrameAdmin(admin.ModelAdmin):
     list_display = ['time_str', 'frame', 'metadata', 'data']
     list_filter = ['metadata__name', FrameSerialFilter, FrameAddressFilter]
+    show_full_result_count = False
 
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = ['metadata', 'time_str_plus', 'frame', 'frame_max']
