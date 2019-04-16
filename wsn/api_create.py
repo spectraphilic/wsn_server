@@ -44,7 +44,8 @@ class MetadataSerializer(serializers.ModelSerializer):
         extra_kwargs = {'tags': {'read_only': False}}
 
     def create(self, validated_data):
-        return frame_to_database(validated_data)
+        metadata, objs = frame_to_database(validated_data)
+        return metadata
 
     # Override to_representation, otherwise the list of *all* frames attached
     # to the metadata will be returned

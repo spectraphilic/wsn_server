@@ -1,5 +1,8 @@
 # Standard Library
 import base64
+from datetime import datetime, time
+
+import pytz
 
 # Django
 from django.http import HttpResponse
@@ -8,16 +11,64 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
 # App
-from .models import frame_to_database
+from .models import Frame, frame_to_database
 from .parsers import waspmote
 
 
-#
-# Create frames sent through 4G by the waspmotes
-#
+oslo = pytz.timezone('Europe/Oslo')
+def epoch_to_oslo(epoch):
+    """
+    Convert Unixe epoch time to local Europe/Oslo time.
+    """
+    dt = datetime.utcfromtimestamp(epoch)
+    dt = datetime.utcfromtimestamp(epoch).replace(tzinfo=pytz.utc)
+    return dt.astimezone(oslo)
+
+
+def postfix(frame, save=False, verbose=False):
+    """
+    Returns None if there's nothing to fix.
+    Returns True if the frame has been fixed, False if it has not.
+    """
+    name = 'sw-002'
+    if frame.metadata.name != name:
+        return
+
+    # The bad data goes from 00:10 to 02:00 local time
+    # Or from 00:05 to 01:00 (from March 14 to March 20)
+    dt = epoch_to_oslo(frame.epoch)
+    if time(0) < dt.time() <= time(2):
+        frames = Frame.objects.filter(metadata__name=name)
+        frames = frames.order_by('id')
+
+        pk = frame.pk
+        prev = frames.filter(pk__lt=pk).last()
+        diff = frame.time - prev.time
+        # The clock jumps +1 day, so the time difference between the 2
+        # consecutive frames is greather than 1 day. We add a margin
+        # error of 2h for the upper limit, so we don't catch too much.
+        one_hour = 3600
+        one_day = 24 * 3600
+        if one_day < diff < one_day + one_hour * 2:
+            old_time = frame.time
+            new_time = old_time - one_day
+            if save:
+                frame.time = new_time
+                frame.save()
+
+            if verbose:
+                old_time = datetime.utcfromtimestamp(old_time)
+                new_time = datetime.utcfromtimestamp(new_time)
+                print(f'Fix pk={pk} {old_time} -> {new_time}')
+
+    return False
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class MeshliumView(View):
+    """
+    Create frames sent through 4G by the waspmotes
+    """
 
     def post(self, request, *args, **kwargs):
         datas = request.POST.get('frame')
@@ -39,6 +90,10 @@ class MeshliumView(View):
                 validated_data['tags']['remote_addr'] = remote_addr
 
                 # Save to database
-                frame_to_database(validated_data)
+                metadata, objs = frame_to_database(validated_data)
+
+                # Fix time in sw-002
+#               for obj in objs:
+#                   postfix(obj, save=True, verbose=False)
 
         return HttpResponse(status=200)

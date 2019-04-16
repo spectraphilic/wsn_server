@@ -415,10 +415,13 @@ def frame_to_database(validated_data, update=False):
     tags = validated_data['tags']
     frames = validated_data['frames']
     metadata, created = Metadata.get_or_create(tags)
+
+    objs = []
     for frame in frames:
         time = frame['time']
         data = frame['data']
         seq = data.pop('frame', None)
-        Frame.create(metadata, time, seq, data, update=update)
+        obj, created = Frame.create(metadata, time, seq, data, update=update)
+        objs.append(obj)
 
-    return metadata
+    return metadata, objs
