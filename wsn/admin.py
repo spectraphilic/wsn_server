@@ -1,7 +1,10 @@
 import datetime
 
 from django.contrib import admin
+from django.core.paginator import Paginator
+from django.db import connection, transaction
 #from django.urls import reverse
+from django.utils.functional import cached_property
 #from django.utils.safestring import mark_safe
 
 from .models import Frame, Metadata
@@ -17,6 +20,28 @@ def attrs(**kw):
         return func
     return f
 
+
+class EstimatedCountPaginator(Paginator):
+    """
+    From https://code.djangoproject.com/ticket/8408#comment:49
+    See also https://hakibenita.com/optimizing-the-django-admin-paginator
+    And https://wiki.postgresql.org/wiki/Count_estimate
+    """
+
+    @cached_property
+    def count(self):
+        # The filtered search is not optimazed
+        if self.object_list.query.where:
+            return self.object_list.count()
+
+        # Speed up the unfiltered search (total count)
+        db_table = self.object_list.model._meta.db_table
+        with transaction.atomic(), connection.cursor() as cursor:
+            cursor.execute("SELECT reltuples FROM pg_class WHERE relname = %s", (db_table,))
+            result = cursor.fetchone()
+            if not result:
+                return 0
+            return int(result[0])
 
 #
 # Metadata
@@ -90,6 +115,7 @@ class FrameAdmin(admin.ModelAdmin):
     list_display = ['time_str', 'frame', 'metadata', 'data']
     list_filter = ['metadata__name', FrameSerialFilter, FrameAddressFilter]
     show_full_result_count = False
+    paginator = EstimatedCountPaginator
 
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = ['metadata', 'time_str_plus', 'frame', 'frame_max']
