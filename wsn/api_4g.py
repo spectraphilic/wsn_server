@@ -93,7 +93,7 @@ class MeshliumView(View):
                 metadata, objs = frame_to_database(validated_data)
 
                 # Fix time in sw-002
-#               for obj in objs:
-#                   postfix(obj, save=True, verbose=False)
+                for obj in objs:
+                    postfix(obj, save=True, verbose=False)
 
         return HttpResponse(status=200)
