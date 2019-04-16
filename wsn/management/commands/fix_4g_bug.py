@@ -29,7 +29,11 @@ class Command(BaseCommand):
         for frame in frames:
             pk = frame.pk
             seq = frame.frame
+            seq_max = frame.frame_max
             time = frame.time
+
+            if seq_max is None:
+                seq_max = seq
 
             # Sequence number is None only for old RSSI frames in XBee
             # networks, produced at the initiative of the Raspberry Pi.
@@ -40,6 +44,12 @@ class Command(BaseCommand):
             typ = frame.data['type']
             typ = {2: 'Boot', 0: ''}[typ]
 
+            # Frame sequence
+            if seq_max == seq:
+                seq_txt = seq
+            else:
+                seq_txt = f'{seq}-{seq_max}'
+
             # Sequence distance
             seq_distance = ''
             if typ == 'Boot':
@@ -48,7 +58,7 @@ class Command(BaseCommand):
                 if seq_prev <= seq:
                     seq_distance = seq - seq_prev
                 else:
-                    seq_distance = (255 - seq_prev) + seq
+                    seq_distance = (256 - seq_prev) + seq
 
                 if seq_distance == 1:
                     seq_distance = ''
@@ -58,8 +68,8 @@ class Command(BaseCommand):
             if time_prev is not None:
                 time_distance = (time // 60) - (time_prev // 60)
 
-            table.append((pk, time, typ, seq, seq_distance, time_distance))
-            seq_prev = seq
+            table.append((pk, time, typ, seq_txt, seq_distance, time_distance))
+            seq_prev = seq_max
             time_prev = time
 
         #print()
