@@ -6,6 +6,7 @@ This means it doesn't work with:
 - Old XBee frames
 """
 
+from datetime import datetime
 from tabulate import tabulate
 
 from django.core.management.base import BaseCommand
@@ -20,7 +21,6 @@ class Command(BaseCommand):
     def handle(self, *args, **kw):
         frames = Frame.objects.filter(metadata__name=NAME)
         frames = frames.order_by('id')
-        #print(f'TOTAL={frames.count()}')
 
         seq_prev = None
         time_prev = None
@@ -63,15 +63,17 @@ class Command(BaseCommand):
                 if seq_distance == 1:
                     seq_distance = ''
 
-            # Time distance
+            # Time
+            time_txt = datetime.utcfromtimestamp(time).strftime('%Y-%m-%d %H:%M:%S')
             time_distance = ''
             if time_prev is not None:
                 time_distance = (time // 60) - (time_prev // 60)
 
-            table.append((pk, time, typ, seq_txt, seq_distance, time_distance))
+            table.append((pk, time_txt, typ, seq_txt, seq_distance, time_distance))
+
+            # Next
             seq_prev = seq_max
             time_prev = time
 
-        #print()
         headers = ['PK', 'Time', 'Type', 'Sequence', 'Seq distance', 'Time distance']
         print(tabulate(table, headers=headers))
