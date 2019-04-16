@@ -32,18 +32,17 @@ def postfix(frame, save=False, verbose=False):
     """
     name = 'sw-002'
     if frame.metadata.name != name:
-        return
+        return None
 
     # The bad data goes from 00:10 to 02:00 local time
     # Or from 00:05 to 01:00 (from March 14 to March 20)
-    dt = epoch_to_oslo(frame.epoch)
+    dt = epoch_to_oslo(frame.time)
     if time(0) < dt.time() <= time(2):
-        frames = Frame.objects.filter(metadata__name=name)
-        frames = frames.order_by('id')
-
-        pk = frame.pk
-        prev = frames.filter(pk__lt=pk).last()
+        # Find out the time distance from the previous frame
+        frames = Frame.objects.filter(metadata__name=name).order_by('id')
+        prev = frames.filter(pk__lt=frame.pk).last()
         diff = frame.time - prev.time
+
         # The clock jumps +1 day, so the time difference between the 2
         # consecutive frames is greather than 1 day. We add a margin
         # error of 2h for the upper limit, so we don't catch too much.
@@ -52,14 +51,15 @@ def postfix(frame, save=False, verbose=False):
         if one_day < diff < one_day + one_hour * 2:
             old_time = frame.time
             new_time = old_time - one_day
+            if verbose:
+                old_dt = datetime.utcfromtimestamp(old_time)
+                new_dt = datetime.utcfromtimestamp(new_time)
+                print(f'Fix {frame.pk} {old_dt} -> {new_dt}')
+
             if save:
                 frame.time = new_time
                 frame.save()
-
-            if verbose:
-                old_time = datetime.utcfromtimestamp(old_time)
-                new_time = datetime.utcfromtimestamp(new_time)
-                print(f'Fix pk={pk} {old_time} -> {new_time}')
+                return True
 
     return False
 
