@@ -83,9 +83,9 @@ def in_iridium(POST):
         tags['serial'] = serial
 
         # Add data
-        frame = validated_data['frames'][0]
+        frame = validated_data['frames'][0]['data']
         frame['momsn'] = momsn # This is a lot like motes 'frame' but uses 2 bytes
-        frame['received'] = transmit_time # FIXME Convert to epoch
+        frame['received'] = transmit_time
         frame['iridium_latitude'] = iridium_latitude
         frame['iridium_longitude'] = iridium_longitude
         frame['iridium_cep'] = iridium_cep

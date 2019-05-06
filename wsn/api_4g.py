@@ -86,7 +86,7 @@ class MeshliumView(View):
                     break
 
                 # Add received time and remote address
-                frame.setdefault('received', int(time.time()))
+                frame['received'] = int(time.time())
                 if remote_addr:
                     frame['remote_addr'] = remote_addr
 
