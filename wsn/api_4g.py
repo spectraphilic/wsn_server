@@ -72,6 +72,7 @@ class MeshliumView(View):
     """
 
     def post(self, request, *args, **kwargs):
+        remote_addr = request.META.get('REMOTE_ADDR', '')
         datas = request.POST.get('frame')
         if type(datas) is str:
             datas = [datas]
@@ -84,14 +85,13 @@ class MeshliumView(View):
                 if frame is None:
                     break
 
+                # Add received time and remote address
                 frame.setdefault('received', int(time.time()))
-                validated_data = waspmote.data_to_json(frame)
-
-                # Add remote addr to tags
-                remote_addr = request.META.get('REMOTE_ADDR', '')
-                validated_data['tags']['remote_addr'] = remote_addr
+                if remote_addr:
+                    frame['remote_addr'] = remote_addr
 
                 # Save to database
+                validated_data = waspmote.data_to_json(frame)
                 metadata, objs = frame_to_database(validated_data)
 
                 # Fix time in sw-002
