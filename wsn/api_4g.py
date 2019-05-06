@@ -1,6 +1,7 @@
 # Standard Library
 import base64
-from datetime import datetime, time
+import datetime
+import time
 
 import pytz
 
@@ -20,8 +21,8 @@ def epoch_to_oslo(epoch):
     """
     Convert Unixe epoch time to local Europe/Oslo time.
     """
-    dt = datetime.utcfromtimestamp(epoch)
-    dt = datetime.utcfromtimestamp(epoch).replace(tzinfo=pytz.utc)
+    dt = datetime.datetime.utcfromtimestamp(epoch)
+    dt = datetime.datetime.utcfromtimestamp(epoch).replace(tzinfo=pytz.utc)
     return dt.astimezone(oslo)
 
 
@@ -37,7 +38,7 @@ def postfix(frame, save=False, verbose=False):
     # The bad data goes from 00:10 to 02:00 local time
     # Or from 00:05 to 01:00 (from March 14 to March 20)
     dt = epoch_to_oslo(frame.time)
-    if time(0) < dt.time() <= time(2):
+    if datetime.time(0) < dt.time() <= datetime.time(2):
         # Find out the time distance from the previous frame
         frames = Frame.objects.filter(metadata__name=name).order_by('id')
         prev = frames.filter(pk__lt=frame.pk).last()
@@ -52,8 +53,8 @@ def postfix(frame, save=False, verbose=False):
             old_time = frame.time
             new_time = old_time - one_day
             if verbose:
-                old_dt = datetime.utcfromtimestamp(old_time)
-                new_dt = datetime.utcfromtimestamp(new_time)
+                old_dt = datetime.datetime.utcfromtimestamp(old_time)
+                new_dt = datetime.datetime.utcfromtimestamp(new_time)
                 print(f'Fix {frame.pk} {old_dt} -> {new_dt}')
 
             if save:
@@ -83,6 +84,7 @@ class MeshliumView(View):
                 if frame is None:
                     break
 
+                frame.setdefault('received', int(time.time()))
                 validated_data = waspmote.data_to_json(frame)
 
                 # Add remote addr to tags
