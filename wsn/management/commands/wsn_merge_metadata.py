@@ -11,12 +11,16 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--save', action='store_true', default=False)
+        parser.add_argument('--pk', type=int, default=None)
 
     def handle(self, *arg, **kw):
         save = kw['save']
+        pk = kw['pk']
 
         key = 'remote_addr'
         metadatas = Metadata.objects.filter(tags__has_key=key)
+        if pk:
+            metadatas = metadatas.filter(pk=pk)
         for metadata in metadatas:
             name = metadata.name
             value = metadata.tags[key]
@@ -36,6 +40,7 @@ class Command(BaseCommand):
                 self.stdout.write('')
                 continue
             ref = ref.get()
+            self.stdout.write(f'metadata={ref.id}')
 
             # Update frames and delete metadata
             # TODO For performance we should use bulk update, but Django does
