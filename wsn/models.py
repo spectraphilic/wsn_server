@@ -8,7 +8,7 @@ from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.db import transaction
-from django.db.models import CASCADE, ForeignKey
+from django.db.models import ForeignKey, PROTECT
 from django.db.models import CharField
 from django.db.models import FloatField # 8 bytes
 from django.db.models import IntegerField # 4 bytes (signed)
@@ -142,7 +142,7 @@ class Metadata(FlexModel):
 
 
 class Frame(FlexModel):
-    metadata = ForeignKey(Metadata, on_delete=CASCADE, related_name='frames',
+    metadata = ForeignKey(Metadata, on_delete=PROTECT, related_name='frames',
                           null=True, editable=False)
     time = IntegerField(null=True, editable=False) # Unix epoch
 
