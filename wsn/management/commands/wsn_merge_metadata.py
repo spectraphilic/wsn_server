@@ -10,10 +10,12 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--save', action='store_true', default=False)
         parser.add_argument('--limit', type=int, default=None)
+        parser.add_argument('--quiet', action='store_true', default=False)
 
     def handle(self, *arg, **kw):
         save = kw['save']
         limit = kw['limit']
+        quiet = kw['quiet']
 
         key = 'remote_addr'
         metadatas = Metadata.objects.filter(tags__has_key=key)
@@ -31,13 +33,20 @@ class Command(BaseCommand):
             ref = Metadata.objects.filter(name=name, tags=tags)
             n = ref.count()
             if n != 1:
-                self.stdout.write(
-                    f'WARNING found {n} metadatas with name={name} tags={tags}'
-                )
-                self.stdout.write('')
+                if not quiet:
+                    self.stdout.write(
+                        f'metadata id={metadata.id} name="{name}" tags={metadata.tags}'
+                    )
+                    self.stdout.write(
+                        f'WARNING found {n} metadatas with name={name} tags={tags}'
+                    )
+                    self.stdout.write('')
                 continue
 
             ref = ref.get()
+            self.stdout.write(
+                f'metadata id={metadata.id} name="{name}" tags={metadata.tags}'
+            )
             self.stdout.write(
                 f'metadata(ref) id={ref.id} name="{ref.name}" tags={ref.tags}'
             )
