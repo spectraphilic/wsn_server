@@ -17,8 +17,7 @@ class Command(BaseCommand):
 
         key = 'remote_addr'
         metadatas = Metadata.objects.filter(tags__has_key=key)
-        if limit:
-            metadatas = metadatas[:limit]
+        i = 0
         for metadata in metadatas:
             name = metadata.name
             value = metadata.tags[key]
@@ -42,6 +41,11 @@ class Command(BaseCommand):
             self.stdout.write(
                 f'metadata(ref) id={ref.id} name="{ref.name}" tags={ref.tags}'
             )
+
+            # Limit
+            i += 1
+            if limit and i > limit:
+                break
 
             # Update frames and delete metadata
             # TODO For performance we should use bulk update, but Django does
