@@ -30,7 +30,11 @@ class Command(BaseCommand):
             del tags[key]
             ref = Metadata.objects.filter(name=name, tags=tags)
             n = ref.count()
-            if n != 1:
+            if n == 0:
+                ref = metadata
+            elif n == 1:
+                ref = ref.get()
+            else:
                 if not quiet:
                     self.stdout.write(
                         f'metadata id={metadata.id} name="{name}" tags={metadata.tags}'
@@ -46,7 +50,6 @@ class Command(BaseCommand):
             if limit and i > limit:
                 break
 
-            ref = ref.get()
             self.stdout.write(
                 f'metadata id={metadata.id} name="{name}" tags={metadata.tags}'
             )
@@ -66,7 +69,8 @@ class Command(BaseCommand):
                 if frame.data is None:
                     frame.data = {}
                 frame.data[key] = value
-                frame.metadata = ref
+                if ref is not metadata:
+                    frame.metadata = ref
                 if save:
                     try:
                         frame.save()
@@ -84,6 +88,12 @@ class Command(BaseCommand):
                     )
             else:
                 if save:
-                    metadata.delete()
+                    if ref is metadata:
+                        del metadata.tags[key]
+                        metadata.save()
+                        self.stdout.write(f'metadata SAVED')
+                    else:
+                        metadata.delete()
+                        self.stdout.write(f'metadata DELETED')
 
             self.stdout.write('')
