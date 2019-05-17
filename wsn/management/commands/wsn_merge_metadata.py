@@ -43,6 +43,11 @@ class Command(BaseCommand):
                     self.stdout.write('')
                 continue
 
+            # Limit
+            i += 1
+            if limit and i > limit:
+                break
+
             ref = ref.get()
             self.stdout.write(
                 f'metadata id={metadata.id} name="{name}" tags={metadata.tags}'
@@ -50,11 +55,6 @@ class Command(BaseCommand):
             self.stdout.write(
                 f'metadata(ref) id={ref.id} name="{ref.name}" tags={ref.tags}'
             )
-
-            # Limit
-            i += 1
-            if limit and i > limit:
-                break
 
             # Update frames and delete metadata
             # TODO For performance we should use bulk update, but Django does
