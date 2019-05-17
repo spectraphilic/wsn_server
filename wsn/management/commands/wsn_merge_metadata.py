@@ -23,9 +23,6 @@ class Command(BaseCommand):
         for metadata in metadatas:
             name = metadata.name
             value = metadata.tags[key]
-            self.stdout.write(
-                f'metadata id={metadata.id} name="{name}" tags={metadata.tags}'
-            )
 
             # Find the reference metadata (the one that doesn't have the key)
             tags = metadata.tags.copy()
