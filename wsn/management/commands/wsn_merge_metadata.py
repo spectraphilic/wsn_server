@@ -1,5 +1,3 @@
-from tqdm import tqdm
-
 # Django
 from django.core.management.base import BaseCommand
 
@@ -11,36 +9,39 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--save', action='store_true', default=False)
-        parser.add_argument('--pk', type=int, default=None)
+        parser.add_argument('--limit', type=int, default=None)
 
     def handle(self, *arg, **kw):
         save = kw['save']
-        pk = kw['pk']
+        limit = kw['limit']
 
         key = 'remote_addr'
         metadatas = Metadata.objects.filter(tags__has_key=key)
-        if pk:
-            metadatas = metadatas.filter(pk=pk)
+        if limit:
+            metadatas = metadatas[:limit]
         for metadata in metadatas:
             name = metadata.name
             value = metadata.tags[key]
-            self.stdout.write(f'id={metadata.id} name="{name}" {key}={value}')
-            self.stdout.write(str(metadata.tags))
+            self.stdout.write(
+                f'metadata id={metadata.id} name="{name}" tags={metadata.tags}'
+            )
 
             # Find the reference metadata (the one that doesn't have the key)
             tags = metadata.tags.copy()
             del tags[key]
-            self.stdout.write(str(tags))
             ref = Metadata.objects.filter(name=name, tags=tags)
             n = ref.count()
             if n != 1:
-                self.stderr.write(
-                    f'expected 1 reference metadatas with "{name}" name, found {n}'
+                self.stdout.write(
+                    f'WARNING found {n} metadatas with name={name} tags={tags}'
                 )
                 self.stdout.write('')
                 continue
+
             ref = ref.get()
-            self.stdout.write(f'metadata={ref.id}')
+            self.stdout.write(
+                f'metadata(ref) id={ref.id} name="{ref.name}" tags={ref.tags}'
+            )
 
             # Update frames and delete metadata
             # TODO For performance we should use bulk update, but Django does
@@ -49,14 +50,20 @@ class Command(BaseCommand):
             frames = Frame.objects.filter(metadata=metadata)
             n = frames.count()
             if save:
-                for frame in tqdm(frames, total=n):
+                for frame in frames:
+                    self.stdout.write(
+                        f'frame id={frame.id} metadata={metadata.id} time={frame.time} data={frame.data}'
+                    )
                     if frame.data is None:
                         frame.data = {}
                     frame.data[key] = value
                     frame.metadata = ref
                     frame.save()
-
-                metadata.delete()
+                    self.stdout.write(
+                        f'frame id={frame.id} metadata={metadata.id} time={frame.time} data={frame.data} SAVED'
+                    )
+                else:
+                    metadata.delete()
             else:
                 self.stdout.write(f'{n} frames would have been updated')
 
