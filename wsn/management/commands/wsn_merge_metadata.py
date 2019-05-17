@@ -58,23 +58,25 @@ class Command(BaseCommand):
             # not yet support bulk update in JSON fields, see
             # https://code.djangoproject.com/ticket/29112
             frames = Frame.objects.filter(metadata=metadata)
-            n = frames.count()
-            if save:
-                for frame in frames:
-                    self.stdout.write(
-                        f'frame id={frame.id} metadata={metadata.id} time={frame.time} data={frame.data}'
-                    )
-                    if frame.data is None:
-                        frame.data = {}
-                    frame.data[key] = value
-                    frame.metadata = ref
+            for frame in frames:
+                self.stdout.write(
+                    f'frame id={frame.id} metadata={metadata.id} time={frame.time} data={frame.data}'
+                )
+                if frame.data is None:
+                    frame.data = {}
+                frame.data[key] = value
+                frame.metadata = ref
+                if save:
                     frame.save()
                     self.stdout.write(
                         f'frame id={frame.id} metadata={metadata.id} time={frame.time} data={frame.data} SAVED'
                     )
                 else:
-                    metadata.delete()
+                    self.stdout.write(
+                        f'frame id={frame.id} metadata={metadata.id} time={frame.time} data={frame.data} *NOT* saved'
+                    )
             else:
-                self.stdout.write(f'{n} frames would have been updated')
+                if save:
+                    metadata.delete()
 
             self.stdout.write('')
