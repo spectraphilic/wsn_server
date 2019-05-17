@@ -1,5 +1,6 @@
 # Django
 from django.core.management.base import BaseCommand
+from django.db import IntegrityError
 
 # WSN
 from wsn.models import Frame, Metadata
@@ -67,7 +68,13 @@ class Command(BaseCommand):
                 frame.data[key] = value
                 frame.metadata = ref
                 if save:
-                    frame.save()
+                    try:
+                        frame.save()
+                    except IntegrityError:
+                        dup = Frame.objects.get(metadata=ref, time=frame.time, frame=frame.frame)
+                        self.stdout.write(f'WARNING frame id={frame.id} dup={dup.id}')
+                        break
+
                     self.stdout.write(
                         f'frame id={frame.id} metadata={metadata.id} time={frame.time} data={frame.data} SAVED'
                     )
