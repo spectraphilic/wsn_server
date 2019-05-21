@@ -12,18 +12,66 @@ import struct
 from Crypto.Cipher import AES
 
 
-def post_noop(value):
+def post_noop(name, value):
     return value
 
-def post_acc(value):
+def post_acc(name, value):
     if (value > 1000): value = 1000
     if (value < -1000): value = -1000
     return (180/math.pi) * math.asin(value/1000)
 
-def post_ds1820(value):
+def post_ds1820(name, value):
     #f = lambda x: x if (-100 < x < 100) else None # None if out of range
     #values = [f(value / 16) for value in values]
     return [value / 16 for value in value]
+
+def post_ctd_old(name, value):
+    if name == 'ctd_temp':
+        return round(value*10) / 10
+
+    return int(round(value))
+
+def post_ctd(name, value):
+    if name == 'ctd_temp':
+        return value / 10
+
+    return value
+
+def post_ds2_old(name, value):
+    if name == 'ds2_temp':
+        return round(value * 10) / 10
+    elif name in {'ds2_speed', 'ds2_meridional', 'ds2_zonal', 'ds2_gust'}:
+        return round(value * 100) / 100
+
+    # ds2_dir
+    return int(round(value))
+
+def post_ds2(name, value):
+    if name == 'ds2_temp':
+        return value * 10
+    elif name in {'ds2_speed', 'ds2_meridional', 'ds2_zonal', 'ds2_gust'}:
+        return value * 100
+
+    # ds2_dir
+    return value
+
+def post_atmos_old(name, value):
+    if name in {'wind_temp', 'wind_x', 'wind_y'}:
+        return round(value * 10) / 10
+    elif name in {'wind_speed', 'wind_gust'}:
+        return round(value * 100) / 100
+
+    # wind_dir
+    return int(round(value))
+
+def post_atmos(name, value):
+    if name in {'wind_temp', 'wind_x', 'wind_y'}:
+        return value * 10
+    elif name in {'wind_speed', 'wind_gust'}:
+        return value * 100
+
+    # wind_dir
+    return value
 
 
 """
@@ -53,22 +101,33 @@ SENSORS = {
      85: ('u', ['tx_pwr']),                              # Legacy (transmission power)
      91: ('f', ['altitude']),                            # GPS altitude
     123: ('w', ['tst']),                                 # Time stamp (epoch)
-    200: ('fff', ['ctd_depth', 'ctd_temp', 'ctd_cond']), # CTD-10
-    201: ('fff', ['ds2_speed', 'ds2_dir', 'ds2_temp']),  # Legacy (DS-2, see 208)
-    202: ('fff', ['ds2_meridional', 'ds2_zonal', 'ds2_gust']), # Legacy (DS-2, see 208)
+    200: ('fff', ['ctd_depth', 'ctd_temp', 'ctd_cond'],  # Legacy (CTD-10, see 216)
+          post_ctd_old),
+    201: ('fff', ['ds2_speed', 'ds2_dir', 'ds2_temp']),  # Legacy (DS-2, see 217)
+    202: ('fff', ['ds2_meridional', 'ds2_zonal', 'ds2_gust']), # Legacy (DS-2, see 217)
     203: ('n', ['ds1820'], post_ds1820),                 # DS18B20 string, array of temperatures
     204: ('ww', ['mb_median', 'mb_sd']),                 # Legacy (MB73XX, see 214)
     205: ('uf', ['gps_satellites', 'gps_accuracy']),     # GPS number of satellites and (horizontal) accuracy
     206: ('f', ['volts']),                               # Battery level volts
-    207: ('fffuf', ['precip_abs', 'precip_dif', 'precip_int_h', 'precip_type', 'precip_int_min']), # WS-100
-    208: ('ffffff', ['ds2_speed', 'ds2_dir', 'ds2_temp', 'ds2_meridional', 'ds2_zonal', 'ds2_gust']), # DS-2 (wind)
+    207: ('fffuf', ['precip_abs', 'precip_dif',          # WS-100
+                    'precip_int_h', 'precip_type',
+                    'precip_int_min']),
+    208: ('ffffff', ['ds2_speed', 'ds2_dir', 'ds2_temp', # Legacy (DS-2, see 217)
+                     'ds2_meridional', 'ds2_zonal', 'ds2_gust'], post_ds2_old),
     209: ('fff', ['int_tc', 'int_hum', 'int_pres']),     # BME internal 0x76
     210: ('fff', ['bme_tc', 'bme_hum', 'bme_pres']),     # BME external 0x77
     211: ('ff', ['mlx_object', 'mlx_ambient']),          # MLX90614 temperature
     212: ('f', ['tmp_temperature']),                     # TMP102 temperature
     213: ('n', ['vl_distance']),                         # VL53L1X distance
     214: ('n', ['mb_distance']),                         # MB73XX array of distances
-    215: ('ffffff', ['wind_speed', 'wind_dir', 'wind_gust', 'wind_temp', 'wind_x', 'wind_y']), # ATMOS (wind)
+    215: ('ffffff', ['wind_speed', 'wind_dir',           # Legacy (ATMOS, see 218)
+                     'wind_gust', 'wind_temp', 'wind_x', 'wind_y'], post_atmos_old),
+    216: ('jjk', ['ctd_depth', 'ctd_temp', 'ctd_cond'],  # CTD-10
+          post_ctd),
+    217: ('jjjjjj', ['ds2_speed', 'ds2_dir', 'ds2_temp', # DS-2 (wind)
+                     'ds2_meridional', 'ds2_zonal', 'ds2_gust'], post_ds2),
+    218: ('jjjjii', ['wind_speed', 'wind_dir',           # ATMOS (wind)
+                     'wind_gust', 'wind_temp', 'wind_x', 'wind_y'], post_atmos),
 }
 
 
@@ -227,9 +286,15 @@ def parse_frame(src, cipher_key=None):
             if c == 'f':
                 value = struct.unpack_from("f", line)[0]
                 line = line[4:]
+            elif c == 'i':
+                value = struct.unpack_from("b", line)[0]
+                line = line[1:]
             elif c == 'j':
                 value = struct.unpack_from("h", line)[0]
                 line = line[2:]
+            elif c == 'k':
+                value = struct.unpack_from("i", line)[0]
+                line = line[4:]
             elif c == 'u':
                 value = struct.unpack_from("B", line)[0]
                 line = line[1:]
@@ -264,7 +329,7 @@ def parse_frame(src, cipher_key=None):
 
                 value = frame.get(name, []) + values
 
-            frame[name] = post(value)
+            frame[name] = post(name, value)
 
     return frame, rest
 
