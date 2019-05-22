@@ -1,8 +1,7 @@
 from django.urls import include, path
 
-from .api_4g import MeshliumView
 from .api_create import CreateView
-from .api_iridium import IridiumView
+from .api_input import IridiumView, MeshliumView
 from .api_query import Query2View
 from .api_upload import UploadEddyproView
 from . import views

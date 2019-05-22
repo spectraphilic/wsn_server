@@ -2,6 +2,8 @@
 import base64
 import codecs
 import datetime
+import json
+import os
 
 import pytz
 
@@ -9,12 +11,64 @@ import pytz
 from celery import shared_task
 from celery.utils.log import get_task_logger
 
+# Django
+from django.conf import settings
+
 # App
 from .models import Frame, frame_to_database
 from .parsers import waspmote
 
 
 logger = get_task_logger(__name__)
+
+
+#
+# Archive
+#
+@shared_task(
+    acks_late=True,             # Send ack at the end, not the beginning
+    autoretry_for=(Exception,), # Retry for any exception
+    max_retries=None,           # Retry for ever
+    default_retry_delay=300,    # Retry after 5min (default is 3 minutes)
+)
+def archive(entry_name, envelop):
+    """
+    Save the frames to the filesystem.
+
+    Parameters:
+
+    - entry_name: name of the entry point (4G, Iridium, ..)
+    - envelop: the data to save
+
+    The envelop must be a dictionary with at least two keys: the 'payload', and
+    the epoch time the data was 'received' by the server.
+
+    The content of the payload depends on the entry point. The received time
+    is used to decide the filepath where to save the envelop.
+
+    The entry name is important because the format of the payload depends on
+    it.
+    """
+    assert type(envelop) is dict
+    assert 'payload' in envelop
+    assert 'received' in envelop
+
+    # File path where the file will be saved
+    dt = datetime.datetime.utcfromtimestamp(envelop['received'])
+    filepath = os.path.join(
+        settings.BASE_DIR, 'var', 'data',
+        entry_name,
+        str(dt.year),
+        dt.strftime('%Y%m%d')
+    )
+
+    # Create parent directory
+    dirpath = os.path.dirname(filepath)
+    os.makedirs(dirpath, exist_ok=True)
+
+    # Append
+    with open(filepath, 'a+') as f:
+        f.write(json.dumps(envelop) + '\n')
 
 
 #
@@ -75,8 +129,13 @@ def postfix(frame, save=False, verbose=False):
     max_retries=None,           # Retry for ever
     default_retry_delay=300,    # Retry after 5min (default is 3 minutes)
 )
-def in_4G(datas, **kw):
-    for data in datas:
+def in_meshlium(envelop):
+    # Pop the payload, what is left is metadata that we'll add later to the
+    # frames
+    payload = envelop.pop('payload')
+    assert type(payload) is list
+
+    for data in envelop:
         # Parse frame
         data = base64.b16decode(data)
         while data:
@@ -85,7 +144,7 @@ def in_4G(datas, **kw):
                 break
 
             # Add received time and remote address
-            frame.update(kw)
+            frame.update(envelop)
 
             # Save to database
             validated_data = waspmote.data_to_json(frame)
@@ -105,9 +164,9 @@ def in_4G(datas, **kw):
     max_retries=None,           # Retry for ever
     default_retry_delay=300,    # Retry after 5min (default is 3 minutes)
 )
-def in_iridium(POST):
+def in_iridium(envelop):
     """
-    Real example:
+    Content of the payload (real example):
     {
       'device_type': ['ROCKBLOCK'],
       'serial': ['10003'],
@@ -121,8 +180,13 @@ def in_iridium(POST):
     }
     """
 
+    # Pop the payload, what is left is metadata. Now we discard this metadata,
+    # but in the future we may add it to the frames.
+    payload = envelop.pop('payload')
+    assert type(payload) is dict
+
     def get(name, t):
-        value = POST[name]
+        value = payload[name]
         assert type(value) is list and len(value) == 1
         return t(value[0])
 
@@ -141,15 +205,10 @@ def in_iridium(POST):
     transmit_time = datetime.datetime.strptime(transmit_time, '%y-%m-%d %H:%M:%S')
     transmit_time = int(transmit_time.timestamp())
 
-    # Catch test messages
-    ignore = {
-        b'ping',
-        b'Hello! This is a test message from RockBLOCK!',
-        b'One small step for a man one giant leap for mankind',
-        b'Abcdefghijklmnopqrstuvwxyz1234567890',
-    }
-    if data in ignore:
-        logger.info(f'Ignore test message "{data.decode()}')
+    # Ignore test messages
+    # TODO move test to waspmote.is_frame
+    if not data.startswith(b'<=>'):
+        logger.info(f'Ignore not-a-frame message "{data.decode()}')
         return
 
     # Parse data
