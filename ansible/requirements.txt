@@ -1,9 +1,9 @@
-bokeh==1.0.2
+bokeh==1.1.0
 ipython==7.5.0
 pip==19.1.1
-pycryptodome==3.6.6
-tabulate==0.8.2
-tqdm==4.25.0
+pycryptodome==3.8.1
+tabulate==0.8.3
+tqdm==4.32.1
 
 {% if django_database.engine == 'postgres' %}
 psycopg2==2.8.2
@@ -14,4 +14,4 @@ Django==2.1.8
 djangorestframework==3.7.7
 
 # Celery
-celery==4.3.0rc3
+celery==4.3.0
