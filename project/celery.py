@@ -12,5 +12,13 @@ app = Celery('wsn')
 #   should have a `CELERY_` prefix.
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
+app.conf.ONCE = {
+    'backend': 'celery_once.backends.File',
+    'settings': {
+        #'location': '/tmp/celery_once',
+        #'default_timeout': 60 * 60
+    }
+}
+
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
