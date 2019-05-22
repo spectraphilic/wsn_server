@@ -16,3 +16,6 @@ djangorestframework==3.7.7
 # Celery
 celery==4.3.0
 celery_once==3.0.0
+
+# Tests
+pytest-django==3.4.8
