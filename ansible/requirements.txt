@@ -10,7 +10,7 @@ psycopg2==2.8.2
 {% endif %}
 
 # Django
-Django==2.1.8
+Django==2.2.1
 djangorestframework==3.7.7
 
 # Celery
