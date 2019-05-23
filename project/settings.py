@@ -203,3 +203,11 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {
 CELERY_TASK_ROUTES = {
     '*': {'queue': 'celery_wsn'},
 }
+
+CELERY_ONCE = {
+    'backend': 'celery_once.backends.File',
+    'settings': {
+        #'location': '/tmp/celery_once',
+        #'default_timeout': 60 * 60
+    }
+}

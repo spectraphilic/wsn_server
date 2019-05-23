@@ -5,6 +5,7 @@ import time
 import pytest
 
 # Django
+from django.conf import settings
 from django.contrib.auth import get_user_model
 
 # Rest Framework
@@ -13,6 +14,12 @@ from rest_framework.test import APIClient
 
 # WSN
 from wsn.models import Frame
+
+
+@pytest.fixture
+def celery_app(celery_app):
+    celery_app.conf.ONCE = settings.CELERY_ONCE
+    return celery_app
 
 
 @pytest.fixture(scope='module')
@@ -28,26 +35,35 @@ def django_db_setup(django_db_setup, django_db_blocker):
         Token.objects.get_or_create(user=user)
 
 
+class API:
+
+    def __init__(self, client):
+        self.client = client
+
+    def create(self, data):
+        path = '/api/create/'
+        return self.client.post(path, data, format='json')
+
+    def query(self, data):
+        path = '/api/query/v2/'
+        return self.client.get(path, data)
+
+    def iridium(self, data):
+        path = '/api/iridium/'
+        return self.client.post(path, data)
+
+
 @pytest.fixture
-def client(db):
+def api(transactional_db):
     token = Token.objects.get(user__username='api').key
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
-    return client
+    return API(client)
 
 
-@pytest.fixture
-def api_create(client):
-    path = '/api/create/'
-    def post_json(data):
-        response = client.post(path, data, format='json')
-        return response
 
-    return post_json
-
-
-def test_create_time_required(api_create):
-    response = api_create({
+def test_create_time_required(api):
+    response = api.create({
         'tags': {'serial': 42},
         'frames':
             [
@@ -59,9 +75,9 @@ def test_create_time_required(api_create):
     assert response.status_code == 400
 
 
-def test_create_time_badtype(api_create):
+def test_create_time_badtype(api):
     ts = datetime.utcnow()
-    response = api_create({
+    response = api.create({
         'tags': {'serial': 42},
         'frames':
             [
@@ -71,11 +87,11 @@ def test_create_time_badtype(api_create):
     assert response.status_code == 400
 
 
-def test_create(client, api_create):
+def test_create(api):
     # Create
     now = int(time.time())
     t = int(time.time())
-    response = api_create({
+    response = api.create({
         'tags': {'serial': 42},
         'frames':
             [
@@ -91,13 +107,13 @@ def test_create(client, api_create):
     assert last.data['battery'] == 30
 
     # Query (miss)
-    response = client.get('/api/query/v2/', {'serial:int': 1234})
+    response = api.query({'serial:int': 1234})
     assert response.status_code == 200
     json = response.json()
     assert len(json['results']) == 0
 
     # Query (hit)
-    response = client.get('/api/query/v2/', {'serial:int': 42})
+    response = api.query({'serial:int': 42})
     assert response.status_code == 200
     results = response.json()['results']
     assert len(results) == 3
@@ -107,8 +123,47 @@ def test_create(client, api_create):
     assert last['time'] == (now + 2)
 
     # Time
-    query = {'serial:int': 42, 'time__gte': now + 1}
-    response = client.get('/api/query/v2/', query)
+    response = api.query({'serial:int': 42, 'time__gte': now + 1})
     assert response.status_code == 200
     json = response.json()
     assert len(json['results']) == 2
+
+
+def test_iridium(api, celery_worker, celery_app):
+    # Test message
+    data = {
+      'device_type': ['ROCKBLOCK'],
+      'serial': ['10003'],
+      'momsn': ['694'],
+      'transmit_time': ['19-03-23 10:30:29'],
+      'imei': ['300234063769210'],
+      'iridium_latitude': ['49.7932'],
+      'iridium_longitude': ['142.5998'],
+      'iridium_cep': ['98.0'],
+      'data': ['48656c6c6f21205468697320697320612074657374206d6573736167652066726f6d20526f636b424c4f434b21']
+    }
+    response = api.iridium(data)
+    assert response.status_code == 200
+
+    response = api.query({})
+    results = response.json()['results']
+    assert len(results) == 0
+
+    # Frame
+    data = {
+      'device_type': ['ROCKBLOCK'],
+      'serial': ['10003'],
+      'momsn': ['694'],
+      'transmit_time': ['19-03-23 10:30:29'],
+      'imei': ['300234063769210'],
+      'iridium_latitude': ['49.7932'],
+      'iridium_longitude': ['142.5998'],
+      'iridium_cep': ['98.0'],
+      'data': ['3c3d3e0640073c10fdc337de2423b77b75dee65c345d3ff8fbffffe7ffd148e13a40006cae425ceca947d25c8f124080dec6421e29aa47d300a4f03e80663640d400003c40']
+    }
+    response = api.iridium(data)
+    assert response.status_code == 200
+
+    response = api.query({})
+    results = response.json()['results']
+    assert len(results) == 1
