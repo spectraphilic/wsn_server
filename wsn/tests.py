@@ -2,7 +2,6 @@
 from datetime import datetime
 import time
 
-#import dateutil
 import pytest
 
 # Django
@@ -105,7 +104,7 @@ def test_create(client, api_create):
     last = results[-1]
     assert last['battery'] == 30
     assert last['received'] == t+2
-    #assert now == dateutil.parser.parse(last['time'])
+    assert last['time'] == (now + 2)
 
     # Time
     query = {'serial:int': 42, 'time__gte': now + 1}
@@ -113,8 +112,3 @@ def test_create(client, api_create):
     assert response.status_code == 200
     json = response.json()
     assert len(json['results']) == 2
-
-
-#def test_query_bad_request(client):
-#    response = client.get('/api/query/v2/', {})
-#    assert response.status_code == 400

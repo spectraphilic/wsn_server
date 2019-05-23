@@ -84,9 +84,6 @@ class Query2View(generics.ListAPIView):
 
                 kw[key] = value
 
-#       if not kw:
-#           raise serializers.ValidationError('must narrow down the query')
-
         metadatas = Metadata.filter(**kw)
         metadatas = list(metadatas.values_list('id', flat=True))
 
@@ -94,7 +91,6 @@ class Query2View(generics.ListAPIView):
 
         # Frames
         queryset = Frame.objects.filter(metadata__in=metadatas)
-        queryset = queryset.order_by('-time') # slow
         for key in 'time__gte', 'time__lte':
             value = params.get(key)
             if value is not None:
