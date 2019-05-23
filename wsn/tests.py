@@ -16,16 +16,22 @@ from rest_framework.test import APIClient
 from wsn.models import Frame
 
 
-# TODO Change scope to module, create the user once
-@pytest.fixture
-def token(db):
+@pytest.fixture(scope='module')
+def django_db_setup(django_db_setup, django_db_blocker):
+    """
+    Database intialization. Here we create the needed objects in the database.
+    Since we reuse the database by default (--reuse-db), we have to use
+    "get_or_create" instead of "create".
+    """
     User = get_user_model()
-    user = User.objects.create(username='api')
-    return Token.objects.create(user=user).key
+    with django_db_blocker.unblock():
+        user, created = User.objects.get_or_create(username='api')
+        Token.objects.get_or_create(user=user)
 
 
 @pytest.fixture
-def client(token):
+def client(db):
+    token = Token.objects.get(user__username='api').key
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
     return client
