@@ -19,6 +19,7 @@ from wsn.models import Frame
 @pytest.fixture
 def celery_app(celery_app):
     celery_app.conf.ONCE = settings.CELERY_ONCE
+    celery_app.conf.task_always_eager = True
     return celery_app
 
 
@@ -54,12 +55,11 @@ class API:
 
 
 @pytest.fixture
-def api(transactional_db):
+def api(db):
     token = Token.objects.get(user__username='api').key
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
     return API(client)
-
 
 
 def test_create_time_required(api):
@@ -129,7 +129,7 @@ def test_create(api):
     assert len(json['results']) == 2
 
 
-def test_iridium(api, celery_worker, celery_app):
+def test_iridium(api, celery_worker, celery_app, transactional_db):
     # Test message
     data = {
       'device_type': ['ROCKBLOCK'],

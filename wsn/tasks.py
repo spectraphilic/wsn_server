@@ -63,7 +63,7 @@ def archive(entry_name, envelop):
     # File path where the file will be saved
     dt = datetime.datetime.utcfromtimestamp(envelop['received'])
     filepath = os.path.join(
-        settings.BASE_DIR, 'var', 'data',
+        settings.DATA_DIR,
         entry_name,
         str(dt.year),
         dt.strftime('%Y%m%d')

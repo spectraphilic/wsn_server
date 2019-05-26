@@ -211,3 +211,6 @@ CELERY_ONCE = {
         #'default_timeout': 60 * 60
     }
 }
+
+# wsn: folder where frames are archived
+DATA_DIR = os.path.join(BASE_DIR, 'var', 'data')
