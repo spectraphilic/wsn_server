@@ -1,0 +1,25 @@
+#
+# See roles/django/defaults/main.yml for the available options
+#
+
+- name: "Travis"
+  hosts: "development"
+  vars_files:
+  - "vars.yml"
+  roles:
+  - role              : "jdavid.django"
+    django_debug      : true
+    django_pull       : false
+    django_with_nginx : false
+    django_with_monit : false
+    django_with_sudo  : false
+
+    django_prefix     : ""
+
+    django_database   :
+      engine          : "postgres"
+      name            : "wsn"
+      user            : "postgres"
+      password        : ""
+
+    python_env        : "conda"
