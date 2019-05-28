@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/spectraphilic/wsn_server.svg?branch=master)](http://travis-ci.org/spectraphilic/wsn_server)
+
 # wsn\_server
 Software and django applications for wsn and iot setup
 
