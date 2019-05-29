@@ -6,6 +6,7 @@ services: postgresql
 
 install:
   - pip install ansible
+  - psql -c 'create database wsn;' -U postgres
   - ansible-playbook -i ansible/hosts ansible/travis.yml
 
 script: pytest
