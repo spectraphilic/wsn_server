@@ -8,13 +8,13 @@
   - "vars.yml"
   roles:
   - role              : "jdavid.django"
-    django_debug      : true
+    django_debug      : false
     django_pull       : false
     django_with_nginx : false
     django_with_monit : false
     django_with_sudo  : false
 
-    django_prefix     : ""
+    django_prefix     : "/home/travis/virtualenv/python3.6.7"
 
     django_database   :
       engine          : "postgres"
