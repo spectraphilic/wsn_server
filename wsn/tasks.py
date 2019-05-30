@@ -29,7 +29,7 @@ logger = get_task_logger(__name__)
 @shared_task(
     acks_late=True,             # Send ack at the end, not the beginning
     autoretry_for=(Exception,), # Retry for any exception
-    max_retries=None,           # Retry for ever
+    max_retries=settings.CELERY_TASK_MAX_RETRIES,
     default_retry_delay=300,    # Retry after 5min (default is 3 minutes)
     # Run only one at a time
     base=QueueOnce,
@@ -133,7 +133,7 @@ def postfix(frame, save=False, verbose=False):
 @shared_task(
     acks_late=True,             # Send ack at the end, not the beginning
     autoretry_for=(Exception,), # Retry for any exception
-    max_retries=None,           # Retry for ever
+    max_retries=settings.CELERY_TASK_MAX_RETRIES,
     default_retry_delay=300,    # Retry after 5min (default is 3 minutes)
 )
 def in_meshlium(envelop):
@@ -142,7 +142,7 @@ def in_meshlium(envelop):
     payload = envelop.pop('payload')
     assert type(payload) is list
 
-    for data in envelop:
+    for data in payload:
         # Parse frame
         data = base64.b16decode(data)
         while data:
@@ -168,7 +168,7 @@ def in_meshlium(envelop):
 @shared_task(
     acks_late=True,             # Send ack at the end, not the beginning
     autoretry_for=(Exception,), # Retry for any exception
-    max_retries=None,           # Retry for ever
+    max_retries=settings.CELERY_TASK_MAX_RETRIES,
     default_retry_delay=300,    # Retry after 5min (default is 3 minutes)
 )
 def in_iridium(envelop):

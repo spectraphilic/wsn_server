@@ -204,6 +204,10 @@ CELERY_TASK_ROUTES = {
     '*': {'queue': 'celery_wsn'},
 }
 
+# Task options (not standard)
+CELERY_TASK_MAX_RETRIES = None # Retry forever
+
+# Celery Once: use the file backend, to avoid adding another service (Redis)
 CELERY_ONCE = {
     'backend': 'celery_once.backends.File',
     'settings': {
