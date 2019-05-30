@@ -48,9 +48,9 @@ def post_ds2_old(name, value):
 
 def post_ds2(name, value):
     if name == 'ds2_temp':
-        return value * 10
+        return value / 10
     elif name in {'ds2_speed', 'ds2_meridional', 'ds2_zonal', 'ds2_gust'}:
-        return value * 100
+        return value / 100
 
     # ds2_dir
     return value
@@ -62,13 +62,13 @@ def post_atmos_old(name, value):
         return round(value * 100) / 100
 
     # wind_dir
-    return int(round(value))
+    return value
 
 def post_atmos(name, value):
     if name in {'wind_temp', 'wind_x', 'wind_y'}:
-        return value * 10
+        return value / 10
     elif name in {'wind_speed', 'wind_gust'}:
-        return value * 100
+        return value / 100
 
     # wind_dir
     return value
@@ -126,7 +126,7 @@ SENSORS = {
           post_ctd),
     217: ('jjjjjj', ['ds2_speed', 'ds2_dir', 'ds2_temp', # DS-2 (wind)
                      'ds2_meridional', 'ds2_zonal', 'ds2_gust'], post_ds2),
-    218: ('jjjjii', ['wind_speed', 'wind_dir',           # ATMOS (wind)
+    218: ('jjjjjj', ['wind_speed', 'wind_dir',           # ATMOS (wind)
                      'wind_gust', 'wind_temp', 'wind_x', 'wind_y'], post_atmos),
 }
 
