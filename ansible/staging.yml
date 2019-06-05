@@ -14,8 +14,6 @@
     django_with_monit : true
     django_with_sudo  : false
 
-    django_prefix     : ""
-
     #django_domain     : ""
     django_name       : "django-boot-staging"
     django_root       : "/tmp/django-boot-staging"
