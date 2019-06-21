@@ -15,8 +15,12 @@ class EddyproParser(CSVParser):
     def parse_header(self):
         self.reader = csv.reader(self.file)
 
-        self.reader.__next__() # Skip 1st line
-        self.fields = self.reader.__next__()
+        # Skip header rows. The fields row must have a date and time columns.
+        line = self.reader.__next__()
+        while 'date' not in line or 'time' not in line:
+            line = self.reader.__next__()
+
+        self.fields = line
         self.units = self.reader.__next__()
 
     def parse_value(self, name, unit, value):
