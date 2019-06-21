@@ -107,6 +107,7 @@ class MetadataAdmin(admin.ModelAdmin):
     list_display = ['name', 'tags']
     readonly_fields = ['name', 'tags']
     list_filter = ['name', SerialFilter]
+    search_fields = ['name']
 
 
 #
