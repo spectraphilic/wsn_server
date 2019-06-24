@@ -10,7 +10,7 @@ import tqdm
 from django.core.management.base import BaseCommand
 
 # Project
-from wsn.api import frame_to_database
+from wsn.models import frame_to_database
 from wsn.parsers import waspmote
 from wsn.settings import WSN_MIN_DATE
 
@@ -18,8 +18,8 @@ from wsn.settings import WSN_MIN_DATE
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
-        parser.add_argument('paths', nargs='+',
-                            help='Path to file or directory')
+        add_argument = parser.add_argument
+        add_argument('paths', nargs='+', help='Path to file or directory')
 
     def handle(self, *args, **kw):
         expr = re.compile(r'.*DATA/([0-9]{6})\.TXT$')
@@ -87,6 +87,9 @@ class Command(BaseCommand):
             first = frames[0]['time']
             last = frames[-1]['time']
             assert first < last
+
+            first = datetime.utcfromtimestamp(first)
+            last = datetime.utcfromtimestamp(last)
 
             # Inserting
             self.stdout.write('')
