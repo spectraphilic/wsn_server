@@ -126,4 +126,7 @@ from socket import getfqdn
 
 ADMINS = ()
 MANAGERS = ADMINS
-SERVER_EMAIL = 'root@' + getfqdn()
+
+fqdn = getfqdn()
+DEFAULT_FROM_EMAIL = 'webmaster@' + fqdn
+SERVER_EMAIL = 'root@' + fqdn
