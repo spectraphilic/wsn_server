@@ -26,7 +26,7 @@ class BaseParser:
         to a file.
         """
         if self.managed:
-            self.file = open(self.filepath)
+            self.file = open(self.filepath, newline='')
 
         try:
             self.parse_header()
