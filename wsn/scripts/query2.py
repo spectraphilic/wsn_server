@@ -6,6 +6,11 @@ import requests
 #URL = 'https://wsn.latice.eu/api/query/v2/'
 URL = 'http://localhost:8000/api/query/v2/'
 
+
+# We need an authentication token
+TOKEN = os.getenv('WSN_TOKEN', 'dcff0c629050b5492362ec28173fa3e051648cb1')
+
+
 def query(
     limit=100,           # Pagination
     fields=None,         # Fields to return (all by default)
@@ -60,9 +65,6 @@ def query(
 
 
 if __name__ == '__main__':
-    # We need an authentication token
-    TOKEN = os.getenv('WSN_TOKEN', 'dcff0c629050b5492362ec28173fa3e051648cb1')
-
     # Number of elements to return in every query
     limit = 2
 
