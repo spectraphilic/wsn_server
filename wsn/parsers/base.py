@@ -6,23 +6,26 @@ logger = logging.getLogger(__name__)
 
 class BaseParser:
 
-    def __init__(self, file):
+    def __init__(self, file, filepath=None):
         """
         Input may be a path to a file or an open file.
         """
         if type(file) is str:
+            assert filepath is None
             self.filepath = file
             self.file = None
+            self.managed = True
         else:
-            self.filepath = None
+            self.filepath = filepath
             self.file = file
+            self.managed = False
 
     def __enter__(self):
         """
         To be used as a context manager, in particular if the input is the path
         to a file.
         """
-        if self.filepath is not None:
+        if self.managed:
             self.file = open(self.filepath)
 
         try:
@@ -34,7 +37,7 @@ class BaseParser:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if self.filepath is not None:
+        if self.managed:
             self.file.close()
 
     def parse_header(self):
@@ -55,9 +58,9 @@ class CSVParser(BaseParser):
 
     def parse_row(self, row):
         data = {}
-        for i, value in enumerate(row):
-            name = self.fields[i]
+        for i, name in enumerate(self.fields):
             unit = self.units[i]
+            value = row[i]
             try:
                 value = self.parse_value(name, unit, value)
             except Exception:

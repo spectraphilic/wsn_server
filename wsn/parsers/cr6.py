@@ -3,6 +3,7 @@ import csv
 import datetime
 import logging
 import math
+import os
 import sys
 
 # App
@@ -18,6 +19,18 @@ class CR6Parser(CSVParser):
     """
 
     def parse_header(self):
+        # 1st verify the file is not trunctated (it may still be truncated
+        # right after the end of a row, that we cannot know)
+        # This method works for text files.
+        f = self.file
+        f.seek(0, os.SEEK_END)
+        n = f.tell()
+        assert n > 1 # not empty
+        f.seek(n - 2, os.SEEK_SET)
+        assert f.read(2) == '\r\n' # ends with a newline
+        f.seek(0) # back to the beginning
+
+        # Parse first line
         self.reader = csv.reader(self.file)
         self.env = self.reader.__next__()
         assert len(self.env) == 8
