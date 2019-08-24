@@ -7,6 +7,8 @@ import traceback
 # Django
 from django.core.management.base import BaseCommand
 
+# Project
+#from wsn.clickhouse import ClickHouse
 from wsn.parsers.cr6 import CR6Parser
 from wsn.upload import upload
 
@@ -39,15 +41,26 @@ class Command(BaseCommand):
             os.rename(filepath, f'{filepath}.empty')
             return
 
+        # TODO Remove once we move to ClickHouse definitely
         try:
             upload(self.parser, filepath)
         except Exception:
             self.stderr.write(f"{filepath} ERROR")
             traceback.print_exc()
-        else:
-            self.stdout.write(f"{filepath} file uploaded")
-            archive(filepath)
-            self.stdout.write(f"{filepath} file archived")
+            return
+
+#       with ClickHouse as clickhouse:
+#           try:
+#               clickhouse.upload(self.parser, filepath)
+#           except Exception:
+#               self.stderr.write(f"{filepath} ERROR")
+#               traceback.print_exc()
+#               return
+
+        # Archive file
+        self.stdout.write(f"{filepath} file uploaded")
+        archive(filepath)
+        self.stdout.write(f"{filepath} file archived")
 
     def handle(self, *args, **kw):
         self.upto = time.time() - 60 * 15 # 15 minutes ago

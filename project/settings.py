@@ -185,6 +185,16 @@ REST_FRAMEWORK = {
 }
 
 #
+# ClickHouse
+#
+
+CLICKHOUSE_HOST = 'localhost'
+CLICKHOUSE_USER = 'default'
+CLICKHOUSE_PASSWORD = ''
+CLICKHOUSE_NAME = 'wsn'
+
+
+#
 # Celery
 #
 
