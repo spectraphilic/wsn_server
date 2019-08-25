@@ -64,31 +64,31 @@ class ClickHouse:
         assert issubclass(parser_class, BaseParser)
         assert metadata is None or type(metadata) is dict
 
-        # Guess the table name from the filename
-        dirpath, filename = os.path.split(filepath)
-        dirname = os.path.basename(dirpath)
-        table = f"{dirname}_{filename.split('_')[0]}"
-
-        # Create the table if it does not exist
-        # The Replacing engine allows to avoid duplicates. Deduplication is
-        # done in the background, so there may be duplicates until the parts
-        # are merged.
-        self.execute(
-            f"CREATE TABLE IF NOT EXISTS {table} ({get_column('TIMESTAMP')}) "
-            f"ENGINE = ReplacingMergeTree() ORDER BY TIMESTAMP",
-            #echo=True,
-        )
-
-        # Get the table columns
-        database = settings.CLICKHOUSE_NAME
-        cols = set([name for name, in self.execute(
-            f"SELECT name FROM system.columns "
-            f"WHERE database = '{database}' AND table = '{table}';",
-            #echo=True,
-        )])
-
         with parser_class(file) as parser:
             metadata = parser.metadata or metadata
+
+            # Guess the table name
+            dirpath, filename = os.path.split(filepath)
+            dirname = os.path.basename(dirpath)
+            table = f"{dirname}_{metadata['table_name']}"
+
+            # Create the table if it does not exist
+            # The Replacing engine allows to avoid duplicates. Deduplication is
+            # done in the background, so there may be duplicates until the parts
+            # are merged.
+            self.execute(
+                f"CREATE TABLE IF NOT EXISTS {table} ({get_column('TIMESTAMP')}) "
+                f"ENGINE = ReplacingMergeTree() ORDER BY TIMESTAMP",
+                #echo=True,
+            )
+
+            # Get the table columns
+            database = settings.CLICKHOUSE_NAME
+            cols = set([name for name, in self.execute(
+                f"SELECT name FROM system.columns "
+                f"WHERE database = '{database}' AND table = '{table}';",
+                #echo=True,
+            )])
 
             # Add new columns
             fields = set(parser.fields)

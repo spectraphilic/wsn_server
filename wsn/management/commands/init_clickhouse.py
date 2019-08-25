@@ -2,7 +2,6 @@
 import glob
 import lzma
 import os
-import re
 import traceback
 
 # Requirements
@@ -23,13 +22,20 @@ class Command(BaseCommand):
                             help='Path to file or directory')
 
     def sort_files(self, paths):
-        expr = re.compile('(.*)_(....-..-..)_(..-..-..)_(.*).dat.xz')
+        n = len('.dat.xz')
         def key(filepath):
-            basename = os.path.basename(filepath)
-            match = expr.match(basename)
-            group = match.group
-            # name, date, time, number
-            return group(1), group(2), group(3), int(group(4))
+            name = os.path.basename(filepath)
+            assert name.endswith('.dat.xz')
+            name = name[:-n]
+
+            key = []
+            for segment in name.split('_'):
+                try:
+                    key.append(int(segment))
+                except ValueError:
+                    key.append(segment)
+
+            return tuple(key)
 
         return sorted(paths, key=key)
 
