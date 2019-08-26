@@ -1,9 +1,11 @@
+# Standard Library
 import csv
 import datetime
 import math
 import sys
 
-from .base import CSVParser
+# Project
+from wsn.parsers.base import CSVParser
 
 
 class EddyproParser(CSVParser):
@@ -46,9 +48,11 @@ class EddyproParser(CSVParser):
 # For trying purposes
 if __name__ == '__main__':
     filepath = sys.argv[1]
-    with EddyproParser(filepath) as parser:
-        print(parser.metadata)
-        for time, data in parser:
-            print(time)
-            print(data)
-            print()
+    parser = EddyproParser()
+    metadata, fields, rows = parser.parse(filepath)
+    print(metadata)
+    print(fields)
+    for time, data in rows:
+        print(time)
+        print(data)
+        break

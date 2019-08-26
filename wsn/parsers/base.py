@@ -4,41 +4,41 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+
+class EmptyError(Exception):
+    pass
+
+class TruncatedError(Exception):
+    pass
+
+
 class BaseParser:
 
-    def __init__(self, file, filepath=None):
+    def parse(self, file, filepath=None, metadata=None):
         """
         Input may be a path to a file or an open file.
         """
+        assert metadata is None or type(metadata) is dict
+
         if type(file) is str:
             assert filepath is None
             self.filepath = file
-            self.file = None
+            self.file = open(self.filepath, newline='')
             self.managed = True
         else:
             self.filepath = filepath
             self.file = file
             self.managed = False
 
-    def __enter__(self):
-        """
-        To be used as a context manager, in particular if the input is the path
-        to a file.
-        """
-        if self.managed:
-            self.file = open(self.filepath, newline='')
-
         try:
             self.parse_header()
-        except Exception:
-            self.__exit__(None, None, None)
-            raise
-
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        if self.managed:
-            self.file.close()
+            metadata = self.metadata or metadata
+            fields = self.fields
+            rows = [(time, data) for (time, data) in self]
+            return (metadata, fields, rows)
+        finally:
+            if self.managed:
+                self.file.close()
 
     def parse_header(self):
         raise NotImplementedError()

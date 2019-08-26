@@ -8,9 +8,9 @@ import traceback
 from django.core.management.base import BaseCommand
 
 # Project
-#from wsn.clickhouse import ClickHouse
+from wsn.parsers.base import EmptyError, TruncatedError
 from wsn.parsers.cr6 import CR6Parser
-from wsn.upload import upload
+from wsn.upload import upload2pg#, upload2ch
 
 
 def archive(filename):
@@ -18,6 +18,13 @@ def archive(filename):
     with lzma.open(filename + '.xz', 'w') as f:
         f.write(data)
     os.remove(filename)
+
+
+CONFIG = {
+    'eton2': [upload2pg],
+    'finseflux': [upload2pg],
+    'mobileflux': [upload2pg],
+}
 
 
 class Command(BaseCommand):
@@ -36,26 +43,33 @@ class Command(BaseCommand):
             self.stdout.write(f"{filepath} skip for now, will handle later")
             return
 
-        if stat.st_size == 0:
+        # Parse file
+        try:
+            metadata, fields, rows = self.parser().parse(filepath)
+        except EmptyError:
             self.stderr.write(f'{filepath} WARNING file is empty')
             os.rename(filepath, f'{filepath}.empty')
             return
-
-        # TODO Remove once we move to ClickHouse definitely
-        try:
-            upload(self.parser, filepath)
+        except TruncatedError:
+            self.stderr.write(f'{filepath} WARNING file is truncated')
+            os.rename(filepath, f'{filepath}.truncated')
+            return
         except Exception:
             self.stderr.write(f"{filepath} ERROR")
             traceback.print_exc()
             return
 
-#       with ClickHouse as clickhouse:
-#           try:
-#               clickhouse.upload(self.parser, filepath)
-#           except Exception:
-#               self.stderr.write(f"{filepath} ERROR")
-#               traceback.print_exc()
-#               return
+        dirpath, filename = os.path.split(filepath)
+        dirname = os.path.basename(dirpath)
+
+        # Upload
+        for upload_to in CONFIG.get(dirname, [upload2pg]):
+            try:
+                upload_to(dirname, metadata, fields, rows)
+            except Exception:
+                self.stderr.write(f"{filepath} ERROR")
+                traceback.print_exc()
+                return
 
         # Archive file
         self.stdout.write(f"{filepath} file uploaded")

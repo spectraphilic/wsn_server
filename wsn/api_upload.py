@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 # App
 from .api_create import CreatePermission
 from .parsers.eddypro import EddyproParser
-from .upload import upload, archive
+from .upload import upload2pg, archive
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -30,13 +30,14 @@ class UploadEddyproView(APIView):
         filename = data.name
         data = data.read()
 
-        # Import to database
-        metadata = upload(
-            EddyproParser,
+        parser = EddyproParser()
+        metadata, fields, rows = parser.parse(
             io.StringIO(data.decode('utf-8')),
-            filename=filename,
-            metadata=metadata
+            metadata=metadata,
         )
+
+        # Import to database
+        metadata = upload2pg(None, metadata, fields, rows)
 
         # Archive, keep a copy of the source file in the filesystem
         archive(metadata.name, filename, data)

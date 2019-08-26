@@ -1,12 +1,6 @@
-# Standard Library
-import os
-
 # Requirements
 from clickhouse_driver import Client
 from django.conf import settings
-
-# Project
-from wsn.parsers.base import BaseParser
 
 
 def get_column(name):
@@ -60,48 +54,41 @@ class ClickHouse:
 
         return n
 
-    def upload(self, parser_class, file, filepath, metadata=None):
-        assert issubclass(parser_class, BaseParser)
-        assert metadata is None or type(metadata) is dict
+    def upload(self, name, metadata, fields, rows):
+        rows2 = []
+        for time, data in rows:
+            data['TIMESTAMP'] = int(time.timestamp())
+            rows2.append(data)
+        rows = rows2
 
-        with parser_class(file) as parser:
-            metadata = parser.metadata or metadata
+        # Guess the table name
+        table = f"{name}_{metadata['table_name']}"
 
-            # Guess the table name
-            dirpath, filename = os.path.split(filepath)
-            dirname = os.path.basename(dirpath)
-            table = f"{dirname}_{metadata['table_name']}"
+        # Create the table if it does not exist
+        # The Replacing engine allows to avoid duplicates. Deduplication is
+        # done in the background, so there may be duplicates until the parts
+        # are merged.
+        self.execute(
+            f"CREATE TABLE IF NOT EXISTS {table} ({get_column('TIMESTAMP')}) "
+            f"ENGINE = ReplacingMergeTree() ORDER BY TIMESTAMP",
+            #echo=True,
+        )
 
-            # Create the table if it does not exist
-            # The Replacing engine allows to avoid duplicates. Deduplication is
-            # done in the background, so there may be duplicates until the parts
-            # are merged.
-            self.execute(
-                f"CREATE TABLE IF NOT EXISTS {table} ({get_column('TIMESTAMP')}) "
-                f"ENGINE = ReplacingMergeTree() ORDER BY TIMESTAMP",
-                #echo=True,
-            )
+        # Get the table columns
+        database = settings.CLICKHOUSE_NAME
+        cols = set([name for name, in self.execute(
+            f"SELECT name FROM system.columns "
+            f"WHERE database = '{database}' AND table = '{table}';",
+            #echo=True,
+        )])
 
-            # Get the table columns
-            database = settings.CLICKHOUSE_NAME
-            cols = set([name for name, in self.execute(
-                f"SELECT name FROM system.columns "
-                f"WHERE database = '{database}' AND table = '{table}';",
-                #echo=True,
-            )])
+        # Add new columns
+        fields = set(fields)
+        new = fields - cols
+        if new:
+            actions = ', '.join(f'ADD COLUMN {get_column(name)}' for name in new)
+            self.execute(f'ALTER TABLE {table} {actions};')
 
-            # Add new columns
-            fields = set(parser.fields)
-            new = fields - cols
-            if new:
-                actions = ', '.join(f'ADD COLUMN {get_column(name)}' for name in new)
-                self.execute(f'ALTER TABLE {table} {actions};')
-
-            rows = []
-            for time, data in parser:
-                data['TIMESTAMP'] = int(time.timestamp())
-                rows.append(data)
-
-            self.insert_rows(table, fields, rows)
+        self.insert_rows(table, fields, rows)
 
         return metadata

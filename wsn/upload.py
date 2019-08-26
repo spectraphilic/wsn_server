@@ -6,28 +6,29 @@ import os
 from django.conf import settings
 
 # App
+from wsn.clickhouse import ClickHouse
 from wsn.models import Metadata, Frame
-from wsn.parsers.base import BaseParser
 
 
 ARCHIVE = os.path.join(settings.BASE_DIR, 'var', 'archive')
 
 
-def upload(parser_class, file, filename=None, metadata=None):
+def upload2pg(name, metadata, fields, rows):
     """
     The metadata may be provided externally, as some files don't include
     metadata.
     """
-    assert issubclass(parser_class, BaseParser)
-    assert metadata is None or type(metadata) is dict
-
-    with parser_class(file) as parser:
-        metadata = parser.metadata or metadata
-        metadata, created = Metadata.get_or_create(metadata)
-        for time, data in parser:
-            Frame.create(metadata, time, None, data, update=False)
+    metadata, created = Metadata.get_or_create(metadata)
+    for time, data in rows:
+        Frame.create(metadata, time, None, data, update=False)
 
     return metadata
+
+
+def upload2ch(name, metadata, fields, rows):
+    if len(rows) > 0:
+        with ClickHouse() as clickhouse:
+            clickhouse.upload(name, metadata, fields, rows)
 
 
 def archive(name, filename, data):

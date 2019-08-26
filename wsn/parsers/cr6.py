@@ -6,8 +6,9 @@ import math
 import os
 import sys
 
-# App
-from .base import CSVParser
+# Project
+from wsn.parsers.base import CSVParser
+from wsn.parsers.base import EmptyError, TruncatedError
 
 
 logger = logging.getLogger(__name__)
@@ -25,9 +26,13 @@ class CR6Parser(CSVParser):
         f = self.file
         f.seek(0, os.SEEK_END)
         n = f.tell()
-        assert n > 1 # not empty
+        if n == 0:
+            raise EmptyError()
+
         f.seek(n - 2, os.SEEK_SET)
-        assert f.read(2) == '\r\n' # ends with a newline
+        if f.read(2) != '\r\n':
+            raise TruncatedError()
+
         f.seek(0) # back to the beginning
 
         # Parse first line
@@ -76,9 +81,11 @@ class CR6Parser(CSVParser):
 # For trying purposes
 if __name__ == '__main__':
     filepath = sys.argv[1]
-    with CR6Parser(filepath) as parser:
-        print(parser.metadata)
-        for time, data in parser:
-            print(time)
-            print(data)
-            break
+    parser = CR6Parser()
+    metadata, fields, rows = parser.parse(filepath)
+    print(metadata)
+    print(fields)
+    for time, data in rows:
+        print(time)
+        print(data)
+        break
