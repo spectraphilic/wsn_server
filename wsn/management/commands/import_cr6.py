@@ -10,7 +10,7 @@ from django.core.management.base import BaseCommand
 # Project
 from wsn.parsers.base import EmptyError, TruncatedError
 from wsn.parsers.cr6 import CR6Parser
-from wsn.upload import upload2pg#, upload2ch
+from wsn.upload import upload2pg, upload2ch
 
 
 def archive(filename):
@@ -22,8 +22,8 @@ def archive(filename):
 
 CONFIG = {
     'eton2': [upload2pg],
-    'finseflux': [upload2pg],
-    'mobileflux': [upload2pg],
+    'finseflux': [upload2pg, upload2ch],
+    'mobileflux': [upload2pg, upload2ch],
 }
 
 
