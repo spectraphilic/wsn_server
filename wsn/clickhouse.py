@@ -57,6 +57,7 @@ class ClickHouse:
     def upload(self, name, metadata, fields, rows):
         rows2 = []
         for time, data in rows:
+            data = data.copy()
             data['TIMESTAMP'] = int(time.timestamp())
             rows2.append(data)
         rows = rows2
