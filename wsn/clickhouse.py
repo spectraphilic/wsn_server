@@ -93,3 +93,28 @@ class ClickHouse:
         self.insert_rows(table, fields, rows)
 
         return metadata
+
+
+    def select(self, table, columns=None, where=None, group_by=None,
+               order_by=None, limit=None, **kwargs):
+
+        if not columns:
+            columns = '*'
+        else:
+            assert type(columns) is list
+            columns = ', '.join(columns)
+
+        query = [f'SELECT {columns} FROM {table}']
+
+        clauses = [
+            ('WHERE', where),
+            ('GROUP BY', group_by),
+            ('ORDER BY', order_by),
+            ('LIMIT', limit),
+        ]
+        for name, value in clauses:
+            if value:
+                query.append(f'{name} {value}')
+
+        query = ' '.join(query)
+        return self.execute(query, **kwargs)

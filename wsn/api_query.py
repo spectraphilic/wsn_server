@@ -2,12 +2,14 @@
 from django.db.models import F, Func, Min, Q
 
 # Rest framework
+from rest_framework import generics
 from rest_framework import pagination
+from rest_framework import permissions
+from rest_framework.response import Response
 from rest_framework import serializers
 
 # App
-from rest_framework import generics
-from rest_framework import permissions
+from .clickhouse import ClickHouse
 from .models import Metadata, Frame
 
 
@@ -65,8 +67,68 @@ class Epoch(Func):
 class Query2View(generics.ListAPIView):
     serializer_class = Query2Serializer
     permission_classes = (permissions.IsAuthenticated,)
-    #permission_classes = (permissions.AllowAny,)
     pagination_class = Query2Pagination
+
+
+    def list(self, request, *args, **kwargs):
+        params = self.request.query_params
+        table = params.get('table')
+        if table is not None:
+            data = self.get_clickhouse(table, params)
+            return Response(data)
+
+        return super().list(request, *args, **kwargs)
+
+
+    def get_clickhouse(self, table, params):
+        limit = params.get('limit')
+        columns = params.getlist('fields')
+        interval = params.get('interval')
+
+        time__gte = params.get('time__gte')
+        time__lte = params.get('time__lte')
+        if time__lte and time__gte:
+            assert time__gte < time__lte
+
+        # Time range
+        where = []
+        if time__gte:
+            where.append(f'TIMESTAMP >= {time__gte}')
+        if time__lte:
+            where.append(f'TIMESTAMP <= {time__lte}')
+        where = ' AND '.join(where)
+
+        with ClickHouse() as clickhouse:
+            # No columns, all columns (useful to check available columns)
+            if not columns:
+                columns = clickhouse.select(
+                    'system.columns', columns=['name'],
+                    where=f"database = 'wsn' AND table = '{table}'",
+                    order_by='name',
+                )
+                columns = [name for name, in columns]
+
+            # Average over interval
+            if interval:
+                time_column = f'intDiv(TIMESTAMP, {interval}) * {interval} AS time'
+                columns = [f'avg({x}) AS {x}' for x in columns]
+                group_by = 'time'
+            else:
+                time_column = 'TIMESTAMP AS time'
+                group_by = None
+
+            # Get data
+            columns = [time_column] + columns
+            rows, columns = clickhouse.select(
+                table, columns=columns, where=where,
+                group_by=group_by, order_by='time', limit=limit,
+                with_column_types=True,
+            )
+            columns = [name for name, typ in columns]
+            results = [dict(zip(columns, row)) for row in rows]
+
+        return [{'previous': None, 'next': None, 'results': results}]
+
 
     def get_queryset(self):
         params = self.request.query_params

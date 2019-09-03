@@ -120,3 +120,29 @@ if __name__ == '__main__':
         time__gte=datetime.datetime(2017, 11, 15),
         debug=True,
     )
+
+    # Example 7: ClickHouse, check available column names
+    print('==============================================')
+    response = query(limit=1,
+        table='finseflux_Biomet',
+        debug=True,
+    )
+
+    # Example 8: ClickHouse, select some columns
+    print('==============================================')
+    response = query(limit=limit,
+        table='finseflux_Biomet',
+        fields=['LWIN_6_14_1_1_1', 'LWOUT_6_15_1_1_1'],
+        time__gte=datetime.datetime(2019, 3, 1),
+        debug=True,
+    )
+
+    # Example 9: ClickHouse, interval returns averages
+    print('==============================================')
+    response = query(limit=limit,
+        table='finseflux_Biomet',
+        fields=['LWIN_6_14_1_1_1', 'LWOUT_6_15_1_1_1'],
+        time__gte=datetime.datetime(2019, 3, 1),
+        interval=3600,
+        debug=True,
+    )
