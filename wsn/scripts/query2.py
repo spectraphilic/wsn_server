@@ -3,7 +3,7 @@ import os
 import pprint
 import requests
 
-#URL = 'https://wsn.latice.eu/api/query/v2/'
+URL = 'https://wsn.latice.eu/api/query/v2/'
 URL = 'http://localhost:8000/api/query/v2/'
 
 
@@ -144,5 +144,16 @@ if __name__ == '__main__':
         fields=['LWIN_6_14_1_1_1', 'LWOUT_6_15_1_1_1'],
         time__gte=datetime.datetime(2019, 3, 1),
         interval=3600,
+        debug=True,
+    )
+
+    # Example 10: ClickHouse, use a different aggregate
+    print('==============================================')
+    response = query(limit=limit,
+        table='finseflux_Biomet',
+        fields=['LWIN_6_14_1_1_1', 'LWOUT_6_15_1_1_1'],
+        time__gte=datetime.datetime(2019, 3, 1),
+        interval=3600,
+        interval_agg='min',
         debug=True,
     )

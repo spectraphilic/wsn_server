@@ -84,6 +84,7 @@ class Query2View(generics.ListAPIView):
         limit = params.get('limit')
         columns = params.getlist('fields')
         interval = params.get('interval')
+        interval_agg = params.get('interval_agg', 'avg')
 
         time__gte = params.get('time__gte')
         time__lte = params.get('time__lte')
@@ -111,7 +112,7 @@ class Query2View(generics.ListAPIView):
             # Average over interval
             if interval:
                 time_column = f'intDiv(TIMESTAMP, {interval}) * {interval} AS time'
-                columns = [f'avg({x}) AS {x}' for x in columns]
+                columns = [f'{interval_agg}({x}) AS {x}' for x in columns]
                 group_by = 'time'
             else:
                 time_column = 'TIMESTAMP AS time'
