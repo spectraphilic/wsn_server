@@ -76,6 +76,12 @@ class FlexModel(models.Model):
         trans = str.maketrans('()', '__')
         return name.translate(trans).rstrip('_')
 
+    def get_value(self, name):
+        value = getattr(self, name, None)
+        if value is None and self.data:
+            value = self.data.get(name)
+        return value
+
     def extract_from_json(self, fields=None, dryrun=True):
         if fields is None:
             fields = set(self.get_data_fields())
