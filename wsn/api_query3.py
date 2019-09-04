@@ -129,7 +129,7 @@ class QueryPostgreSQL(views.APIView):
             if type(obj) is dict:
                 row = obj
             else:
-                row = {}
+                row = {'time': obj.time}
                 for name in data_fields:
                     value = obj.get_value(name)
                     if value is not None:
