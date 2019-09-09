@@ -20,16 +20,25 @@ from django.utils.translation import gettext_lazy as _
 
 logger = logging.getLogger(__name__)
 
+
+# The CR6 program defines most fields as IEEE4, actually the CR6 doesn't
+# support double precision. However in the CSV file we find values such as
+# 1.684204, 146.4748 or 202.6803; these values cannot be represented exactly
+# with simple precision floats. So we've 2 choices:
 #
-# XXX In theory we could (should) use this instead of 'double precision' in
-# many fields. The CR6 program defines most fields as IEEE4, this should map
-# to 'real' in PostgreSQL. But we find values such as 1.684204 in CR6 which
-# loss precision when translated to Postgres. Try:
+# 1. We can use double precision to store the number exactly as we find it into
+#    the CSV file.
+# 2. We can use simple precision, since the source data is single precision,
+#    the value in the CSV file must be wrong anyway.
 #
-#   postgres=# select cast(1.684204 as real);
+# Many command line tools, such as the clickhouse and postgres clients, round
+# the printed numbers, so the information displayed may be misleading:
 #
-# It returns 1.6842 !
-#
+#     postgres=# select cast(1.684204 as real), cast(cast(1.684204 as real) as double precision);
+#     float4 |      float8
+#    --------+------------------
+#     1.6842 | 1.68420398235321
+#    (1 row)
 
 class Float4Field(FloatField):
     description = _("Floating point number (4 bytes)")

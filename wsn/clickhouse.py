@@ -7,7 +7,7 @@ def get_column(name):
     datatype = {
         'TIMESTAMP': 'UInt32',
         'RECORD': 'UInt32',
-    }.get(name, 'Float32 DEFAULT NaN')
+    }.get(name, 'Float64 DEFAULT NaN')
 
     return f'"{name}" {datatype}'
 
