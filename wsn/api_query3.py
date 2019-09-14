@@ -71,21 +71,25 @@ class QueryPostgreSQL(views.APIView):
             # XXX Interval and tags don't work together (TEST)
             # XXX Interval requires fields (TEST)
             interval = int(interval)
-            interval_agg = params.get('interval_agg', 'avg')
-            agg = {
-                'avg': Avg,
-                'count': Count,
-                'max': Max,
-                'min': Min,
-                'stddev': StdDev,
-                'sum': Sum,
-                'variance': Variance,
-            }[interval_agg]
-            annotations = {x: agg(x) for x in fields}
             queryset = queryset\
                 .annotate(key=(F('time') / interval) * interval)\
-                .values('key')\
-                .annotate(time=F('key'), **annotations)
+                .values('key')
+
+            interval_agg = params.get('interval_agg')
+            if interval_agg:
+                agg = {
+                    'avg': Avg,
+                    'count': Count,
+                    'max': Max,
+                    'min': Min,
+                    'stddev': StdDev,
+                    'sum': Sum,
+                    'variance': Variance,
+                }[interval_agg]
+                annotations = {x: agg(x) for x in fields}
+                queryset = queryset.annotate(time=F('key'), **annotations)
+            else:
+                queryset = queryset.order_by('key', 'time').distinct('key').values()
 
         tags = params.getlist('tags')
         return queryset.select_related('metadata') if tags else queryset
@@ -158,7 +162,7 @@ class QueryClickHouse(views.APIView):
         limit = params.get('limit')
         columns = params.getlist('fields')
         interval = params.get('interval')
-        interval_agg = params.get('interval_agg', 'avg')
+        interval_agg = params.get('interval_agg')
 
         time__gte = params.get('time__gte')
         time__lte = params.get('time__lte')
@@ -183,22 +187,40 @@ class QueryClickHouse(views.APIView):
                 )
                 columns = [name for name, in columns]
 
+            # Remove TIMESTAMP
+            columns = [name for name in columns if name != 'TIMESTAMP']
+
+            # Defaults
+            group_by = None
+            order_by = 'time'
+            limit_by = None
+            key = None
+
             # Average over interval
             if interval:
-                time_column = f'intDiv(TIMESTAMP, {interval}) * {interval} AS time'
-                columns = [f'{interval_agg}({x}) AS {x}' for x in columns]
-                group_by = 'time'
+                if interval_agg:
+                    time = [f'intDiv(TIMESTAMP, {interval}) * {interval} AS time']
+                    columns = time + [f'{interval_agg}({x}) AS {x}' for x in columns]
+                    group_by = 'time'
+                else:
+                    key = [f'intDiv(TIMESTAMP, {interval}) * {interval} AS key']
+                    columns = key + ['TIMESTAMP AS time'] + columns
+                    limit_by = (1, 'key')
             else:
-                time_column = 'TIMESTAMP AS time'
-                group_by = None
+                columns = ['TIMESTAMP AS time'] + columns
 
             # Get data
-            columns = [time_column] + columns
             rows, columns = clickhouse.select(
                 table, columns=columns, where=where,
-                group_by=group_by, order_by='time', limit=limit,
+                group_by=group_by, order_by=order_by, limit_by=limit_by,
+                limit=limit,
                 with_column_types=True,
             )
             columns = [name for name, typ in columns]
+
+            # Remove key
+            if key:
+                columns = columns[1:]
+                rows = [row[1:] for row in rows]
 
         return Response({'columns': columns, 'rows': rows, 'format': 'compact'})

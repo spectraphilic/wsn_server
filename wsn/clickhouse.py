@@ -96,7 +96,7 @@ class ClickHouse:
 
 
     def select(self, table, columns=None, where=None, group_by=None,
-               order_by=None, limit=None, **kwargs):
+               order_by=None, limit=None, limit_by=None, **kwargs):
 
         if not columns:
             columns = '*'
@@ -107,14 +107,15 @@ class ClickHouse:
         query = [f'SELECT {columns} FROM {table}']
 
         clauses = [
-            ('WHERE', where),
-            ('GROUP BY', group_by),
-            ('ORDER BY', order_by),
-            ('LIMIT', limit),
+            ('WHERE {}', where),
+            ('GROUP BY {}', group_by),
+            ('ORDER BY {}', order_by),
+            ('LIMIT {0[0]} BY {0[1]}', limit_by),
+            ('LIMIT {}', limit),
         ]
-        for name, value in clauses:
-            if value:
-                query.append(f'{name} {value}')
+        for fstr, value in clauses:
+            if value is not None:
+                query.append(fstr.format(value))
 
         query = ' '.join(query)
         return self.execute(query, **kwargs)
