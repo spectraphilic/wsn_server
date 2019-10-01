@@ -22,8 +22,8 @@ def archive(filename):
 
 CONFIG = {
     'eton2': [upload2pg],
-    'finseflux': [upload2ch, upload2pg],
-    'mobileflux': [upload2ch, upload2pg],
+    'finseflux': [upload2ch],
+    'mobileflux': [upload2ch],
 }
 
 
