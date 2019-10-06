@@ -14,8 +14,6 @@
     django_with_monit : false
     django_with_sudo  : false
 
-    django_prefix     : ""
-
 #   django_domain     : ""
 #   django_root       : ""
 #   django_name       : ""
