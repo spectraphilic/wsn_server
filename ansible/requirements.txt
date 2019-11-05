@@ -1,11 +1,11 @@
 django-sendfile2==0.4.3
-Django==2.2.6
-ipython==7.8.0
-Pillow==6.2.0
-pip==19.2.3
+Django==2.2.7
+ipython==7.9.0
+Pillow==6.2.1
+pip==19.3.1
 
 {% if django_database.engine == 'postgres' %}
-psycopg2==2.8.3
+psycopg2==2.8.4
 {% endif %}
 
 # Custom
