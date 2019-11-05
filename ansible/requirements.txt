@@ -5,7 +5,7 @@ Pillow==6.2.1
 pip==19.3.1
 
 {% if django_database.engine == 'postgres' %}
-psycopg2==2.8.4
+psycopg2-binary==2.8.4
 {% endif %}
 
 # Custom
