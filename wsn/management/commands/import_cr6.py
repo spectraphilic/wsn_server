@@ -77,7 +77,7 @@ class Command(BaseCommand):
         self.stdout.write(f"{filepath} file archived")
 
     def handle(self, *args, **kw):
-        self.upto = time.time() - 60 * 15 # 15 minutes ago
+        self.upto = time.time() - 60 * 5 # 5 minutes ago
 
         for path in kw['paths']:
             # File
