@@ -23,4 +23,4 @@ celery_once==3.0.0
 clickhouse-driver[lz4]
 
 # Tests
-pytest-django==3.4.8
+pytest-django==3.6.0
