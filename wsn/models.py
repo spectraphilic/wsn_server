@@ -186,102 +186,9 @@ class Frame(FlexModel):
     # CR common
     RECORD = IntegerField(null=True, editable=False)
 
-    # CR6 Status
-    panel_tmpr = FloatField(null=True, editable=False) # IEEE4
-    A116_panel_tmpr = FloatField(null=True, editable=False) # IEEE4
-    batt_CR6 = FloatField(null=True, editable=False) # IEEE4
-    process_time = IntegerField(null=True, editable=False) # IEEE4 microseconds
-    buff_depth = IntegerField(null=True, editable=False) # IEEE4 scans
-    # CR6 Status FTP_push
-    FTPResult_Biomet = SmallIntegerField(null=True, editable=False) # FP2
-    FTPResult_StationStatus = SmallIntegerField(null=True, editable=False) # FP2
-    # CR6 Status Crydom_relay
-    LicorOn = SmallIntegerField(null=True, editable=False) # FP2
-    PowLicor = SmallIntegerField(null=True, editable=False) # FP2
-    # CR6 Status Tilt
-    CXTLA_tilt_X = FloatField(null=True, editable=False) # IEEE4
-    CXTLA_tilt_Y = FloatField(null=True, editable=False) # IEEE4
-    # CR6 Status TriStar
-    # CR6 Status CNR_4
-    T_nr = FloatField(null=True, editable=False) # IEEE4
-    T_K_nr = FloatField(null=True, editable=False) # IEEE4
-    Rl_down_meas = FloatField(null=True, editable=False) # IEEE4
-    Rl_up_meas = FloatField(null=True, editable=False) # IEEE4
-    pulse_CNR4_Tot = SmallIntegerField(null=True, editable=False) # FP2
-    # CR6 Status HFP01SC
-    shf_cal_1 = FloatField(null=True, editable=False) # IEEE4
-    shf_cal_2 = FloatField(null=True, editable=False) # IEEE4
-    shf_cal_on_f = SmallIntegerField(null=True, editable=False) # FP2
-    sw12_1_state = SmallIntegerField(null=True, editable=False) # FP2
-
-    # CR6 Biomet
-    PA_4_2_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    VIN_18_39_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    # CR6 Biomet HMP
-    RH_19_3_1_2_1 = FloatField(null=True, editable=False) # IEEE4
-    # CR6 Biomet MET (or EE_T)
-    TA_2_1_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    TA_2_1_1_2_1 = FloatField(null=True, editable=False) # IEEE4
-    TS_2_38_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    TSS_2_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    RH_19_3_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    WS_16_33_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    WD_20_35_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    METNORR_99_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    METNOR_99_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    METNORA_99_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    METNOS_99_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    # CR6 Biomet NEDB
-    P_RAIN_8_19_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    # CR6 Biomet SR50A
-    SR50DISTANCE_9_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    SR50QUALITY_99_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    # CR6 Biomet CNR_4
-    SWIN_6_10_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    SWOUT_6_11_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    LWIN_6_14_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    LWOUT_6_15_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    # CR6 Biomet TCAV
-    TS_2_38_2_1_1 = FloatField(null=True, editable=False) # IEEE4
-    # CR6 Biomet SI411
-    SURFACETEMP_2_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    # CR6 Biomet CS650
-    SWC_12_36_3_1_1 = FloatField(null=True, editable=False) # IEEE4
-    BEC_99_99_3_1_1 = FloatField(null=True, editable=False) # IEEE4
-    TS_2_38_3_1_1 = FloatField(null=True, editable=False) # IEEE4
-    PERMITTIVITY_99_99_3_1_1 = FloatField(null=True, editable=False) # IEEE4
-    CS650PERIOD_99_99_3_1_1 = FloatField(null=True, editable=False) # IEEE4
-    CS650VRATIO_99_99_3_1_1 = FloatField(null=True, editable=False) # IEEE4
-    # CR6 Biomet HFP01SC
-    SHF_6_37_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    SHF_6_37_2_1_1 = FloatField(null=True, editable=False) # IEEE4
-    SHF_99_37_1_1_2 = FloatField(null=True, editable=False) # IEEE4
-    SHF_99_37_2_1_2 = FloatField(null=True, editable=False) # IEEE4
-    # CR6 Biomet FlowCapt_1
-    FC1DRIFTmin_99_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    FC1DRIFTmean_99_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    FC1DRIFTmax_99_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    FC1DRIFTstd_99_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    FC1DRIFTsum_99_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    FC1WSmin_16_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    FC1WSmean_16_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    FC1WSmax_16_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    # CR6 Biomet FlowCapt_2
-    FC2DRIFTmin_99_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    FC2DRIFTmean_99_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    FC2DRIFTmax_99_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    FC2DRIFTstd_99_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    FC2DRIFTsum_99_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    FC2WSmin_16_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    FC2WSmean_16_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-    FC2WSmax_16_99_1_1_1 = FloatField(null=True, editable=False) # IEEE4
-
     # Other
     TiltX_Avg = FloatField(null=True, editable=False)
     TiltY_Avg = FloatField(null=True, editable=False)
-    RH1_19_3_1_1_1 = FloatField(null=True, editable=False)
-    TA1_2_1_1_1 = FloatField(null=True, editable=False)
-
 
     class Meta:
         unique_together = [('metadata', 'time', 'frame')]
@@ -340,7 +247,7 @@ class Frame(FlexModel):
         if created and seq is not None:
             try:
                 self.merge_frames(metadata, time, save=True)
-            except Exception as ex:
+            except Exception:
                 logger.exception(f'failed to merge frames metadata={metadata.id} time={time}')
 
         return obj, created
