@@ -14,12 +14,11 @@
     django_with_monit : false
     django_with_sudo  : false
 
-    django_prefix     : "/home/travis/virtualenv/python3.7.1"
+    prefix            : "/home/travis/virtualenv/python3.7.1"
+    virtualenv        : false
 
     django_database   :
       engine          : "postgres"
       name            : "wsn"
       user            : "postgres"
       password        : ""
-
-    python_env        : "conda"
