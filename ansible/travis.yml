@@ -14,7 +14,7 @@
     django_with_monit : false
     django_with_sudo  : false
 
-    django_prefix     : "/home/travis/virtualenv/python3.6.7"
+    django_prefix     : "/home/travis/virtualenv/python3.7.1"
 
     django_database   :
       engine          : "postgres"
