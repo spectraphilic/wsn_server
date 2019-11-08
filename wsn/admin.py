@@ -120,6 +120,16 @@ class FrameAddressFilter(FrameSerialFilter):
     title = 'address'
     parameter_name = 'source_addr_long'
 
+
+def epoch_to_str_plus(time):
+    if time is None:
+        return '-'
+
+    dt = datetime.datetime.utcfromtimestamp(time)
+    dt = dt.strftime("%Y-%m-%d %H:%M:%S %z")
+    return f'{dt} ({time})'
+
+
 @admin.register(Frame)
 class FrameAdmin(admin.ModelAdmin):
     list_display = ['time_str', 'frame', 'metadata', 'data']
@@ -128,12 +138,20 @@ class FrameAdmin(admin.ModelAdmin):
     paginator = EstimatedCountPaginator
 
     def get_readonly_fields(self, request, obj=None):
-        readonly_fields = ['metadata', 'time_str_plus', 'frame', 'frame_max']
         fields = [
-            name for name in obj.get_data_fields()
-            if getattr(obj, name) is not None and name not in readonly_fields]
+            'metadata',
+            'time_str_plus',
+            'received_str_plus',
+            'inserted_str_plus',
+            'frame', 'frame_max',
+        ]
 
-        return readonly_fields + fields + ['data']
+        exclude = {'frame', 'received'}
+        for name in obj.get_data_fields():
+            if name not in exclude and getattr(obj, name) is not None:
+                fields.append(name)
+
+        return fields + ['data']
 
     @attrs(short_description='Time', admin_order_field='time')
     def time_str(self, obj):
@@ -142,12 +160,26 @@ class FrameAdmin(admin.ModelAdmin):
 
     @attrs(short_description='Time')
     def time_str_plus(self, obj):
-        dt = datetime.datetime.utcfromtimestamp(obj.time)
-        dt = dt.strftime("%Y-%m-%d %H:%M:%S %z")
-        return f'{dt} ({obj.time})'
+        return epoch_to_str_plus(obj.time)
 
+    @attrs(short_description='Received')
+    def received_str_plus(self, obj):
+        return epoch_to_str_plus(obj.received)
+
+    @attrs(short_description='Inserted')
+    def inserted_str_plus(self, obj):
+        return epoch_to_str_plus(obj.inserted)
 
 #   def metadata_link(self, obj):
 #       pk = obj.metadata_id
 #       href = reverse('admin:wsn_metadata_change', args=[pk])
 #       return mark_safe('<a href="{}">{}</a>'.format(href, pk))
+
+    def get_form(self, request, obj=None, **kwargs):
+        help_texts = {
+            'time_str_plus': 'Sampling time',
+            'received_str_plus': 'Time the frame was received by the gateway (if any)',
+            'inserted_str_plus': 'Time of insert into the database (only available from 2019/11/09)'
+        }
+        kwargs.update({'help_texts': help_texts})
+        return super().get_form(request, obj, **kwargs)

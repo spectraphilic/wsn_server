@@ -2,6 +2,7 @@
 from datetime import datetime
 import logging
 import math
+from time import time as epoch_float
 
 # Django
 from django.contrib.postgres.fields import JSONField
@@ -156,10 +157,18 @@ class Metadata(FlexModel):
         return self.objects.filter(**search)
 
 
+def epoch():
+    return round(epoch_float())
+
 class Frame(FlexModel):
+
     metadata = ForeignKey(Metadata, on_delete=PROTECT, related_name='frames',
                           null=True, editable=False)
-    time = IntegerField(null=True, editable=False) # Unix epoch
+
+    # Time (unix epoch)
+    time = IntegerField(null=True, editable=False) # Sample time
+    received = IntegerField(null=True, editable=False) # Gateway time
+    inserted = IntegerField(null=True, editable=False, default=epoch)
 
     # Sequence number (motes)
     # Because the XBee frame is so small we have to split the logical frame,
@@ -181,7 +190,6 @@ class Frame(FlexModel):
 #   ds2_meridional 2057 float -26.579999923706055 6.849999904632568
 #   ds1820 4153 <class 'list'> None None
     bat = SmallIntegerField(null=True, editable=False)
-    received = IntegerField(null=True, editable=False)
 
     # CR common
     RECORD = IntegerField(null=True, editable=False)
@@ -194,7 +202,7 @@ class Frame(FlexModel):
         unique_together = [('metadata', 'time', 'frame')]
 
     json_field = 'data'
-    non_data_fields = {'time', 'metadata', json_field, 'frame_max'}
+    non_data_fields = {'metadata', 'time', 'inserted', json_field, 'frame_max'}
 
     @classmethod
     def create(self, metadata, time, seq, data, update=False):
