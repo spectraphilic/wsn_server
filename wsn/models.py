@@ -223,6 +223,12 @@ class Frame(FlexModel):
                 raise ValueError('unexpected naive datetime, expected integer (epoch) or aware datetime')
             time = int(time.timestamp())
 
+        if time > (2**31 - 1):
+            logger.warning(
+                f'Discarding frame with unexpected time={time} from metadata={metadata.id}'
+            )
+            return None, False
+
         defaults = {
             name: data.pop(name) for name in self.get_data_fields()
             if name in data}
@@ -352,6 +358,7 @@ def frame_to_database(validated_data, update=False):
         data = frame['data']
         seq = data.pop('frame', None)
         obj, created = Frame.create(metadata, time, seq, data, update=update)
-        objs.append(obj)
+        if obj is not None:
+            objs.append(obj)
 
     return metadata, objs
