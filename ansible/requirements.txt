@@ -1,5 +1,5 @@
 django-sendfile2==0.4.3
-Django==2.2.7
+Django==2.2.8
 ipython==7.9.0
 Pillow==6.2.1
 pip==19.3.1
