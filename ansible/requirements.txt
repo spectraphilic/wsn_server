@@ -11,16 +11,16 @@ psycopg2-binary==2.8.4
 # Custom
 bokeh==1.1.0
 djangorestframework==3.7.7
-pycryptodome==3.8.1
-tabulate==0.8.3
-tqdm==4.32.1
+pycryptodome==3.9.4
+tabulate==0.8.6
+tqdm==4.40.2
 
 # Celery
 celery==4.3.0
-celery_once==3.0.0
+celery_once==3.0.1
 
 # ClickHouse
-clickhouse-driver[lz4]
+clickhouse-driver[lz4]==0.1.2
 
 # Tests
-pytest-django==3.6.0
+pytest-django==3.7.0
