@@ -1,4 +1,9 @@
+# Standard Library
 import logging
+import os
+
+# Project
+from wsn.utils import cached_property
 
 
 logger = logging.getLogger(__name__)
@@ -14,55 +19,91 @@ class TruncatedError(Exception):
 
 class BaseParser:
 
-    def parse(self, file, filepath=None, metadata=None):
-        """
-        Input may be a path to a file or an open file.
-        """
-        assert metadata is None or type(metadata) is dict
+    OPEN_KWARGS = {}
+
+    def __init__(self,
+        file,          # A file-like object or a path to a file
+        filepath=None, # Used for better error messages
+        metadata=None, # Externally provided metadata
+        stat=None,     # os.stat_result instance
+    ):
 
         if type(file) is str:
             assert filepath is None
-            self.filepath = file
-            self.file = open(self.filepath, newline='')
+            filepath = file
+            self.file = open(filepath, **self.OPEN_KWARGS)
             self.managed = True
         else:
-            self.filepath = filepath
             self.file = file
             self.managed = False
 
+        if filepath is not None:
+            self.filepath = filepath
+
+        if metadata is not None:
+            assert type(metadata) is dict
+            self.metadata = metadata
+
+        if stat is not None:
+            self.stat = stat
+
+    @cached_property
+    def filepath(self):
+        return self.file.name
+
+    @cached_property
+    def stat(self):
+        if self.filepath is not None:
+            return os.stat(self.filepath)
+
+        return None
+
+    @cached_property
+    def size(self):
+        if self.stat is not None:
+            return self.stat.st_size
+
+        f = self.file
+        f.seek(0, os.SEEK_END)
+        self.size = f.tell()
+
+    def parse(self):
+        """
+        Input may be a path to a file or an open file.
+        """
         try:
-            self.parse_header()
-            metadata = self.metadata or metadata
-            fields = self.fields
-            rows = [(time, data) for (time, data) in self]
-            return (metadata, fields, rows)
+            self._open()
+            self._load()
+            return (self.metadata, self.fields, self.rows)
         finally:
+            self._close()
             if self.managed:
                 self.file.close()
 
-    def parse_header(self):
+    def _open(self):
+        pass
+
+    def _load(self):
         raise NotImplementedError()
 
-    @property
-    def metadata(self):
-        raise NotImplementedError()
-
-    def __iter__(self):
-        raise NotImplementedError()
+    def _close(self):
+        pass
 
 
 class CSVParser(BaseParser):
 
-    def parse_value(self, name, unit, value):
+    OPEN_KWARGS = {'newline': ''}
+
+    def _parse_value(self, name, unit, value):
         raise NotImplementedError()
 
-    def parse_row(self, row):
+    def _parse_row(self, row):
         data = {}
         for i, name in enumerate(self.fields):
             unit = self.units[i]
             value = row[i]
             try:
-                value = self.parse_value(name, unit, value)
+                value = self._parse_value(name, unit, value)
             except Exception:
                 lineno = self.reader.line_num
                 logger.exception(
@@ -73,16 +114,17 @@ class CSVParser(BaseParser):
 
         return data
 
-    def parse_time(self, data):
+    def _parse_time(self, data):
         raise NotImplementedError()
 
-    def __iter__(self):
-        # FIXME Should reject a line if it doesn't have an end-of-line, because
-        # then the last value is probably truncated.  Better to reject the
-        # whole line than to import a bad value, right?
-        # But the csv module has already stripped the end-of-line, so we cannot
-        # know.
+    def _parse_header(self):
+        raise NotImplementedError()
+
+    def _load(self):
+        self._parse_header()
+
+        rows = self.rows = []
         for row in self.reader:
-            data = self.parse_row(row)
-            time, data = self.parse_time(data)
-            yield time, data
+            data = self._parse_row(row)
+            time, data = self._parse_time(data)
+            rows.append((time, data))

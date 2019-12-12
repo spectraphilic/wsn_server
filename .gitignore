@@ -100,7 +100,9 @@ ENV/
 # mypy
 .mypy_cache/
 
+#
 # From django-boot
+#
 /ansible/*.retry
 /db.sqlite3
 /etc/
@@ -114,3 +116,10 @@ ENV/
 .*.swp
 *.pyc
 *~
+
+#
+# Other
+#
+
+# LibreOffice locks
+.~lock.*#

@@ -14,7 +14,7 @@ class EddyproParser(CSVParser):
     def metadata(self):
         return {}
 
-    def parse_header(self):
+    def _parse_header(self):
         self.reader = csv.reader(self.file)
 
         # Skip header rows. The fields row must have a date and time columns.
@@ -25,7 +25,7 @@ class EddyproParser(CSVParser):
         self.fields = line
         self.units = self.reader.__next__()
 
-    def parse_value(self, name, unit, value):
+    def _parse_value(self, name, unit, value):
         if value == 'NaN':
             return math.nan
 
@@ -37,7 +37,7 @@ class EddyproParser(CSVParser):
 
         return value
 
-    def parse_time(self, data):
+    def _parse_time(self, data):
         date = data.pop('date')
         time = data.pop('time')
         time = datetime.datetime.strptime(f'{date} {time}', '%Y-%m-%d %H:%M')

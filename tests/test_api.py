@@ -120,7 +120,6 @@ def api(django_db_setup):
 # Tests start here
 #
 
-
 def test_create_time_required(api, db):
     response = api.create({
         'tags': {'serial': 42},

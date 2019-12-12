@@ -1,3 +1,4 @@
+# Standard Library
 import configparser
 import csv
 import datetime
@@ -6,8 +7,13 @@ import os
 import sys
 from zipfile import ZipFile
 
+# Project
+from wsn.utils import cached_property
+from .base import BaseParser
+
 
 class DataFile:
+
     def __init__(self, parser):
         self.file = None
         self.parser = parser
@@ -16,7 +22,7 @@ class DataFile:
         self.fields = []
 
     def open(self, filename):
-        self.file = io.TextIOWrapper(self.parser.file.open(filename))
+        self.file = io.TextIOWrapper(self.parser.zipfile.open(filename))
         self.parse()
 
     def close(self):
@@ -71,7 +77,7 @@ class DataFile:
             yield (time, data)
 
 
-class LicorParser:
+class LicorParser(BaseParser):
     """
     Licor.
 
@@ -79,50 +85,63 @@ class LicorParser:
     https://github.com/JeremyRueffer/ClimateDataIO.jl#licor
     """
 
-    @property
-    def metadata(self):
-        return self._data.header
+    OPEN_KWARGS = {'mode': 'rb'}
 
-    def __iter__(self):
-        yield from self._data
+    @cached_property
+    def zipfile(self):
+        return ZipFile(self.file)
 
-    def __init__(self, filepath):
-        self.filepath = filepath
-        self.file = None
-        # Files inside
-        self._metadata = configparser.ConfigParser()
-        self._data = DataFile(self)
-        self._biomet_metadata = configparser.ConfigParser()
-        self._biomet_data = DataFile(self)
-
-    def __read_metadata(self, config, filepath):
-        with self.file.open(filepath) as file:
-            config.read_file(io.TextIOWrapper(file))
-
-    def __enter__(self):
-        self.file = ZipFile(self.filepath)
+    @cached_property
+    def filename_root(self):
         filename = os.path.basename(self.filepath)
         root, ext = os.path.splitext(filename)
-        # Read metadata files
-        self.__read_metadata(self._metadata, root + '.metadata')
-        self.__read_metadata(self._biomet_metadata, root + '-biomet.metadata')
-        # Open data files
-        self._data.open(root + '.data')
-        self._biomet_data.open(root + '-biomet.data')
-        return self
+        return root
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    @cached_property
+    def _metadata(self):
+        path = f'{self.filename_root}.metadata'
+        config = configparser.ConfigParser()
+        with self.zipfile.open(path) as file:
+            config.read_file(io.TextIOWrapper(file))
+        return config
+
+    @cached_property
+    def _data(self):
+        data = DataFile(self)
+        data.open(f'{self.filename_root}.data')
+        return data
+
+    @cached_property
+    def _biomet_metadata(self):
+        path = f'{self.filename_root}-biomet.metadata'
+        config = configparser.ConfigParser()
+        with self.zipfile.open(path) as file:
+            config.read_file(io.TextIOWrapper(file))
+        return config
+
+    @cached_property
+    def _biomet_data(self):
+        data = DataFile(self)
+        data.open(f'{self.filename_root}-biomet.data')
+        return data
+
+    def _load(self):
+        self.metadata = self._data.header
+        self.fields = self._data.fields
+        self.rows = list(self._data)
+
+    def _close(self):
         self._data.close()
         self._biomet_data.close()
-        self.file.close()
+        self.zipfile.close()
 
 
 # For trying purposes
 if __name__ == '__main__':
     filepath = sys.argv[1]
-    with LicorParser(filepath) as parser:
-        print(parser._biomet_metadata.sections())
-        print(parser._biomet_data.header)
-        print(parser._biomet_data.fields)
-        for time, data in parser._biomet_data:
-            print(time)
+    parser = LicorParser(filepath)
+    print(parser._biomet_metadata.sections())
+    print(parser._biomet_data.header)
+    print(parser._biomet_data.fields)
+    for time, data in parser._biomet_data:
+        print(time)
