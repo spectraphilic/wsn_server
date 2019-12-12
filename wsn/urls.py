@@ -2,7 +2,6 @@ from django.urls import include, path
 
 from .api_create import CreateView
 from .api_input import IridiumView, MeshliumView
-from .api_query import Query2View
 from .api_query3 import QueryPostgreSQL, QueryClickHouse
 from .api_upload import UploadEddyproView
 from . import views
@@ -19,8 +18,6 @@ urlpatterns = [
     path('api/upload/eddypro/', UploadEddyproView.as_view()),
     path('api/iridium/', IridiumView.as_view()),
     path('getpost_frame_parser.php', MeshliumView.as_view()),
-    # API query data
-    path('api/query/v2/', Query2View.as_view()),
     # API query: v3
     path('api/query/postgresql/', QueryPostgreSQL.as_view()),
     path('api/query/clickhouse/', QueryClickHouse.as_view()),

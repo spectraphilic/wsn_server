@@ -90,7 +90,7 @@ class API:
         return self.client.post(path, data, format='json')
 
     def query(self, data):
-        path = '/api/query/v2/'
+        path = '/api/query/postgresql/'
         return self.client.get(path, data)
 
     def iridium(self, data):
@@ -114,6 +114,11 @@ def api(django_db_setup):
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
     return API(client)
+
+
+#
+# Tests start here
+#
 
 
 def test_create_time_required(api, db):
@@ -164,14 +169,16 @@ def test_create(api, db):
     response = api.query({'serial:int': 1234})
     assert response.status_code == 200
     json = response.json()
-    assert len(json['results']) == 0
+    from pprint import pprint
+    pprint(json)
+    assert len(json['rows']) == 0
 
     # Query (hit)
     response = api.query({'serial:int': 42})
     assert response.status_code == 200
-    results = response.json()['results']
-    assert len(results) == 3
-    last = results[-1]
+    rows = response.json()['rows']
+    assert len(rows) == 3
+    last = rows[-1]
     assert last['battery'] == 30
     assert last['received'] == t+2
     assert last['time'] == (now + 2)
@@ -180,7 +187,7 @@ def test_create(api, db):
     response = api.query({'serial:int': 42, 'time__gte': now + 1})
     assert response.status_code == 200
     json = response.json()
-    assert len(json['results']) == 2
+    assert len(json['rows']) == 2
 
 
 def test_iridium(api, db, celery_session_app, celery_session_worker):
@@ -200,8 +207,8 @@ def test_iridium(api, db, celery_session_app, celery_session_worker):
     assert response.status_code == 200
 
     response = api.query({})
-    results = response.json()['results']
-    assert len(results) == 0
+    rows = response.json()['rows']
+    assert len(rows) == 0
 
     # Frame
     data = {
@@ -221,8 +228,8 @@ def test_iridium(api, db, celery_session_app, celery_session_worker):
 
     response = api.query({})
     json = response.json()
-    assert 'results' in json
-    assert len(json['results']) == 1
+    assert 'rows' in json
+    assert len(json['rows']) == 1
 
 
 def test_4G(api, db, celery_session_app, celery_session_worker):
@@ -235,5 +242,5 @@ def test_4G(api, db, celery_session_app, celery_session_worker):
 
     response = api.query({})
     json = response.json()
-    assert 'results' in json
-    assert len(json['results']) == 1
+    assert 'rows' in json
+    assert len(json['rows']) == 1
