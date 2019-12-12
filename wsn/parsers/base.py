@@ -126,5 +126,6 @@ class CSVParser(BaseParser):
         rows = self.rows = []
         for row in self.reader:
             data = self._parse_row(row)
-            time, data = self._parse_time(data)
-            rows.append((time, data))
+            if data is not None:
+                time, data = self._parse_time(data)
+                rows.append((time, data))

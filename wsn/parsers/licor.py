@@ -63,6 +63,7 @@ class DataFile:
             time, ms = row[i_time].rsplit(':', 1)
             dt = datetime.datetime.strptime(date + time, '%Y-%m-%d%H:%M:%S')
             dt = dt.replace(microsecond=int(ms)*1000)
+            dt = dt.replace(tzinfo=datetime.timezone.utc)
             # TODO Assert it matches Seconds/Nanoseconds
             return dt
 
