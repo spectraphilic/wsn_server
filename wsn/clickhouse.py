@@ -114,7 +114,7 @@ class ClickHouse:
             ('LIMIT {}', limit),
         ]
         for fstr, value in clauses:
-            if value is not None:
+            if value not in (None, ''):
                 query.append(fstr.format(value))
 
         query = ' '.join(query)

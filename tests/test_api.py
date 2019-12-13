@@ -51,13 +51,13 @@ def test_create(api, db):
     assert last.data['battery'] == 30
 
     # Query (miss)
-    response = api.query({'serial:int': 1234})
+    response = api.query_pg({'serial:int': 1234})
     assert response.status_code == 200
     json = response.json()
     assert len(json['rows']) == 0
 
     # Query (hit)
-    response = api.query({'serial:int': 42})
+    response = api.query_pg({'serial:int': 42})
     assert response.status_code == 200
     rows = response.json()['rows']
     assert len(rows) == 3
@@ -67,7 +67,7 @@ def test_create(api, db):
     assert last['time'] == (now + 2)
 
     # Time
-    response = api.query({'serial:int': 42, 'time__gte': now + 1})
+    response = api.query_pg({'serial:int': 42, 'time__gte': now + 1})
     assert response.status_code == 200
     json = response.json()
     assert len(json['rows']) == 2
@@ -89,7 +89,7 @@ def test_iridium(api, db, celery_session_app, celery_session_worker):
     response = api.iridium(data)
     assert response.status_code == 200
 
-    response = api.query({})
+    response = api.query_pg()
     rows = response.json()['rows']
     assert len(rows) == 0
 
@@ -109,7 +109,7 @@ def test_iridium(api, db, celery_session_app, celery_session_worker):
     response = api.iridium(data)
     assert response.status_code == 200
 
-    response = api.query({})
+    response = api.query_pg()
     json = response.json()
     assert 'rows' in json
     assert len(json['rows']) == 1
@@ -123,7 +123,7 @@ def test_4G(api, db, celery_session_app, celery_session_worker):
     response = api.meshlium(data)
     assert response.status_code == 200
 
-    response = api.query({})
+    response = api.query_pg()
     json = response.json()
     assert 'rows' in json
     assert len(json['rows']) == 1

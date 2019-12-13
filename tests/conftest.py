@@ -48,11 +48,15 @@ class API:
         path = '/api/create/'
         return self.client.post(path, data, format='json')
 
-    def query(self, data=None):
-        if data is None:
-            data = {}
-
+    def query_pg(self, data=None):
         path = '/api/query/postgresql/'
+        return self.client.get(path, data)
+
+    def query_ch(self, table, data=None):
+        data = data or {}
+        data['table'] = table
+
+        path = '/api/query/clickhouse/'
         return self.client.get(path, data)
 
     def iridium(self, data):

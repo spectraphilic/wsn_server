@@ -1,12 +1,17 @@
 dist: bionic
 language: python
-python:
-  - "3.6"
-  - "3.7"
+python: 3.7
 
-services: postgresql
+services:
+  - docker
+  - postgresql
+
 addons:
   postgresql: "10"
+
+before_install:
+  - travis_retry docker pull yandex/clickhouse-server
+  - docker run -d -p 127.0.0.1:9000:9000 yandex/clickhouse-server
 
 install:
   - pip install ansible

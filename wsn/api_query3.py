@@ -1,4 +1,5 @@
 # Django
+from django.conf import settings
 from django.db.models import Q, F
 from django.db.models import Avg, Count, Max, Min, StdDev, Sum, Variance
 
@@ -182,7 +183,7 @@ class QueryClickHouse(views.APIView):
             if not columns:
                 columns = clickhouse.select(
                     'system.columns', columns=['name'],
-                    where=f"database = 'wsn' AND table = '{table}'",
+                    where=f"database = '{settings.CLICKHOUSE_NAME}' AND table = '{table}'",
                     order_by='name',
                 )
                 columns = [name for name, in columns]

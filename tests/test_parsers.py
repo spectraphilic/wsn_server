@@ -1,5 +1,6 @@
 # Standard Library
 from datetime import datetime, timezone
+from pathlib import Path
 from zipfile import BadZipFile
 
 # Requirements
@@ -13,8 +14,13 @@ from wsn.parsers.licor import LicorParser
 from wsn.parsers.sommer import SommerParser
 
 
-def test_cr6_empty():
-    filename = 'tests/data/cr6/Biomet_2019-08-23_19-05-00_8362_empty.dat'
+@pytest.fixture(scope='module')
+def datadir():
+    return Path('tests/data')
+
+
+def test_cr6_empty(datadir):
+    filename = str(datadir / 'cr6' / 'finseflux' / 'Biomet_2019-08-23_19-05-00_8362_empty.dat')
 
     parser = CR6Parser(filename)
     with pytest.raises(EmptyError):
@@ -26,8 +32,8 @@ def test_cr6_empty():
             parser.parse()
 
 
-def test_cr6_truncated():
-    filename = 'tests/data/cr6/Biomet_2019-08-23_19-05-00_8362_truncated.dat'
+def test_cr6_truncated(datadir):
+    filename = str(datadir / 'cr6' / 'finseflux' / 'Biomet_2019-08-23_19-05-00_8362_truncated.dat')
 
     parser = CR6Parser(filename)
     with pytest.raises(TruncatedError):
@@ -39,8 +45,8 @@ def test_cr6_truncated():
             parser.parse()
 
 
-def test_cr6():
-    filename = 'tests/data/cr6/Biomet_2019-08-23_19-05-00_8362.dat'
+def test_cr6(datadir):
+    filename = str(datadir / 'cr6' / 'finseflux' / 'Biomet_2019-08-23_19-05-00_8362.dat')
 
     parser = CR6Parser(filename)
     metadata, fields, rows = parser.parse()
