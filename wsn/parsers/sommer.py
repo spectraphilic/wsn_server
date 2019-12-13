@@ -1,12 +1,33 @@
 # Standard Library
 import csv
 import datetime
+import os
 
 # Project
 from wsn.parsers.base import CSVParser
+from wsn.parsers.base import EmptyError, TruncatedError
 
 
 class SommerParser(CSVParser):
+    """
+    Sommer MRL-7
+    """
+
+    OPEN_KWARGS = {'newline': '', 'encoding': 'utf-8-sig'}
+
+    def _open(self):
+        if self.size == 0:
+            raise EmptyError()
+
+        # 1st verify the file is not trunctated (it may still be truncated
+        # right after the end of a row, that we cannot know)
+        # This method works for text files.
+        f = self.file
+        f.seek(self.size - 2, os.SEEK_SET)
+        if f.read(2) != '\r\n':
+            raise TruncatedError()
+
+        f.seek(0) # back to the beginning
 
     @property
     def metadata(self):
@@ -16,17 +37,28 @@ class SommerParser(CSVParser):
         self.reader = csv.reader(self.file, delimiter=';')
 
         line = self.reader.__next__()
+        assert line[0] == 'SommerXF'
+
+        # Header signature
         line = self.reader.__next__()
         assert line[0] == 'HSG'
+
+        # Station ID
         line = self.reader.__next__()
         assert line[0] == 'SID'
+        #station_id = line[1]
+        #station_name = line[2]
+
+        # Channel position
         line = self.reader.__next__()
         assert line[0] == 'CP' and line[1] == ''
 
+        # Channel name
         line = self.reader.__next__()
         assert line[0] == 'CL' and line[1] == ''
         self.fields = line[1:]
 
+        # Channel unit
         line = self.reader.__next__()
         assert line[0] == 'CU' and line[1] == ''
         self.units = line[1:]
