@@ -18,7 +18,6 @@ class Command(ImportCommand):
 
     EXTENSION = '.dat'
     PARSER = CR6Parser
-    SAFETY_TIME = 5 * 60 # 5 minutes
 
     def _handle_file(self, filepath, metadata, fields, rows):
         dirpath, filename = os.path.split(filepath)

@@ -51,12 +51,14 @@ class ImportCommand(BaseCommand):
     # Variables to be overriden by subclasses
     EXTENSION = None
     PARSER = None
-    SAFETY_TIME = 5 * 60 # in seconds, default is 5 minutes
-
 
     def add_arguments(self, parser):
         parser.add_argument('paths', nargs='+',
-                            help='Path to file or directory')
+            help='Path to file or directory',
+        )
+        parser.add_argument('--skip', default=5,
+            help='Skip files older than the given minutes (default 5)',
+        )
 
     def archive(self, filename):
         data = open(filename, 'rb').read()
@@ -91,7 +93,7 @@ class ImportCommand(BaseCommand):
         self._handle_file(filepath, metadata, fields, rows)
 
     def handle(self, *args, **kw):
-        self.upto = time.time() - self.SAFETY_TIME
+        self.upto = time.time() - (kw['skip'] * 60)
 
         for path in kw['paths']:
             # File
