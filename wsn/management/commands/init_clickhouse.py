@@ -48,7 +48,7 @@ class Command(BaseCommand):
                 return None, [], []
             except Exception:
                 self.stderr.write(f"{filepath} ERROR")
-                traceback.print_exc()
+                traceback.print_exc(file=self.stderr)
                 return None, [], []
 
         return metadata, fields, rows

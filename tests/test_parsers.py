@@ -1,8 +1,11 @@
+# Standard Library
 from datetime import datetime, timezone
 from zipfile import BadZipFile
 
+# Requirements
 import pytest
 
+# Project
 from wsn.parsers.base import EmptyError, TruncatedError
 from wsn.parsers.cr6 import CR6Parser
 from wsn.parsers.eddypro import EddyproParser

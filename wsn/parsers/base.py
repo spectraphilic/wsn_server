@@ -2,8 +2,8 @@
 import logging
 import os
 
-# Project
-from wsn.utils import cached_property
+# Django
+from django.utils.functional import cached_property
 
 
 logger = logging.getLogger(__name__)

@@ -7,8 +7,10 @@ import os
 import sys
 from zipfile import ZipFile
 
+# Django
+from django.utils.functional import cached_property
+
 # Project
-from wsn.utils import cached_property
 from .base import BaseParser
 
 
