@@ -30,11 +30,11 @@ class UploadEddyproView(APIView):
         filename = data.name
         data = data.read()
 
-        parser = EddyproParser()
-        metadata, fields, rows = parser.parse(
+        parser = EddyproParser(
             io.StringIO(data.decode('utf-8')),
             metadata=metadata,
         )
+        metadata, fields, rows = parser.parse()
 
         # Import to database
         metadata = upload2pg(None, metadata, fields, rows)
