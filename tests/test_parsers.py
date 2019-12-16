@@ -127,7 +127,7 @@ def test_sommer():
     assert len(rows) == 30
 
     fields = set(fields)
-    fields.remove('')
+    fields.remove('TIMESTAMP')
     for time, data in rows:
         assert type(time) is datetime and time.tzinfo == timezone.utc
         assert type(data) is dict

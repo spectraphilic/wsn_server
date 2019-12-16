@@ -1,6 +1,7 @@
 # Standard Library
 import logging
 import os
+from pathlib import Path
 
 # Django
 from django.utils.functional import cached_property
@@ -29,6 +30,9 @@ class BaseParser:
     ):
 
         if type(file) is str:
+            file = Path(file)
+
+        if isinstance(file, Path):
             assert filepath is None
             filepath = file
             self.file = open(filepath, **self.OPEN_KWARGS)
@@ -49,12 +53,12 @@ class BaseParser:
 
     @cached_property
     def filepath(self):
-        return self.file.name
+        return Path(self.file.name)
 
     @cached_property
     def stat(self):
         if self.filepath is not None:
-            return os.stat(self.filepath)
+            return self.filepath.stat()
 
         return None
 

@@ -1,6 +1,7 @@
 # Standard Library
 import csv
 import datetime
+import math
 import os
 
 # Project
@@ -56,7 +57,7 @@ class SommerParser(CSVParser):
         # Channel name
         line = self.reader.__next__()
         assert line[0] == 'CL' and line[1] == ''
-        self.fields = line[1:]
+        self.fields = ['TIMESTAMP'] + line[2:]
 
         # Channel unit
         line = self.reader.__next__()
@@ -74,6 +75,9 @@ class SommerParser(CSVParser):
             raise ValueError(f'Unexpected row "{first}"')
 
     def _parse_value(self, name, unit, value):
+        if value == '':
+            return math.nan
+
         for t in int, float:
             try:
                 return t(value)
@@ -83,7 +87,7 @@ class SommerParser(CSVParser):
         return value
 
     def _parse_time(self, data):
-        value = data.pop('') # 2019-12-11 11:32:00
+        value = data.pop('TIMESTAMP') # 2019-12-11 11:32:00
         time = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
         time = time.replace(tzinfo=datetime.timezone.utc)
         return time, data

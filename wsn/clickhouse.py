@@ -63,7 +63,11 @@ class ClickHouse:
         rows = rows2
 
         # Guess the table name
-        table = f"{name}_{metadata['table_name']}"
+        table_name = metadata.get('table_name')
+        if table_name:
+            table = f"{name}_{table_name}"
+        else:
+            table = str(name)
 
         # Create the table if it does not exist
         # The Replacing engine allows to avoid duplicates. Deduplication is
@@ -102,6 +106,8 @@ class ClickHouse:
             columns = '*'
         else:
             assert type(columns) is list
+            columns = [f'"{x[0]}" AS {x[1]}' if type(x) is tuple else f'"{x}"'
+                       for x in columns]
             columns = ', '.join(columns)
 
         query = [f'SELECT {columns} FROM {table}']

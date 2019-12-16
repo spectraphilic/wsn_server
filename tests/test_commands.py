@@ -25,9 +25,8 @@ def clickhouse():
         user=settings.CLICKHOUSE_USER,
         password=settings.CLICKHOUSE_PASSWORD,
     )
-    client.execute(f'CREATE DATABASE {settings.CLICKHOUSE_NAME}')
-    yield
     client.execute(f'DROP DATABASE IF EXISTS {settings.CLICKHOUSE_NAME}')
+    client.execute(f'CREATE DATABASE {settings.CLICKHOUSE_NAME}')
     client.disconnect()
 
 
@@ -37,7 +36,7 @@ def test_import_eton2(api, db, datadir):
 
     # Test skipping files
     skip = int(time.time() - datetime.datetime(2018, 1, 1).timestamp()) // 60
-    assert call_command('import_cr6', path, skip=skip) == 0
+    assert call_command('import_file', path, skip=skip) == 0
     # Verify no data has been imported
     response = api.query_pg()
     assert response.status_code == 200
@@ -45,7 +44,7 @@ def test_import_eton2(api, db, datadir):
     assert len(json['rows']) == 0
 
     # Test importing data
-    assert call_command('import_cr6', path, skip=0) == 0
+    assert call_command('import_file', path, skip=0) == 0
     # Verify the data has been imported
     response = api.query_pg()
     assert response.status_code == 200
@@ -65,15 +64,42 @@ def test_import_finseflux(api, clickhouse, datadir):
 
     # Test skipping files
     skip = int(time.time() - datetime.datetime(2018, 1, 1).timestamp()) // 60
-    assert call_command('import_cr6', path, skip=skip) == 0
+    assert call_command('import_file', path, skip=skip) == 0
 
     # Test importing data
-    assert call_command('import_cr6', path, skip=0) == 0
+    assert call_command('import_file', path, skip=0) == 0
     # Verify the data has been imported
     response = api.query_ch(table)
     assert response.status_code == 200
     json = response.json()
     assert len(json['rows']) == 288
+
+    # Verify the files have been archived
+    for path in files:
+        assert not path.exists()
+        assert (
+            Path(f'{path}.xz').exists() or
+            Path(f'{path}.empty').exists() or
+            Path(f'{path}.truncated').exists()
+        )
+
+
+def test_import_sommer(api, clickhouse, datadir):
+    path = datadir / 'sommer'
+    table = 'finse_sommer'
+    files = list(path.iterdir())
+
+    # Test skipping files
+    skip = int(time.time() - datetime.datetime(2018, 1, 1).timestamp()) // 60
+    assert call_command('import_file', path, name=table, skip=skip) == 0
+
+    # Test importing data
+    assert call_command('import_file', path, name=table, skip=0) == 0
+    # Verify the data has been imported
+    response = api.query_ch(table)
+    assert response.status_code == 200
+    json = response.json()
+    assert len(json['rows']) == 30
 
     # Verify the files have been archived
     for path in files:
