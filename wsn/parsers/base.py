@@ -44,9 +44,9 @@ class BaseParser:
         if filepath is not None:
             self.filepath = filepath
 
-        if metadata is not None:
-            assert type(metadata) is dict
-            self.metadata = metadata
+        metadata = metadata or {}
+        assert type(metadata) is dict
+        self.metadata = metadata
 
         if stat is not None:
             self.stat = stat

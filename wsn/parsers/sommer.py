@@ -30,10 +30,6 @@ class SommerParser(CSVParser):
 
         f.seek(0) # back to the beginning
 
-    @property
-    def metadata(self):
-        return {}
-
     def _parse_header(self):
         self.reader = csv.reader(self.file, delimiter=';')
 
