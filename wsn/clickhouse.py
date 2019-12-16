@@ -106,8 +106,6 @@ class ClickHouse:
             columns = '*'
         else:
             assert type(columns) is list
-            columns = [f'"{x[0]}" AS {x[1]}' if type(x) is tuple else f'"{x}"'
-                       for x in columns]
             columns = ', '.join(columns)
 
         query = [f'SELECT {columns} FROM {table}']

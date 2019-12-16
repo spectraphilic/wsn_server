@@ -189,7 +189,7 @@ class QueryClickHouse(views.APIView):
                 columns = [name for name, in columns]
 
             # Remove TIMESTAMP
-            columns = [name for name in columns if name != 'TIMESTAMP']
+            columns = [f'"{name}"' for name in columns if name != 'TIMESTAMP']
 
             # Defaults
             group_by = None
@@ -208,7 +208,7 @@ class QueryClickHouse(views.APIView):
                     columns = key + [('TIMESTAMP', 'time')] + columns
                     limit_by = (1, 'key')
             else:
-                columns = [('TIMESTAMP', 'time')] + columns
+                columns = ['TIMESTAMP AS time'] + columns
 
             # Get data
             rows, columns = clickhouse.select(
