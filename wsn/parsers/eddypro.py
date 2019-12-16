@@ -10,10 +10,6 @@ from wsn.parsers.base import CSVParser
 
 class EddyproParser(CSVParser):
 
-    @property
-    def metadata(self):
-        return {}
-
     def _parse_header(self):
         self.reader = csv.reader(self.file)
 
