@@ -121,7 +121,11 @@ class QueryPostgreSQL(views.APIView):
 
                 queryset = queryset.annotate(time=F('key'), **annotations)
             else:
-                queryset = queryset.order_by('key', 'time').distinct('key').values()
+                queryset = queryset.order_by('key', 'time').distinct('key')
+                queryset = queryset.annotate(**{
+                    name: KeyTextTransform(name, 'data')
+                    for name in json_fields})
+                queryset = queryset.values()
 
         tags = params.getlist('tags')
         return queryset.select_related('metadata') if tags else queryset
