@@ -205,7 +205,7 @@ class QueryClickHouse(views.APIView):
                     group_by = 'time'
                 else:
                     key = [f'intDiv(TIMESTAMP, {interval}) * {interval} AS key']
-                    columns = key + [('TIMESTAMP', 'time')] + columns
+                    columns = key + ['TIMESTAMP AS time'] + columns
                     limit_by = (1, 'key')
             else:
                 columns = ['TIMESTAMP AS time'] + columns
