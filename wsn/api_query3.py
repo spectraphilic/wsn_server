@@ -1,7 +1,10 @@
 # Django
 from django.conf import settings
+from django.contrib.postgres.fields.jsonb import KeyTextTransform
+from django.db.models import FloatField
 from django.db.models import Q, F
 from django.db.models import Avg, Count, Max, Min, StdDev, Sum, Variance
+from django.db.models.functions import Cast
 
 # Rest framework
 from rest_framework import permissions, views
@@ -12,16 +15,38 @@ from .clickhouse import ClickHouse
 from .models import Frame, Metadata
 
 
+def filter_or(queryset, *args, **kw):
+    """
+    Like queryset.filter(*args, **kw) but it filters using OR instead of AND.
+    """
+    args = list(args)
+    for key, value in kw.items():
+        args.append(Q(**{key: value}))
+
+    if not args:
+        return queryset
+
+    query = args[0]
+    for q in args[1:]:
+        query |= q
+
+    return queryset.filter(query)
+
+
 class QueryPostgreSQL(views.APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
         params = self.request.query_params
 
-        # Metadatas
-        # TODO Optimize using data__contains when key does not end by __gte/__lte
-        # because __contains will trigger usage of the GIN index.
-        kw = {}
+        # Fields. Split between first class fields defined in the schema, and
+        # those stored in the JSONB datatype (data->'xxx').
+        fields = set(params.getlist('fields'))
+        data_fields = set(Frame.get_data_fields())
+        row_fields = list(fields & data_fields) # Fields defined in the schema
+        json_fields = list(fields - data_fields) # Fields in the JSON datatype (data->'xxx')
+
+        # Get list of metadatas, and filter frames by them.
         exclude = {
             'format',                   # From Django Rest framework
             'fields', 'tags',           # Columns
@@ -29,6 +54,7 @@ class QueryPostgreSQL(views.APIView):
             'time__gte', 'time__lte',   # Time range
             'interval', 'interval_agg', # Aggregated results
         }
+        kw = {}
         for key, value in params.items():
             if key not in exclude:
                 if key.endswith(':int'):
@@ -37,33 +63,30 @@ class QueryPostgreSQL(views.APIView):
 
                 kw[key] = value
 
-        metadatas = Metadata.filter(**kw)
-        metadatas = list(metadatas.values_list('id', flat=True))
+        metadatas = Metadata.filter(**kw).values_list('id', flat=True)
+        queryset = Frame.objects.filter(metadata__in=list(metadatas))
 
-        args, kw = [], {}
-
-        # Frames
-        queryset = Frame.objects.filter(metadata__in=metadatas)
+        # Filter by time range
+        kw = {}
         for key in 'time__gte', 'time__lte':
             value = params.get(key)
             if value is not None:
                 kw[key] = int(float(value))
+        if kw:
+            queryset = queryset.filter(**kw)
 
-        # Fields
-        fields = params.getlist('fields')
-        if fields:
-            if len(fields) == 1:
-                q = Q(data__has_key=fields[0])
-            else:
-                q = Q(data__has_any_keys=fields)
+        # Filter the frames that have the fields we're looking for
+        if len(json_fields) > 1:
+            args = [Q(data__has_any_keys=json_fields)]
+        elif len(json_fields) == 1:
+            args = [Q(data__has_key=json_fields[0])]
+        else:
+            args = []
 
-            # Fields defined in the schema
-            for field in set(fields) & set(Frame.get_data_fields()):
-                q |= Q(**{'%s__isnull' % field: False})
+        kw = {f'{field}__isnull': False for field in row_fields}
+        queryset = filter_or(queryset, *args, **kw)
 
-            args.append(q)
-
-        queryset = queryset.filter(*args, **kw)
+        # Order by time
         queryset = queryset.order_by('time')
 
         # Interval
@@ -87,7 +110,15 @@ class QueryPostgreSQL(views.APIView):
                     'sum': Sum,
                     'variance': Variance,
                 }[interval_agg]
-                annotations = {x: agg(x) for x in fields}
+
+                annotations = {}
+                for name in row_fields:
+                    annotations[name] = agg(name)
+                for name in json_fields:
+                    field = KeyTextTransform(name, 'data') # Access: data->>'name'
+                    field = Cast(field, FloatField()) # Cast
+                    annotations[name] = agg(field)
+
                 queryset = queryset.annotate(time=F('key'), **annotations)
             else:
                 queryset = queryset.order_by('key', 'time').distinct('key').values()
