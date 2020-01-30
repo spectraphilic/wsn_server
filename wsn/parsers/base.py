@@ -105,7 +105,10 @@ class CSVParser(BaseParser):
         data = {}
         for i, name in enumerate(self.fields):
             unit = self.units[i]
-            value = row[i]
+            try:
+                value = row[i]
+            except IndexError:
+                value = ''
             try:
                 value = self._parse_value(name, unit, value)
             except Exception:
