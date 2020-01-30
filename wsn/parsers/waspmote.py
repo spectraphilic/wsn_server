@@ -12,6 +12,13 @@ import struct
 from Crypto.Cipher import AES
 
 
+class ParseError(ValueError):
+    pass
+
+class FrameNotFound(ParseError):
+    pass
+
+
 def post_noop(name, value):
     return value
 
@@ -177,25 +184,26 @@ def parse_frame(src, cipher_key=None):
     Parse the frame starting at the given byte string. We consider that the
     frame start delimeter has already been read.
     """
-    line = src
 
     if cipher_key is not None and type(cipher_key) is not bytes:
         raise TypeError('cipher_key must be None or bytes, got %s' % type(cipher_key))
 
-    # Start delimiter
-    if not line.startswith(b'<=>'):
-        print('Warning: expected frame not found')
-        return None, src
+    # Skip garbage (search start delimiter)
+    n = src.find(b'<=>')
+    if n == -1:
+        raise FrameNotFound()
+    elif n > 0:
+        src = src[n:]
 
-    line = line[3:]
+    line = src[3:] # Skip Start delimiter
 
     # Frame type
     frame_type = struct.unpack_from("B", line)[0]
     line = line[1:]
 
     if frame_type & 128: # b7
-        print("Warning: text frames not supported (%d)" % frame_type)
-        return None, src
+        # TODO Discard text frames
+        raise ParseError("Text frames not supported (%d)" % frame_type)
 
     if frame_type == 96:
         encrypted = True
@@ -204,8 +212,7 @@ def parse_frame(src, cipher_key=None):
         encrypted = True
         v15 = False
     elif frame_type > 11:
-        print("Warning: %d frame type not supported" % frame_type)
-        return None, src
+        raise ParseError("Frame type %d not supported" % frame_type)
     else:
         encrypted = False
         # 0 -  5 : v12
@@ -243,18 +250,15 @@ def parse_frame(src, cipher_key=None):
 
         cipher = get_cipher(cipher_key)
         if cipher is None:
-            print('Warning: encrypted frames not supported because no key provided')
-            return None, src
+            raise ParseError('Encrypted frames not supported because no key provided')
 
         line = cipher.decrypt(line)
         frame, _ = parse_frame(line) # _ may contain zeroes
         if frame['serial'] != serial_id:
-            print("Warning: serial numbers do not match %d != %d", serial_id, frame['serial'])
-            return None, src
+            raise ParseError("Serial numbers do not match %d != %d", serial_id, frame['serial'])
 
         if not v15 and frame['name'] != name:
-            print("Warning: name do not match %s != %s", name, frame['name'])
-            return None, src
+            raise ParseError("Names do not match %s != %s", name, frame['name'])
 
         return frame, rest
 
@@ -274,8 +278,7 @@ def parse_frame(src, cipher_key=None):
         line = line[1:]
         sensor = SENSORS.get(sensor_id, ())
         if not sensor:
-            print("Warning: %d sensor type not supported" % sensor_id)
-            return None, src
+            raise ParseError("Sensor type %d not supported" % sensor_id)
 
         form, names, post = unpack(3, sensor)
         if post is None:

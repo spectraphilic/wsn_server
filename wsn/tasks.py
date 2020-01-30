@@ -146,8 +146,9 @@ def in_meshlium(envelop):
         # Parse frame
         data = base64.b16decode(data)
         while data:
-            frame, data = waspmote.parse_frame(data)
-            if frame is None:
+            try:
+                frame, data = waspmote.parse_frame(data)
+            except waspmote.FrameNotFound:
                 break
 
             # Add received time and remote address
@@ -212,18 +213,13 @@ def in_iridium(envelop):
     transmit_time = datetime.datetime.strptime(transmit_time, '%y-%m-%d %H:%M:%S')
     transmit_time = int(transmit_time.timestamp())
 
-    # Ignore test messages
-    # TODO move test to waspmote.is_frame
-    if not data.startswith(b'<=>'):
-        logger.info(f'Ignore not-a-frame message "{data.decode()}')
-        return
-
     # Parse data
     n = 0
     while data:
-        frame, data = waspmote.parse_frame(data)
-        if frame is None:
-            raise ValueError(f'error parsing frame: {data}')
+        try:
+            frame, data = waspmote.parse_frame(data)
+        except waspmote.FrameNotFound:
+            break
 
         validated_data = waspmote.data_to_json(frame)
 
@@ -245,4 +241,5 @@ def in_iridium(envelop):
         frame_to_database(validated_data)
         n += 1
 
-    logger.info(f'Imported {n} frames')
+    if n > 0:
+        logger.info(f'Imported {n} frames')
