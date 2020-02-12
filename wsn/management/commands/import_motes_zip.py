@@ -81,20 +81,26 @@ class Command(BaseCommand):
         for serie in series.values():
             tags = serie['tags']
             frames = serie['frames']
+            n = len(frames)
 
             # Sort by time
             #frames.sort(key=lambda x: x['time'])
-            first = frames[0]['time']
-            last = frames[-1]['time']
-            assert first < last
 
-            first = datetime.utcfromtimestamp(first)
-            last = datetime.utcfromtimestamp(last)
-
-            # Inserting
+            # Print
             self.stdout.write('')
             self.stdout.write('serial={serial} name={name}'.format(**tags))
-            self.stdout.write('{} frames from {} to {}'.format(len(frames), first, last))
+            first = frames[0]['time']
+            if n > 1:
+                last = frames[-1]['time']
+                assert first < last
+                first = datetime.utcfromtimestamp(first)
+                last = datetime.utcfromtimestamp(last)
+                self.stdout.write('{} frames from {} to {}'.format(n, first, last))
+            else:
+                first = datetime.utcfromtimestamp(first)
+                self.stdout.write('{} frame at {}'.format(n, first))
+
+            # Inserting
             yes = input('Insert into database? Yes/[No]: ')
             if yes.lower() == 'yes':
                 t0 = time()
