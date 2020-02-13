@@ -76,16 +76,19 @@ class SommerParser(CSVParser):
             return None
 
     def _parse_value(self, name, unit, value):
+        if name == 'TIMESTAMP':
+            return value
+
         if value == '':
             return math.nan
 
-        for t in int, float:
-            try:
-                return t(value)
-            except ValueError:
-                pass
+        try:
+            return int(value)
+        except ValueError:
+            pass
 
-        return value
+        value = value.replace(',', '.')
+        return float(value)
 
     def _parse_time(self, data):
         value = data.pop('TIMESTAMP') # 2019-12-11 11:32:00
