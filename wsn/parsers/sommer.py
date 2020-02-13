@@ -1,6 +1,7 @@
 # Standard Library
 import csv
 import datetime
+import logging
 import math
 import os
 
@@ -8,6 +9,8 @@ import os
 from wsn.parsers.base import CSVParser
 from wsn.parsers.base import EmptyError, TruncatedError
 
+
+logger = logging.getLogger(__name__)
 
 class SommerParser(CSVParser):
     """
@@ -63,12 +66,14 @@ class SommerParser(CSVParser):
     def _parse_row(self, row):
         first = row[0]
         if first == 'D':
-            data = super()._parse_row(row[1:])
-            return data
+            return super()._parse_row(row[1:])
+        elif first == 'A':
+            raise NotImplementedError('Asynchronous (A) data lines not yet supported')
         elif first == 'SIG':
-            return None
+            return None # XXX Nothing else shuld be parsed from here
         else:
-            raise ValueError(f'Unexpected row "{first}"')
+            logger.warning(f'Unexpected data line "{first}"')
+            return None
 
     def _parse_value(self, name, unit, value):
         if value == '':
