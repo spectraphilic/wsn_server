@@ -72,6 +72,11 @@ class Command(BaseCommand):
             self.stderr.write(f'{filepath} WARNING file is truncated')
             os.rename(filepath, f'{filepath}.truncated')
             return
+        except UnicodeDecodeError:
+            # Sometimes Sommer files have garbage
+            self.stderr.write(f'{filepath} WARNING file is not UTF-8')
+            os.rename(filepath, f'{filepath}.badutf8')
+            return
         except Exception:
             self.stderr.write(f"{filepath} ERROR")
             traceback.print_exc(file=self.stderr)
