@@ -135,6 +135,7 @@ SENSORS = {
                      'ds2_meridional', 'ds2_zonal', 'ds2_gust'], post_ds2),
     218: ('jjjjjj', ['wind_speed', 'wind_dir',           # ATMOS (wind)
                      'wind_gust', 'wind_temp', 'wind_x', 'wind_y'], post_atmos),
+    219: ('ff', ['sht_tc', 'sht_hum']),                  # SHT31
 }
 
 
