@@ -14,7 +14,7 @@
     django_with_monit : false
     django_with_sudo  : false
 
-    prefix            : "/home/travis/virtualenv/python3.7.5"
+    prefix            : "/home/travis/virtualenv/python3.7.6"
     virtualenv        : false
 
     django_database   :
