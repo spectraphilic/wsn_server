@@ -7,7 +7,7 @@ from django.db.models import Avg, Count, Max, Min, StdDev, Sum, Variance
 from django.db.models.functions import Cast
 
 # Rest framework
-from rest_framework import permissions, views
+from rest_framework import permissions, serializers, views
 from rest_framework.response import Response
 
 # Project
@@ -193,7 +193,9 @@ class QueryClickHouse(views.APIView):
 
     def get(self, request, format=None):
         params = self.request.query_params
-        table = params['table']
+        table = params.get('table')
+        if table is None:
+            raise serializers.ValidationError(detail="Missing 'table' query parameter")
 
         limit = params.get('limit')
         columns = params.getlist('fields')
