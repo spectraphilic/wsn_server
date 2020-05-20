@@ -38,7 +38,15 @@ class Command(BaseCommand):
                     match = expr.match(name)
                     if match:
                         date = '20' + match.group(1)
-                        date = datetime.strptime(date, '%Y%m%d').date()
+                        try:
+                            date = datetime.strptime(date, '%Y%m%d').date()
+                        except ValueError:
+                            # Skip the 000000.TXT file, anyway the data it
+                            # contains will have a bad timestamp, since this
+                            # happens when there's an error in the I2C bus.
+                            skipped.append(name)
+                            continue
+
                         if date < WSN_MIN_DATE.date():
                             skipped.append(name)
                             continue
