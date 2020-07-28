@@ -37,6 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # This adds the svelte_js template tag
+    'boot',
 ]
 
 MIDDLEWARE = [

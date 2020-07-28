@@ -1,10 +1,12 @@
-# Import from Django
+# Django
 from django.conf.urls import url
+from django.urls import path
 
 # Import from boot
-from .views import SendfileView
+from . import views
 
 
 urlpatterns = [
-    url(r'^sendfile/(?P<path>.*)$', SendfileView.as_view(), name='sendfile'),
+    path('sendfile/<path>', views.SendfileView.as_view(), name='sendfile'),
+    path('svelte/hello/<name>', views.SvelteHelloView.as_view()),
 ]
