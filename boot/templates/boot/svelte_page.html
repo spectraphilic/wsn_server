@@ -10,7 +10,9 @@
   <script src="{% svelte_js %}"></script>
   {{ view.props|json_script:"app-data" }}
   <script>
-    app('{{view.page_app}}', JSON.parse(document.getElementById('app-data').textContent));
+    const props = JSON.parse(document.getElementById('app-data').textContent);
+    const target = document.querySelector('#anchor');
+    new app.{{view.page_app}}({props, target});
   </script>
 </body>
 
