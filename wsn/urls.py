@@ -4,15 +4,12 @@ from .api_create import CreateView
 from .api_input import IridiumView, MeshliumView
 from .api_query3 import QueryPostgreSQL, QueryClickHouse
 from .api_upload import UploadEddyproView
-from . import views
 
 
 #from .utils import profile
 #query_profile = profile('/tmp/query.prof')
 
 urlpatterns = [
-    # Bokeh
-    path('explore/', views.explore),
     # API import data
     path('api/create/', CreateView.as_view()),
     path('api/upload/eddypro/', UploadEddyproView.as_view()),
