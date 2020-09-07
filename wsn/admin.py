@@ -1,12 +1,15 @@
+# Standard Library
 import datetime
 
+# Django
 from django.contrib import admin
 from django.core.paginator import Paginator
 from django.db import connection, transaction
-#from django.urls import reverse
 from django.utils.functional import cached_property
-#from django.utils.safestring import mark_safe
 
+from rangefilter.filter import DateRangeFilter
+
+# Project
 from .models import Frame, Metadata
 
 
@@ -52,9 +55,18 @@ class EstimatedCountPaginator(Paginator):
                 return 0
             return int(result[0])
 
+
 #
-# Metadata
+# Filters
 #
+
+class TimeFilter(DateRangeFilter):
+
+    def _make_query_filter(self, request, validated_data):
+        params = super()._make_query_filter(request, validated_data)
+        params = {k: v.timestamp() for k, v in params.items()} # To timestamp
+        return params
+
 
 class NameFilter(admin.SimpleListFilter):
     title = 'name'
@@ -102,24 +114,18 @@ class SerialFilter(NameFilter):
         return '%016X' % value
 
 
-@admin.register(Metadata)
-class MetadataAdmin(admin.ModelAdmin):
-    list_display = ['name', 'tags']
-    readonly_fields = ['name', 'tags']
-    list_filter = ['name', SerialFilter]
-    search_fields = ['name']
-
-
-#
-# Frames
-#
 class FrameSerialFilter(SerialFilter):
     prefix = 'metadata__'
+
 
 class FrameAddressFilter(FrameSerialFilter):
     title = 'address'
     parameter_name = 'source_addr_long'
 
+
+#
+# Admin
+#
 
 def epoch_to_str_plus(time):
     if time is None:
@@ -130,10 +136,23 @@ def epoch_to_str_plus(time):
     return f'{dt} ({time})'
 
 
+@admin.register(Metadata)
+class MetadataAdmin(admin.ModelAdmin):
+    list_display = ['name', 'tags']
+    readonly_fields = ['name', 'tags']
+    list_filter = ['name', SerialFilter]
+    search_fields = ['name']
+
+
 @admin.register(Frame)
 class FrameAdmin(admin.ModelAdmin):
     list_display = ['time_str', 'frame', 'metadata', 'data']
-    list_filter = ['metadata__name', FrameSerialFilter, FrameAddressFilter]
+    list_filter = [
+        ('time', TimeFilter),
+        'metadata__name',
+        FrameSerialFilter,
+        FrameAddressFilter
+    ]
     show_full_result_count = False
     paginator = EstimatedCountPaginator
 

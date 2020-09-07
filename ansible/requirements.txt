@@ -10,6 +10,7 @@ psycopg2-binary==2.8.4
 
 # Custom
 bokeh==1.1.0
+django-admin-rangefilter==0.6.2
 djangorestframework==3.10.3
 pycryptodome==3.9.4
 tabulate==0.8.6
