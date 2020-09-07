@@ -3,7 +3,7 @@ Rename serial to device_serial.
 """
 
 from django.core.management.base import BaseCommand
-from wsn.models import Frame, Metadata
+from wsn.models import Metadata
 
 
 class Command(BaseCommand):
@@ -25,4 +25,3 @@ class Command(BaseCommand):
                     metadata.save()
                     print(f'{metadata}')
                     print()
-

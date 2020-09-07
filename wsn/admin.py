@@ -153,6 +153,8 @@ class FrameAdmin(admin.ModelAdmin):
         FrameSerialFilter,
         FrameAddressFilter
     ]
+
+    # Speed up
     show_full_result_count = False
     paginator = EstimatedCountPaginator
 
