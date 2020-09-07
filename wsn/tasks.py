@@ -227,7 +227,7 @@ def in_iridium(envelop):
         tags = validated_data['tags']
         tags['device_type'] = device_type
         tags['imei'] = imei
-        tags['serial'] = serial
+        tags['device_serial'] = serial # Rename to not overwrite mote's serial number
 
         # Add data
         frame = validated_data['frames'][0]['data']
