@@ -1,27 +1,27 @@
-django-sendfile2==0.5.1
-Django==2.2.10
+django-sendfile2==0.6.0
+Django==2.2.16
 ipython==7.12.0
 Pillow==7.0.0
-pip==20.0.2
+pip==20.2.2
 
 {% if django_database.engine == 'postgres' %}
-psycopg2-binary==2.8.4
+psycopg2-binary==2.8.5
 {% endif %}
 
 # Custom
 bokeh==1.1.0
 django-admin-rangefilter==0.6.2
 djangorestframework==3.10.3
-pycryptodome==3.9.4
-tabulate==0.8.6
-tqdm==4.40.2
+pycryptodome==3.9.8
+tabulate==0.8.7
+tqdm==4.48.2
 
 # Celery
-celery==4.3.0
+celery==4.4.7
 celery_once==3.0.1
 
 # ClickHouse
 clickhouse-driver[lz4]==0.1.2
 
 # Tests
-pytest-django==3.7.0
+pytest-django==3.9.0
