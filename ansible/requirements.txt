@@ -17,7 +17,7 @@ tabulate==0.8.7
 tqdm==4.48.2
 
 # Celery
-celery==4.4.7
+celery==4.3.0
 celery_once==3.0.1
 
 # ClickHouse
