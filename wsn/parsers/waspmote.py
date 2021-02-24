@@ -85,6 +85,7 @@ def post_atmos(name, value):
 f - float
 j - int16_t
 u - uint8_t
+v - uint16_t
 w - uint32_t
 s - char*
 n - Array of int16_t (specially compressed)
@@ -135,7 +136,16 @@ SENSORS = {
                      'ds2_meridional', 'ds2_zonal', 'ds2_gust'], post_ds2),
     218: ('jjjjjj', ['wind_speed', 'wind_dir',           # ATMOS (wind)
                      'wind_gust', 'wind_temp', 'wind_x', 'wind_y'], post_atmos),
-    219: ('ff', ['sht_tc', 'sht_hum']),                  # SHT31
+    219: ('ff', ['sht_tc', 'sht_hum']),                    # SHT31
+    220: ('vvvvvvvvvv', ['channel_f1', 'channel_f2', 'channel_f3',
+                         'channel_f4', 'channel_f5', 'channel_f6',
+                         'channel_f7', 'channel_f8', 'channel_clear',
+                         'channel_nir']),                  # AS7341
+    221: ('ffffffffff', ['icm_temp', 'icm_acc_x', 'icm_acc_y', 'icm_acc_z',
+                         'icm_mag_x', 'icm_mag_y', 'icm_mag_z', 'icm_gyro_x',
+                         'icm_gyro_y', 'icm_gyro_z']),     # ICM20X
+    222: ('vvv', ['vcnl_prox', 'vcnl_lux', 'vcnl_white']), # VCNL4040
+    223: ('ffv', ['veml_lux', 'veml_white', 'veml_als']),  # VEML7700
 }
 
 
