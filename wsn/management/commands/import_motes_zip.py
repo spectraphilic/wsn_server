@@ -22,7 +22,7 @@ class Command(BaseCommand):
         add_argument('paths', nargs='+', help='Path to file or directory')
 
     def handle(self, *args, **kw):
-        expr = re.compile(r'.*DATA/([0-9]{6})\.TXT$')
+        expr = re.compile(r'^.*\b([0-9]{6})\.TXT$')
 
         series = {}
         state = {}
