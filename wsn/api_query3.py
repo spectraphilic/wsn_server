@@ -48,11 +48,12 @@ class QueryPostgreSQL(views.APIView):
 
         # Get list of metadatas, and filter frames by them.
         exclude = {
-            'format',                   # From Django Rest framework
-            'fields', 'tags',           # Columns
+            'format',                           # From Django Rest framework
+            'fields', 'tags',                   # Columns
             'limit',
-            'time__gte', 'time__lte',   # Time range
-            'interval', 'interval_agg', # Aggregated results
+            'time__gte', 'time__lte',           # Time range (sampled)
+            'received__gte', 'received__lte',   # Time range (received, by gateway)
+            'interval', 'interval_agg',         # Aggregated results
         }
         kw = {}
         for key, value in params.items():
@@ -68,7 +69,7 @@ class QueryPostgreSQL(views.APIView):
 
         # Filter by time range
         kw = {}
-        for key in 'time__gte', 'time__lte':
+        for key in 'time__gte', 'time__lte', 'received__gte', 'received__lte':
             value = params.get(key)
             if value is not None:
                 kw[key] = int(float(value))
