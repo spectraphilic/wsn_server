@@ -23,6 +23,10 @@
     django_hsts       : 0
     certbot_email     : ""
 
+    django_cache      :
+      backend         : "memcached"
+      location        : "unix:/run/memcached/memcached.sock"
+
     django_database   :
       engine          : "postgres"
       name            : ""
