@@ -41,10 +41,14 @@ class CR6Parser(CSVParser):
         self.reader.__next__() # abbreviations
 
         env = self.env
+        try:
+            serial = int(env[3])
+        except ValueError:
+            serial = env[3]
         self.metadata = {
             'name': env[1],                # mobileflux1
             'model': env[2],               # CR6
-            'serial': int(env[3]),         # 744
+            'serial': serial,              # 744
             'os_version': env[4],          # CR6.Std.07
             'prog_name': env[5],           # CPU:flux_stations.CR6
             'prog_signature': int(env[6]), # 55208

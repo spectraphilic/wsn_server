@@ -111,7 +111,10 @@ class SerialFilter(NameFilter):
         if value == 0:
             return 'null'
 
-        return '%016X' % value
+        try:
+            return '%016X' % value # integer
+        except TypeError:
+            return value # string
 
 
 class FrameSerialFilter(SerialFilter):
