@@ -13,11 +13,24 @@ from wsn.models import Metadata, Frame
 ARCHIVE = os.path.join(settings.BASE_DIR, 'var', 'archive')
 
 
+# Mapping to load the metadata with a different name
+METADATA_NAMES = {
+    'CR6 Austfonna': 'UIO_Iridium_CR6',
+    'CR1000 Austfonna': 'UIO_Iridium_CR6',
+}
+
+
 def upload2pg(name, metadata, fields, rows):
     """
     The metadata may be provided externally, as some files don't include
     metadata.
     """
+    # Use a different metadata name
+    metadata_name = metadata['name']
+    metadata_name = METADATA_NAMES.get(metadata_name, metadata_name)
+    metadata['name'] = metadata_name
+
+    # Load
     metadata, created = Metadata.get_or_create(metadata)
     for t, data in rows:
         Frame.create(metadata, t, None, data, update=False)
