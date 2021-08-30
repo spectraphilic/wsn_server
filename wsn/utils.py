@@ -4,6 +4,9 @@ import os
 import pstats
 import time
 
+# Django
+from django.db.models import Func, DateField
+
 
 def profile(log_file):
     assert os.path.isabs(log_file)
@@ -27,3 +30,17 @@ def profile(log_file):
         return inner
 
     return decorator
+
+
+class GetDate(Func):
+    """
+    Returns the <date> from a unix timestamp. For example:
+
+    frames = Frame.objects.all().annotate(date=GetDate(F('time')))
+    frames.values_list('time', 'date')
+    frames.distinct('metadata__name', 'date').values('date', 'metadata__name')
+    """
+
+    function = 'TO_TIMESTAMP'
+    template = '%(function)s(%(expressions)s)::date'
+    output_field = DateField()
