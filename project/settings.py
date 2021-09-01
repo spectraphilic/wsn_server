@@ -37,11 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
+    # Requirements
     'rangefilter',
     'rest_framework',
     'rest_framework.authtoken',
-
+    # Project
+    'qc.apps.QCConfig',
     'wsn.apps.WsnConfig',
 ]
 
