@@ -1,14 +1,10 @@
 # Django
 from django.utils import timezone
-
-# Rest framework
-from rest_framework import generics
 from rest_framework import serializers
 
 # Project
 from wsn.models import Metadata, Frame
 from wsn.models import frame_to_database
-from .permissions import CreatePermission
 
 
 class DateTimeField(serializers.DateTimeField):
@@ -53,7 +49,3 @@ class MetadataSerializer(serializers.ModelSerializer):
         return {}
 
 
-class CreateView(generics.CreateAPIView):
-    queryset = Metadata.objects.all()
-    serializer_class = MetadataSerializer
-    permission_classes = [CreatePermission]

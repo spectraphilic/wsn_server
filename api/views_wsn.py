@@ -1,3 +1,8 @@
+# Standard Library
+import io
+import json
+import time
+
 # Django
 from django.conf import settings
 from django.contrib.postgres.fields.jsonb import KeyTextTransform
@@ -5,15 +10,133 @@ from django.db.models import FloatField
 from django.db.models import Q, F
 from django.db.models import Avg, Count, Max, Min, StdDev, Sum, Variance
 from django.db.models.functions import Cast
+from django.http import HttpResponse
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 
 # Rest framework
-from rest_framework import permissions, serializers, views
+from rest_framework import generics, permissions, serializers, views
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 # Project
 from wsn.clickhouse import ClickHouse
 from wsn.models import Frame, Metadata
+from wsn.parsers.eddypro import EddyproParser
+from wsn import tasks
+from wsn import upload
+from .permissions import CreatePermission
+from .serializers import MetadataSerializer
 
+
+class CreateView(generics.CreateAPIView):
+    queryset = Metadata.objects.all()
+    serializer_class = MetadataSerializer
+    permission_classes = [CreatePermission]
+
+
+#
+# 4G
+#
+
+@method_decorator(csrf_exempt, name='dispatch')
+class MeshliumView(View):
+    """
+    Create frames sent through 4G by the waspmotes.
+
+    To make it simple in the motes sketch, we use the same method as
+    implemented in the Meshlium.
+    """
+
+    def post(self, request, *args, **kwargs):
+        # Payload
+        payload = request.POST.get('frame')
+        if type(payload) is str:
+            payload = [payload]
+
+        # Envelop
+        envelop = {
+            'payload': payload,
+            'received': int(time.time()),
+        }
+        remote_addr = request.META.get('REMOTE_ADDR', '')
+        if remote_addr:
+            envelop['remote_addr'] = remote_addr
+
+        # Send tasks to workers
+        tasks.in_meshlium.delay(envelop)
+        tasks.archive.delay('meshlium', envelop)
+
+        # Ok
+        return HttpResponse(status=200)
+
+
+#
+# Iridium
+#
+
+@method_decorator(csrf_exempt, name='dispatch')
+class IridiumView(View):
+
+    def post(self, request, *args, **kwargs):
+        # Payload
+        payload = dict(request.POST)
+
+        # Envelop
+        envelop = {
+            'payload': payload,
+            'received': int(time.time()),
+        }
+        remote_addr = request.META.get('REMOTE_ADDR', '')
+        if remote_addr:
+            envelop['remote_addr'] = remote_addr
+
+        # Send tasks to workers
+        tasks.in_iridium.delay(envelop)
+        tasks.archive.delay('iridium', envelop)
+
+        # Ok
+        return HttpResponse(status=200)
+
+
+#
+# Eddypro
+#
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UploadEddyproView(APIView):
+    permission_classes = [CreatePermission]
+
+    def post(self, request, *args, **kw):
+        # Read metadata
+        metadata = json.loads(request.data['metadata'].read())
+        assert metadata.get('name')
+
+        # Read data file
+        data = request.data['data']
+        filename = data.name
+        data = data.read()
+
+        parser = EddyproParser(
+            io.StringIO(data.decode('utf-8')),
+            metadata=metadata,
+        )
+        metadata, fields, rows = parser.parse()
+
+        # Import to database
+        metadata = upload.upload2pg(None, metadata, fields, rows)
+
+        # Archive, keep a copy of the source file in the filesystem
+        upload.archive(metadata.name, filename, data)
+
+        # Ok
+        return Response(status=201)
+
+
+#
+# Query
+#
 
 def filter_or(queryset, *args, **kw):
     """

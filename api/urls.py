@@ -1,10 +1,9 @@
 from django.urls import path
 
 # Project
-from .api_create import CreateView
-from .api_input import IridiumView, MeshliumView
-from .api_query3 import QueryPostgreSQL, QueryClickHouse
-from .api_upload import UploadEddyproView
+from .views_wsn import CreateView, IridiumView, MeshliumView
+from .views_wsn import QueryPostgreSQL, QueryClickHouse
+from .views_wsn import UploadEddyproView
 
 
 #from wsn.utils import profile
