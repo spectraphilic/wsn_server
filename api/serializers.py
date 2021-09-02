@@ -47,5 +47,3 @@ class MetadataSerializer(serializers.ModelSerializer):
     # to the metadata will be returned
     def to_representation(self, instance):
         return {}
-
-

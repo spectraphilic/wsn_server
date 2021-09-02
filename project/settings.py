@@ -248,4 +248,4 @@ CELERY_ONCE = {
 }
 
 # wsn: folder where frames are archived
-DATA_DIR = os.path.join(BASE_DIR, 'var', 'data')
+DATA_DIR = BASE_DIR / 'var' / 'data'
