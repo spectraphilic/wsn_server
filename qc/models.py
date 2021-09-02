@@ -11,7 +11,7 @@ class Site(models.Model):
 
 class Node(models.Model):
 
-    name = models.CharField(max_length=80)
+    name = models.CharField(max_length=80, unique=True)
     site = models.ForeignKey(Site, models.PROTECT)
 
     def __str__(self):
