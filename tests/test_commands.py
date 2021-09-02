@@ -2,6 +2,7 @@
 import datetime
 from pathlib import Path
 import shutil
+import socket
 import time
 
 # Requirements
@@ -11,6 +12,12 @@ import pytest
 # Django
 from django.conf import settings
 from django.core.management import call_command
+
+
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+    has_clickhouse = sock.connect_ex(('', 9000)) == 0
+
+requires_clickhouse = pytest.mark.skipif(not has_clickhouse, reason='Requires ClickHouse running at port 9000')
 
 
 @pytest.fixture(scope='function')
@@ -57,6 +64,7 @@ def test_import_eton2(api, db, datadir):
         assert Path(f'{path}.xz').exists()
 
 
+@requires_clickhouse
 def test_import_finseflux(api, clickhouse, datadir):
     path = datadir / 'cr6' / 'finseflux'
     table = 'finseflux_Biomet'
@@ -84,6 +92,7 @@ def test_import_finseflux(api, clickhouse, datadir):
         )
 
 
+@requires_clickhouse
 def test_import_sommer(api, clickhouse, datadir):
     path = datadir / 'sommer'
     table = 'finse_sommer'
