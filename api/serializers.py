@@ -3,6 +3,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 # Project
+from qc.models import Node, Data
 from wsn.models import Metadata, Frame
 from wsn.models import frame_to_database
 
@@ -47,3 +48,26 @@ class MetadataSerializer(serializers.ModelSerializer):
     # to the metadata will be returned
     def to_representation(self, instance):
         return {}
+
+
+#
+# Quality control
+#
+
+class DataSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Data
+        fields = [
+            'time', 'temperature', 'temperature_qc', 'humidity', 'humidity_qc',
+            'air_pressure', 'air_pressure_qc', 'snow_depth', 'snow_depth_qc']
+        extra_kwargs = {key: {'read_only': False} for key in fields}
+
+
+class NodeSerializer(serializers.ModelSerializer):
+
+    data = DataSerializer(many=True)
+
+    class Meta:
+        model = Node
+        fields = ['name', 'data']

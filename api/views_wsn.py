@@ -16,8 +16,10 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
 # Rest framework
-from rest_framework import generics, permissions, serializers, views
+from rest_framework import generics, views
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 
 # Project
@@ -26,14 +28,13 @@ from wsn.models import Frame, Metadata
 from wsn.parsers.eddypro import EddyproParser
 from wsn import tasks
 from wsn import upload
-from .permissions import CreatePermission
-from .serializers import MetadataSerializer
+from . import permissions, serializers
 
 
 class CreateView(generics.CreateAPIView):
     queryset = Metadata.objects.all()
-    serializer_class = MetadataSerializer
-    permission_classes = [CreatePermission]
+    serializer_class = serializers.MetadataSerializer
+    permission_classes = [permissions.CreatePermission]
 
 
 #
@@ -106,7 +107,7 @@ class IridiumView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class UploadEddyproView(APIView):
-    permission_classes = [CreatePermission]
+    permission_classes = [permissions.CreatePermission]
 
     def post(self, request, *args, **kw):
         # Read metadata
@@ -157,7 +158,7 @@ def filter_or(queryset, *args, **kw):
 
 
 class QueryPostgreSQL(views.APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         params = self.request.query_params
@@ -313,13 +314,13 @@ class QueryPostgreSQL(views.APIView):
 
 
 class QueryClickHouse(views.APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, format=None):
         params = self.request.query_params
         table = params.get('table')
         if table is None:
-            raise serializers.ValidationError(detail="Missing 'table' query parameter")
+            raise ValidationError(detail="Missing 'table' query parameter")
 
         limit = params.get('limit')
         columns = params.getlist('fields')
