@@ -1,4 +1,8 @@
+# Django
+from django.contrib.auth.decorators import login_required
 from django.urls import path
+
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
 
 # Project
 from .views_wsn import CreateView, IridiumView, MeshliumView
@@ -18,4 +22,7 @@ urlpatterns = [
     # API query
     path('api/query/postgresql/', QueryPostgreSQL.as_view()),
     path('api/query/clickhouse/', QueryClickHouse.as_view()),
+    # Schema & docs
+    path('api/schema/', login_required(SpectacularAPIView.as_view()), name='schema'),
+    path('api/', login_required(SpectacularRedocView.as_view(url_name='schema')), name='redoc'),
 ]

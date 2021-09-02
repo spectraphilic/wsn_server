@@ -37,17 +37,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # This adds the svelte_js template tag
+    'boot',
     # Requirements
     'rangefilter',
     'rest_framework',
     'rest_framework.authtoken',
+    'drf_spectacular',
     # Project
     'api.apps.ApiConfig',
     'qc.apps.QCConfig',
     'wsn.apps.WsnConfig',
-
-    # This adds the svelte_js template tag
-    'boot',
 ]
 
 MIDDLEWARE = [
@@ -192,16 +192,16 @@ LOGIN_URL = '/admin/login/'
 #
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAdminUser',
-    ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication', # For the browsable views
     ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAdminUser',
+    ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'PAGE_SIZE': 100,
-    #'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'STRICT_JSON': False,
 }
 
