@@ -3,12 +3,12 @@ from django.utils import timezone
 
 # Rest framework
 from rest_framework import generics
-from rest_framework import permissions
 from rest_framework import serializers
 
-# App
-from .models import Metadata, Frame
-from .models import frame_to_database
+# Project
+from wsn.models import Metadata, Frame
+from wsn.models import frame_to_database
+from .permissions import CreatePermission
 
 
 class DateTimeField(serializers.DateTimeField):
@@ -53,17 +53,7 @@ class MetadataSerializer(serializers.ModelSerializer):
         return {}
 
 
-class CreatePermission(permissions.BasePermission):
-    """
-    Only the special user "api" is allowed to create frames.
-    """
-
-    def has_permission(self, request, view):
-        user = request.user
-        return user and user.username == 'api'
-
-
 class CreateView(generics.CreateAPIView):
     queryset = Metadata.objects.all()
     serializer_class = MetadataSerializer
-    permission_classes = (CreatePermission,)
+    permission_classes = [CreatePermission]

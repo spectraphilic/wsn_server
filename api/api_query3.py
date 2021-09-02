@@ -11,8 +11,8 @@ from rest_framework import permissions, serializers, views
 from rest_framework.response import Response
 
 # Project
-from .clickhouse import ClickHouse
-from .models import Frame, Metadata
+from wsn.clickhouse import ClickHouse
+from wsn.models import Frame, Metadata
 
 
 def filter_or(queryset, *args, **kw):

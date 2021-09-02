@@ -18,5 +18,7 @@ from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('wsn.urls')),
+    # Login URLs for the browsable API
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('', include('api.urls')),
 ]

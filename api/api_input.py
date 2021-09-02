@@ -8,7 +8,7 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
 # App
-from . import tasks
+from wsn import tasks
 
 
 #

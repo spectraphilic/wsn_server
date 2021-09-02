@@ -11,14 +11,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 # App
-from .api_create import CreatePermission
-from .parsers.eddypro import EddyproParser
-from .upload import upload2pg, archive
+from wsn.parsers.eddypro import EddyproParser
+from wsn.upload import upload2pg, archive
+from .permissions import CreatePermission
 
 
 @method_decorator(csrf_exempt, name='dispatch')
 class UploadEddyproView(APIView):
-    permission_classes = (CreatePermission,)
+    permission_classes = [CreatePermission]
 
     def post(self, request, *args, **kw):
         # Read metadata
