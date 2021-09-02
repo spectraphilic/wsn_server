@@ -1,0 +1,20 @@
+{% load static svelte %}
+<html>
+
+<head>
+  <link rel='stylesheet' type="text/css" href="{% svelte_css 'main' %}">
+</head>
+
+<body>
+  <div id="anchor"></div>
+
+  <script src="{% svelte_js 'main' %}"></script>
+  {{ view.props|json_script:"app-data" }}
+  <script>
+    const props = JSON.parse(document.getElementById('app-data').textContent);
+    const target = document.querySelector('#anchor');
+    new app.{{view.page_app}}({props, target});
+  </script>
+</body>
+
+</html>

@@ -108,8 +108,10 @@ ENV/
 /etc/
 /local/
 /manage.py
+/node_modules/
 /project/settings_ansible.py
 /project/settings_local.py
+/project/static/build/
 /var/
 /venv*/
 

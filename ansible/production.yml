@@ -25,6 +25,10 @@
     nginx_max_body_size: "30m"
     certbot_email     : "jdavid@geo.uio.no"
 
+    django_cache      :
+      backend         : "memcached"
+      location        : "unix:/run/memcached/memcached.sock"
+
     django_database   :
       engine          : "postgres"
       name            : "wsn"
