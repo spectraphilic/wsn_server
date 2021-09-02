@@ -5,7 +5,6 @@ import math
 from time import time as epoch_float
 
 # Django
-from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.db import transaction
@@ -125,7 +124,7 @@ class FlexModel(models.Model):
 
 
 class Metadata(FlexModel):
-    tags = JSONField(null=True, editable=False)
+    tags = models.JSONField(null=True, editable=False)
     name = CharField(max_length=255, null=True, editable=False)
 
     class Meta:
@@ -176,7 +175,7 @@ class Frame(FlexModel):
     frame = SmallIntegerField(null=True, editable=False)
     frame_max = SmallIntegerField(null=True, editable=False)
 
-    data = JSONField(null=True, editable=False)
+    data = models.JSONField(null=True, editable=False)
 
     # Extracted from .data to save memory space
 #   mb_sd 573 int 0 31
