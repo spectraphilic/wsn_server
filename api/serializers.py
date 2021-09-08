@@ -1,6 +1,6 @@
 # Django
 from django.utils import timezone
-from rest_framework import serializers
+from rest_framework import fields, serializers
 
 # Project
 from qc.models import Node, Data
@@ -71,3 +71,32 @@ class NodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Node
         fields = ['name', 'data']
+
+    def run_validation(self, data=fields.empty):
+        # This makes validation to work when updating
+        queryset = self.parent.instance
+        name = data['name']
+        self.instance = queryset.filter(name=name).first()
+
+        return super().run_validation(data=data)
+
+    def create_or_update(self, validated_data):
+        name = validated_data.pop('name')
+        data = validated_data.pop('data')
+
+        node, created = Node.objects.get_or_create(name=name)
+        for data in data:
+            time = data.pop('time')
+            Data.objects.get_or_create(node=node, time=time, **data)
+
+        return node
+
+
+class NodeListSerializer(serializers.ListSerializer):
+
+    child = NodeSerializer()
+
+    def update(self, queryset, validated_data):
+        return [
+            self.child.create_or_update(attrs) for attrs in validated_data
+        ]

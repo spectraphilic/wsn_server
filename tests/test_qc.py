@@ -31,17 +31,28 @@ def data():
 
 
 def test_qc(data, api, db):
-#   site = Site.objects.create(name='Ny-Ålesund')
-#   node = Node.objects.create(name='sw-001', site=site)
-#   assert Site.objects.count() == 1
-#   assert Node.objects.count() == 1
-#   assert Data.objects.count() == 0
+    assert Site.objects.count() == 0
+    assert Node.objects.count() == 0
+    assert Data.objects.count() == 0
 
+    # First upload
     url = reverse('api:qc-upload')
-    response = api.client.post(url, {'name': 'sw-001', 'data': data}, format='json')
-    print()
-    print('XXX', response.status_code)
-    print(response.data)
+    name = 'sw-001'
+    response = api.client.post(url, [{'name': name, 'data': data}], format='json')
+    assert response.status_code == 200
+    assert len(response.data) == 1
+    node = response.data[0]
+    assert node['name'] == name
+    assert node['data'] == data
+    assert Node.objects.count() == 1
+    assert Data.objects.count() == 1
 
-#   assert Node.objects.count() == 1
-#   assert Data.objects.count() == 1
+    # Second upload
+    response = api.client.post(url, [{'name': name, 'data': data}], format='json')
+    assert response.status_code == 200
+    assert len(response.data) == 1
+    node = response.data[0]
+    assert node['name'] == name
+    assert node['data'] == data
+    assert Node.objects.count() == 1
+    assert Data.objects.count() == 1

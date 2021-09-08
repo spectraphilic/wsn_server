@@ -12,7 +12,7 @@ class Site(models.Model):
 class Node(models.Model):
 
     name = models.CharField(max_length=80, unique=True)
-    site = models.ForeignKey(Site, models.PROTECT)
+    site = models.ForeignKey(Site, models.PROTECT, null=True)
 
     def __str__(self):
         return self.name
@@ -25,7 +25,7 @@ class Data(models.Model):
         verbose_name = 'Data'
         verbose_name_plural = 'Data'
 
-    node = models.ForeignKey(Node, models.PROTECT, editable=False)
+    node = models.ForeignKey(Node, models.PROTECT, editable=False, related_name='data')
     time = models.IntegerField(null=True, editable=False)
 
     # Data
