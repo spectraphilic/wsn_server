@@ -87,7 +87,7 @@ class NodeSerializer(serializers.ModelSerializer):
         node, created = Node.objects.get_or_create(name=name)
         for data in data:
             time = data.pop('time')
-            Data.objects.get_or_create(node=node, time=time, **data)
+            Data.objects.update_or_create(node=node, time=time, defaults=data)
 
         return node
 
