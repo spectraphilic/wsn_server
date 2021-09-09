@@ -34,7 +34,7 @@ from . import permissions, serializers
 class CreateView(generics.CreateAPIView):
     queryset = Metadata.objects.all()
     serializer_class = serializers.MetadataSerializer
-    permission_classes = [permissions.CreatePermission]
+    permission_classes = [permissions.IsUserAPI]
 
 
 #
@@ -107,7 +107,7 @@ class IridiumView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class UploadEddyproView(APIView):
-    permission_classes = [permissions.CreatePermission]
+    permission_classes = [permissions.IsUserAPI]
 
     def post(self, request, *args, **kw):
         # Read metadata

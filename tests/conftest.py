@@ -37,6 +37,7 @@ from django.contrib.auth import get_user_model
 # Django REST framework
 from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
+from rest_framework_api_key.models import APIKey
 
 
 class API:
@@ -103,7 +104,26 @@ def django_db_setup(django_db_setup):
 
 
 @pytest.fixture(scope='module')
-def api(django_db_setup):
+def api():
+    client = APIClient()
+    return API(client)
+
+
+@pytest.fixture(scope='module')
+def api_key(django_db_setup):
+    """
+    We depend on django_db_setup to be sure this fixture is run on the test
+    database, not the real database.
+    """
+    api_key, key = APIKey.objects.create_key(name='pe-partner')
+
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f'Api-Key {key}')
+    return API(client)
+
+
+@pytest.fixture(scope='module')
+def api_user(django_db_setup):
     """
     We depend on django_db_setup to be sure this fixture is run on the test
     database, not the real database.

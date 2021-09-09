@@ -6,8 +6,8 @@ import time
 from wsn.models import Frame
 
 
-def test_create_time_required(api, db):
-    response = api.create({
+def test_create_time_required(api_user, db):
+    response = api_user.create({
         'tags': {'serial': 42},
         'frames':
             [
@@ -19,9 +19,9 @@ def test_create_time_required(api, db):
     assert response.status_code == 400
 
 
-def test_create_time_badtype(api, db):
+def test_create_time_badtype(api_user, db):
     ts = datetime.utcnow()
-    response = api.create({
+    response = api_user.create({
         'tags': {'serial': 42},
         'frames':
             [
@@ -31,11 +31,11 @@ def test_create_time_badtype(api, db):
     assert response.status_code == 400
 
 
-def test_create(api, db):
+def test_create(api_user, db):
     # Create
     now = int(time.time())
     t = int(time.time())
-    response = api.create({
+    response = api_user.create({
         'tags': {'serial': 42},
         'frames':
             [
@@ -51,13 +51,13 @@ def test_create(api, db):
     assert last.data['battery'] == 30
 
     # Query (miss)
-    response = api.query_pg({'serial:int': 1234})
+    response = api_user.query_pg({'serial:int': 1234})
     assert response.status_code == 200
     json = response.json()
     assert len(json['rows']) == 0
 
     # Query (hit)
-    response = api.query_pg({'serial:int': 42})
+    response = api_user.query_pg({'serial:int': 42})
     assert response.status_code == 200
     rows = response.json()['rows']
     assert len(rows) == 3
@@ -67,13 +67,13 @@ def test_create(api, db):
     assert last['time'] == (now + 2)
 
     # Time
-    response = api.query_pg({'serial:int': 42, 'time__gte': now + 1})
+    response = api_user.query_pg({'serial:int': 42, 'time__gte': now + 1})
     assert response.status_code == 200
     json = response.json()
     assert len(json['rows']) == 2
 
 
-def test_iridium(api, db, celery_session_app, celery_session_worker):
+def test_iridium(api_user, db, celery_session_app, celery_session_worker):
     # Test message
     data = {
         'device_type': ['ROCKBLOCK'],
@@ -86,10 +86,10 @@ def test_iridium(api, db, celery_session_app, celery_session_worker):
         'iridium_cep': ['98.0'],
         'data': ['48656c6c6f21205468697320697320612074657374206d6573736167652066726f6d20526f636b424c4f434b21'],
     }
-    response = api.iridium(data)
+    response = api_user.iridium(data)
     assert response.status_code == 200
 
-    response = api.query_pg()
+    response = api_user.query_pg()
     rows = response.json()['rows']
     assert len(rows) == 0
 
@@ -106,24 +106,24 @@ def test_iridium(api, db, celery_session_app, celery_session_worker):
         'data': ['3c3d3e0640073c10fdc337de2423b77b75dee65c345d3ff8fbffffe7ffd148e13a400'
                  '06cae425ceca947d25c8f124080dec6421e29aa47d300a4f03e80663640d400003c40'],
     }
-    response = api.iridium(data)
+    response = api_user.iridium(data)
     assert response.status_code == 200
 
-    response = api.query_pg()
+    response = api_user.query_pg()
     json = response.json()
     assert 'rows' in json
     assert len(json['rows']) == 1
 
 
-def test_4G(api, db, celery_session_app, celery_session_worker):
+def test_4G(api_user, db, celery_session_app, celery_session_worker):
     data = {
         'frame': '3C3D3E0640073C10FDC337DE2423B77B75DEE65C345D3FF8FBFFFFE7FFD148E13A400'
                  '06CAE425CECA947D25C8F124080DEC6421E29AA47D300A4F03E80663640D400003C40',
     }
-    response = api.meshlium(data)
+    response = api_user.meshlium(data)
     assert response.status_code == 200
 
-    response = api.query_pg()
+    response = api_user.query_pg()
     json = response.json()
     assert 'rows' in json
     assert len(json['rows']) == 1

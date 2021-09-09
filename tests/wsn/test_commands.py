@@ -37,7 +37,7 @@ def clickhouse():
     client.disconnect()
 
 
-def test_import_eton2(api, db, datadir):
+def test_import_eton2(api_user, db, datadir):
     path = datadir / 'cr6' / 'eton2'
     files = list(path.iterdir())
 
@@ -45,7 +45,7 @@ def test_import_eton2(api, db, datadir):
     skip = int(time.time() - datetime.datetime(2018, 1, 1).timestamp()) // 60
     assert call_command('import_file', path, skip=skip) == 0
     # Verify no data has been imported
-    response = api.query_pg()
+    response = api_user.query_pg()
     assert response.status_code == 200
     json = response.json()
     assert len(json['rows']) == 0
@@ -53,7 +53,7 @@ def test_import_eton2(api, db, datadir):
     # Test importing data
     assert call_command('import_file', path, skip=0) == 0
     # Verify the data has been imported
-    response = api.query_pg()
+    response = api_user.query_pg()
     assert response.status_code == 200
     json = response.json()
     assert len(json['rows']) == 168
@@ -65,7 +65,7 @@ def test_import_eton2(api, db, datadir):
 
 
 @requires_clickhouse
-def test_import_finseflux(api, clickhouse, datadir):
+def test_import_finseflux(api_user, clickhouse, datadir):
     path = datadir / 'cr6' / 'finseflux'
     table = 'finseflux_Biomet'
     files = list(path.iterdir())
@@ -77,7 +77,7 @@ def test_import_finseflux(api, clickhouse, datadir):
     # Test importing data
     assert call_command('import_file', path, skip=0) == 0
     # Verify the data has been imported
-    response = api.query_ch(table)
+    response = api_user.query_ch(table)
     assert response.status_code == 200
     json = response.json()
     assert len(json['rows']) == 288
@@ -93,7 +93,7 @@ def test_import_finseflux(api, clickhouse, datadir):
 
 
 @requires_clickhouse
-def test_import_sommer(api, clickhouse, datadir):
+def test_import_sommer(api_user, clickhouse, datadir):
     path = datadir / 'sommer'
     table = 'finse_sommer'
     files = list(path.iterdir())
@@ -105,7 +105,7 @@ def test_import_sommer(api, clickhouse, datadir):
     # Test importing data
     assert call_command('import_file', path, name=table, skip=0) == 0
     # Verify the data has been imported
-    response = api.query_ch(table)
+    response = api_user.query_ch(table)
     assert response.status_code == 200
     json = response.json()
     assert len(json['rows']) == 30

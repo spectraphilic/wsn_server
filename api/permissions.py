@@ -1,7 +1,7 @@
 from rest_framework import permissions
 
 
-class CreatePermission(permissions.BasePermission):
+class IsUserAPI(permissions.BasePermission):
     """
     Only the special user "api" is allowed to create frames.
     """

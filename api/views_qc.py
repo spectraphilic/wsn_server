@@ -1,13 +1,14 @@
 from rest_framework import generics, response
+from rest_framework_api_key.permissions import HasAPIKey
 
-from . import permissions, serializers
+from . import serializers
 from qc.models import Node
 
 
 class QCUploadView(generics.GenericAPIView):
     queryset = Node.objects.all()
     serializer_class = serializers.NodeListSerializer
-    permission_classes = [permissions.CreatePermission]
+    permission_classes = [HasAPIKey]
 
     def post(self, request, *args, **kwargs):
         queryset = self.get_queryset()

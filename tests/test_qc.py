@@ -85,7 +85,7 @@ def data():
     return data
 
 
-def test_qc(data, api, db):
+def test_qc(data, api_key, db):
     # Prepare data
     data1 = copy.deepcopy(data[:7])
     data2 = copy.deepcopy(data[6:])
@@ -102,7 +102,7 @@ def test_qc(data, api, db):
     # First upload
     url = reverse('api:qc-upload')
     name = 'sw-001'
-    response = api.client.post(url, [{'name': name, 'data': data1}], format='json')
+    response = api_key.client.post(url, [{'name': name, 'data': data1}], format='json')
     assert response.status_code == 200
     assert len(response.data) == 1
     node = response.data[0]
@@ -113,7 +113,7 @@ def test_qc(data, api, db):
     assert Data.objects.get(node__name=name, time=1554566400).temperature == 0
 
     # Second upload
-    response = api.client.post(url, [{'name': name, 'data': data2}], format='json')
+    response = api_key.client.post(url, [{'name': name, 'data': data2}], format='json')
     assert response.status_code == 200
     assert len(response.data) == 1
     node = response.data[0]

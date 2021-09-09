@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rangefilter',
     'rest_framework',
     'rest_framework.authtoken',
+    'rest_framework_api_key',
     'drf_spectacular',
     # Project
     'api.apps.ApiConfig',
