@@ -4,7 +4,7 @@ from django.urls import path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
 
 # Project
-from .views_qc import QCUploadView
+from .views_qc import QCUploadView, QCDownloadView
 from .views_wsn import CreateView, IridiumView, MeshliumView
 from .views_wsn import QueryPostgreSQL, QueryClickHouse
 from .views_wsn import UploadEddyproView
@@ -26,6 +26,7 @@ urlpatterns = [
     path('api/query/clickhouse/', QueryClickHouse.as_view()),
     # Quality Control
     path('api/qc/upload/', QCUploadView.as_view(), name='qc-upload'),
+    path('api/qc/download/', QCDownloadView.as_view(), name='qc-download'),
     # Schema & docs
     path('api/schema/', login_required(SpectacularAPIView.as_view()), name='schema'),
     path('api/', login_required(SpectacularRedocView.as_view(url_name='api:schema')), name='redoc'),

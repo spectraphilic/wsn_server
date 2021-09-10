@@ -100,9 +100,9 @@ def test_qc(data, api_key, db):
     assert Data.objects.count() == 0
 
     # First upload
-    url = reverse('api:qc-upload')
+    upload_url = reverse('api:qc-upload')
     name = 'sw-001'
-    response = api_key.client.post(url, [{'name': name, 'data': data1}], format='json')
+    response = api_key.client.post(upload_url, [{'name': name, 'data': data1}], format='json')
     assert response.status_code == 200
     assert len(response.data) == 1
     node = response.data[0]
@@ -113,7 +113,7 @@ def test_qc(data, api_key, db):
     assert Data.objects.get(node__name=name, time=1554566400).temperature == 0
 
     # Second upload
-    response = api_key.client.post(url, [{'name': name, 'data': data2}], format='json')
+    response = api_key.client.post(upload_url, [{'name': name, 'data': data2}], format='json')
     assert response.status_code == 200
     assert len(response.data) == 1
     node = response.data[0]
@@ -122,3 +122,15 @@ def test_qc(data, api_key, db):
     assert Node.objects.count() == 1
     assert Data.objects.count() == 9
     assert Data.objects.get(node__name=name, time=1554566400).temperature == 24.0625
+
+    # Download
+    download_url = reverse('api:qc-download')
+    response = api_key.client.get(download_url)
+    assert response.status_code == 200
+    response_json = response.json()
+    assert response_json['count'] == 1
+    results = response_json['results']
+    assert len(results) == 1
+    result = results[0]
+    assert result['name'] == name
+    assert result['data'] == data

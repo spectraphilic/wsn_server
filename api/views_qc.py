@@ -16,3 +16,9 @@ class QCUploadView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return response.Response(serializer.data)
+
+
+class QCDownloadView(generics.ListAPIView):
+    queryset = Node.objects.all()
+    serializer_class = serializers.NodeSerializer
+    permission_classes = [HasAPIKey]
