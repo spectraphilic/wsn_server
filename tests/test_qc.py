@@ -1,13 +1,42 @@
 # Standard Library
 import copy
-from datetime import datetime
+import datetime
 
 # Requirements
 import pytest
 from rest_framework.reverse import reverse
 
+from rest_framework.test import APIClient
+from rest_framework_api_key.models import APIKey
+
 # Project
 from qc.models import Site, Node, Data
+
+
+@pytest.fixture(scope='module')
+def client_rw(django_db_setup):
+    """
+    We depend on django_db_setup to be sure this fixture is run on the test
+    database, not the real database.
+    """
+    api_key, key = APIKey.objects.create_key(name='quality-control')
+
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f'Api-Key {key}')
+    return client
+
+
+@pytest.fixture(scope='module')
+def client_ro(django_db_setup):
+    """
+    We depend on django_db_setup to be sure this fixture is run on the test
+    database, not the real database.
+    """
+    api_key, key = APIKey.objects.create_key(name='quality-control-read-only')
+
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f'Api-Key {key}')
+    return client
 
 
 @pytest.fixture
@@ -79,13 +108,13 @@ def data():
     ]
 
     for row in data:
-        time = row['time']
-        row['time'] = int(datetime.strptime(time, '%Y-%m-%d %H:%M:%S').timestamp())
+        dt = datetime.datetime.strptime(row['time'], '%Y-%m-%d %H:%M:%S')
+        row['time'] = int(dt.timestamp())
 
     return data
 
 
-def test_qc(data, api_key, db):
+def test_qc(client_ro, client_rw, data, db):
     # Prepare data
     data1 = copy.deepcopy(data[:7])
     data2 = copy.deepcopy(data[6:])
@@ -99,10 +128,16 @@ def test_qc(data, api_key, db):
     assert Node.objects.count() == 0
     assert Data.objects.count() == 0
 
+    # Need the right key
+    upload_url = reverse('api:qc-upload')
+    name = 'sw-001'
+    response = client_ro.post(upload_url, [{'name': name, 'data': data1}], format='json')
+    assert response.status_code == 401
+
     # First upload
     upload_url = reverse('api:qc-upload')
     name = 'sw-001'
-    response = api_key.client.post(upload_url, [{'name': name, 'data': data1}], format='json')
+    response = client_rw.post(upload_url, [{'name': name, 'data': data1}], format='json')
     assert response.status_code == 200
     assert len(response.data) == 1
     node = response.data[0]
@@ -113,7 +148,7 @@ def test_qc(data, api_key, db):
     assert Data.objects.get(node__name=name, time=1554566400).temperature == 0
 
     # Second upload
-    response = api_key.client.post(upload_url, [{'name': name, 'data': data2}], format='json')
+    response = client_rw.post(upload_url, [{'name': name, 'data': data2}], format='json')
     assert response.status_code == 200
     assert len(response.data) == 1
     node = response.data[0]
@@ -124,13 +159,14 @@ def test_qc(data, api_key, db):
     assert Data.objects.get(node__name=name, time=1554566400).temperature == 24.0625
 
     # Download
-    download_url = reverse('api:qc-download')
-    response = api_key.client.get(download_url)
-    assert response.status_code == 200
-    response_json = response.json()
-    assert response_json['count'] == 1
-    results = response_json['results']
-    assert len(results) == 1
-    result = results[0]
-    assert result['name'] == name
-    assert result['data'] == data
+    for client in [client_ro, client_rw]:
+        download_url = reverse('api:qc-download')
+        response = client.get(download_url)
+        assert response.status_code == 200
+        response_json = response.json()
+        assert response_json['count'] == 1
+        results = response_json['results']
+        assert len(results) == 1
+        result = results[0]
+        assert result['name'] == name
+        assert result['data'] == data
