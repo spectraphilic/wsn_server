@@ -17,6 +17,9 @@ from django.db.models import SmallIntegerField # 2 bytes (signed)
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
+# Project
+from .utils import TimeModelMixin
+
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +162,7 @@ class Metadata(FlexModel):
 def epoch():
     return round(epoch_float())
 
-class Frame(FlexModel):
+class Frame(TimeModelMixin, FlexModel):
 
     metadata = ForeignKey(Metadata, on_delete=PROTECT, related_name='frames',
                           null=True, editable=False)

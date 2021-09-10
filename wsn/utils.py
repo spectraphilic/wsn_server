@@ -1,5 +1,6 @@
 # Standard Library
-from cProfile import Profile
+import cProfile
+import datetime
 import os
 import pstats
 import time
@@ -8,10 +9,31 @@ import time
 from django.db.models import Func, DateField
 
 
+def attrs(**kw):
+    def f(func):
+        for k, v in kw.items():
+            setattr(func, k, v)
+        return func
+    return f
+
+
+def fmt_time(time):
+    dt = datetime.datetime.utcfromtimestamp(time)
+    return dt.strftime("%Y-%m-%d %H:%M:%S %z")
+
+
+class TimeModelMixin:
+
+    @property
+    @attrs(short_description='Time', admin_order_field='time')
+    def time_str(self):
+        return fmt_time(self.time)
+
+
 def profile(log_file):
     assert os.path.isabs(log_file)
 
-    profiler = Profile()
+    profiler = cProfile.Profile()
     def decorator(fn):
         def inner(*args, **kwargs):
             # Add a timestamp to the profile output when the callable

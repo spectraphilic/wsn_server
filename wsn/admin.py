@@ -1,6 +1,3 @@
-# Standard Library
-import datetime
-
 # Django
 from django.contrib import admin
 from django.core.paginator import Paginator
@@ -10,18 +7,8 @@ from django.utils.functional import cached_property
 from rangefilter.filter import DateRangeFilter
 
 # Project
-from .models import Frame, Metadata
-
-
-#
-# Utilities
-#
-def attrs(**kw):
-    def f(func):
-        for k, v in kw.items():
-            setattr(func, k, v)
-        return func
-    return f
+from . import models
+from . import utils
 
 
 class EstimatedCountPaginator(Paginator):
@@ -80,7 +67,7 @@ class NameFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         name = self.parameter_name
-        values = Metadata.objects.all().values_list('tags', flat=True)
+        values = models.Metadata.objects.all().values_list('tags', flat=True)
         values = set(value.get(name, self.value_default) for value in values)
         values = [(value, self.pprint(value)) for value in values]
         values = sorted(values, key=lambda x: x[1])
@@ -131,15 +118,10 @@ class FrameAddressFilter(FrameSerialFilter):
 #
 
 def epoch_to_str_plus(time):
-    if time is None:
-        return '-'
-
-    dt = datetime.datetime.utcfromtimestamp(time)
-    dt = dt.strftime("%Y-%m-%d %H:%M:%S %z")
-    return f'{dt} ({time})'
+    return '-' if time is None else f'{utils.fmt_time(time)} ({time})'
 
 
-@admin.register(Metadata)
+@admin.register(models.Metadata)
 class MetadataAdmin(admin.ModelAdmin):
     list_display = ['name', 'tags']
     readonly_fields = ['name', 'tags']
@@ -147,7 +129,7 @@ class MetadataAdmin(admin.ModelAdmin):
     search_fields = ['name']
 
 
-@admin.register(Frame)
+@admin.register(models.Frame)
 class FrameAdmin(admin.ModelAdmin):
     list_display = ['time_str', 'frame', 'metadata', 'data']
     list_filter = [
@@ -177,20 +159,15 @@ class FrameAdmin(admin.ModelAdmin):
 
         return fields + ['data']
 
-    @attrs(short_description='Time', admin_order_field='time')
-    def time_str(self, obj):
-        dt = datetime.datetime.utcfromtimestamp(obj.time)
-        return dt.strftime("%Y-%m-%d %H:%M:%S %z")
-
-    @attrs(short_description='Time')
+    @utils.attrs(short_description='Time')
     def time_str_plus(self, obj):
         return epoch_to_str_plus(obj.time)
 
-    @attrs(short_description='Received')
+    @utils.attrs(short_description='Received')
     def received_str_plus(self, obj):
         return epoch_to_str_plus(obj.received)
 
-    @attrs(short_description='Inserted')
+    @utils.attrs(short_description='Inserted')
     def inserted_str_plus(self, obj):
         return epoch_to_str_plus(obj.inserted)
 

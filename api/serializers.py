@@ -70,7 +70,7 @@ class NodeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Node
-        fields = ['name', 'data']
+        fields = ['name', 'data', 'lat', 'lng']
 
     def run_validation(self, data=fields.empty):
         # This makes validation to work when updating
