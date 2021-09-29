@@ -3,7 +3,7 @@ from rest_framework import generics, response
 # Project
 from . import permissions
 from . import serializers
-from qc.models import Node
+from qc.models import Node, Data
 
 
 class QCUploadView(generics.GenericAPIView):
@@ -22,8 +22,12 @@ class QCUploadView(generics.GenericAPIView):
 
 
 class QCDownloadView(generics.ListAPIView):
-    queryset = Node.objects.all()
-    serializer_class = serializers.NodeSerializer
+    serializer_class = serializers.DataSerializer
+    pagination_class = None
     permission_classes = [
         permissions.with_api_key(lambda api_key: api_key.name.startswith('quality-control'))
     ]
+
+    def get_queryset(self):
+        name = self.kwargs['name']
+        return Data.objects.filter(node__name=name)
