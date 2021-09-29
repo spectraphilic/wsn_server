@@ -40,11 +40,11 @@ INSTALLED_APPS = [
     # This adds the svelte_js template tag
     'boot',
     # Requirements
+    'drf_spectacular',
     'rangefilter',
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_api_key',
-    'drf_spectacular',
     # Project
     'api.apps.ApiConfig',
     'qc.apps.QCConfig',
