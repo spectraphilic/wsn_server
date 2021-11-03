@@ -90,8 +90,10 @@ class FlexModel(models.Model):
 
     def get_value(self, name):
         value = getattr(self, name, None)
-        if value is None and self.data:
-            value = self.data.get(name)
+        if value is None:
+            data = getattr(self, self.json_field)
+            return data.get(value)
+
         return value
 
     def extract_from_json(self, fields=None, dryrun=True):
