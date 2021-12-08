@@ -1,20 +1,15 @@
-{% load static svelte %}
+{% load django_vite svelte %}
 <html>
 
 <head>
-  <link rel='stylesheet' type="text/css" href="{% svelte_css 'main' %}">
+  {% vite_hmr_client %}
 </head>
 
 <body>
-  <div id="anchor"></div>
+  <h1>Test Svelte</h1>
 
-  <script src="{% svelte_js 'main' %}"></script>
-  {{ view.props|json_script:"app-data" }}
-  <script>
-    const props = JSON.parse(document.getElementById('app-data').textContent);
-    const target = document.querySelector('#anchor');
-    new app.{{view.page_app}}({props, target});
-  </script>
+  <div id="app"></div>
+  {% vite_mount 'src/main.js' 'Hello' view.props 'app' %}
 </body>
 
 </html>

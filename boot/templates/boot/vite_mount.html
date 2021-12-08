@@ -1,0 +1,15 @@
+{# TODO Move props within the script tag #}
+{# TODO Automatically create the mount point if target not given #}
+{% if props %}
+    {{ props|json_script:data_name }}
+{% endif %}
+<script type="module">
+    import { {{name}} } from '{{url}}';
+    const target = document.querySelector('#{{target}}');
+{% if props %}
+    const props = JSON.parse(document.getElementById('{{data_name}}').textContent);
+    new {{name}}({props, target});
+{% else %}
+    new {{name}}({target});
+{% endif %}
+</script>

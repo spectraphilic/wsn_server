@@ -37,8 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    # This adds the svelte_js template tag
+    # Requirements
+    'django_vite',
+    # For testing Svelte integration
     'boot',
 ]
 
@@ -143,3 +144,10 @@ MANAGERS = ADMINS
 fqdn = getfqdn()
 DEFAULT_FROM_EMAIL = 'webmaster@' + fqdn
 SERVER_EMAIL = 'root@' + fqdn
+
+#
+# Vite
+#
+
+DJANGO_VITE_ASSETS_PATH = BASE_DIR / 'project' / 'static'
+DJANGO_VITE_DEV_MODE = DEBUG
