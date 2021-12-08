@@ -1,4 +1,4 @@
-Django==3.2.8
+Django==4.0
 django-sendfile2==0.6.0
 django-vite==1.2.1
 ipython==7.30.1
