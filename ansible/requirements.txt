@@ -1,5 +1,5 @@
 Django==4.0
-django-sendfile2==0.6.0
+git+https://github.com/moggers87/django-sendfile2@6145876dae2ffb838a249a0090fc20897b868981#django-sendfile2
 django-vite==1.2.1
 ipython==7.30.1
 Pillow==8.4.0
