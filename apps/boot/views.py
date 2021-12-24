@@ -33,14 +33,12 @@ class SvelteBaseView(TemplateView):
         return {}
 
 
-class SvelteHelloView(SvelteBaseView):
-    """
-    Example of a Svelte view.
-    """
+class SvelteUsersView(SvelteBaseView):
+    page_app = 'Users'
+    page_title = 'List of users'
 
-    page_app = 'Hello'
     def props(self):
-        name = self.kwargs['name']
+        GET = self.request.GET
         return {
-            'name': name,
+            'extra': GET.get('extra'),
         }

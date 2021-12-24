@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # Requirements
     'django_vite',
+    'strawberry.django',
     # For testing Svelte integration
     'boot',
 ]
