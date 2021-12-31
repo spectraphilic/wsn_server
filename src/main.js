@@ -1,3 +1,4 @@
-import Users from './Users.svelte';
+import UsersList from './UsersList.svelte';
+import UsersUpdate from './UsersUpdate.svelte';
 
-export { Users };
+export { UsersList, UsersUpdate };

@@ -3,6 +3,7 @@ import os
 
 # Django
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.http import Http404
 from django.views.generic import TemplateView, View
 
@@ -33,12 +34,23 @@ class SvelteBaseView(TemplateView):
         return {}
 
 
-class SvelteUsersView(SvelteBaseView):
-    page_app = 'Users'
+User = get_user_model()
+
+class UsersListView(SvelteBaseView):
+    page_app = 'UsersList'
     page_title = 'List of users'
 
+class UsersUpdateView(SvelteBaseView):
+    page_app = 'UsersUpdate'
+    page_title = 'Update user'
+
     def props(self):
-        GET = self.request.GET
+        pk = self.kwargs['id']
+        user = User.objects.get(pk=pk)
         return {
-            'extra': GET.get('extra'),
+            'id': pk,
+            'username': user.username,
+            'email': user.email,
+            'firstName': user.first_name,
+            'lastName': user.last_name,
         }
