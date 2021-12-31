@@ -25,8 +25,8 @@ class SendfileView(View):
 class SvelteBaseView(TemplateView):
     template_name = 'boot/svelte_page.html'
 
-    # Name of Svelte app in src/main.js
-    page_app = None
+    page_app = None # Name of Svelte app in src/main.js
+    page_title = None
 
     # Props to initialize the Svelte app
     def props(self):

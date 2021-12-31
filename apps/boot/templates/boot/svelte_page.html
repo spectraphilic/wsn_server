@@ -6,10 +6,12 @@
 </head>
 
 <body>
-  <h1>Test Svelte</h1>
+  {% if view.page_title %}
+  <h1>{{ view.page_title  }}</h1>
+  {% endif %}
 
   <div id="app"></div>
-  {% vite_mount 'src/main.js' 'Hello' view.props 'app' %}
+  {% vite_mount 'src/main.js' view.page_app view.props 'app' %}
 </body>
 
 </html>
