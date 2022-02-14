@@ -92,7 +92,7 @@ class FlexModel(models.Model):
         value = getattr(self, name, None)
         if value is None:
             data = getattr(self, self.json_field)
-            return data.get(value)
+            return data.get(name)
 
         return value
 
