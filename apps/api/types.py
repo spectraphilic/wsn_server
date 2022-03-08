@@ -31,7 +31,6 @@ class UserCreate:
 
 @sb.django.input(User, partial=True)
 class UserUpdate:
-    id: auto
     username: auto
     email: auto
     first_name: auto

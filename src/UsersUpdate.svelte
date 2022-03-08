@@ -21,13 +21,17 @@
             $firstName: String,
             $lastName: String)
         {
-            updateUser(data: {
-                id: $id,
-                username: $username,
-                email: $email,
-                firstName: $firstName,
-                lastName: $lastName
-            }) {
+            updateUser(
+                data: {
+                    username: $username,
+                    email: $email,
+                    firstName: $firstName,
+                    lastName: $lastName
+                },
+                filters: {
+                    id: { inList: [$id] }
+                }
+            ) {
                 id
                 username
                 email

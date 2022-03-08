@@ -16,7 +16,7 @@ class Query:
 
 @sb.type
 class Mutation:
-    updateUser: List[types.UserType] = sb.django.mutations.update(types.UserUpdate)
+    updateUser: List[types.UserType] = sb.django.mutations.update(types.UserUpdate, filters=types.UserFilter)
 
 
 schema = sb.Schema(query=Query, mutation=Mutation)
