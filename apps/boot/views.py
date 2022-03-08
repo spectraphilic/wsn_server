@@ -54,3 +54,8 @@ class UsersUpdateView(SvelteBaseView):
             'firstName': user.first_name,
             'lastName': user.last_name,
         }
+
+
+class UsersCreateView(SvelteBaseView):
+    page_app = 'UsersCreate'
+    page_title = 'Create user'

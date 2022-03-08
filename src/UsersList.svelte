@@ -50,5 +50,9 @@
         </tr>
         {/each}
     </table>
+
+    <p>
+    <a href="create/">Add</a>
+    </p>
 </div>
 {/if}

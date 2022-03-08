@@ -23,7 +23,6 @@ class UserType:
 
 @sb.django.input(User)
 class UserCreate:
-    id: auto
     username: auto
     email: auto
     first_name: auto
