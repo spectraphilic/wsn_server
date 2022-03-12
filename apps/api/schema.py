@@ -18,6 +18,7 @@ class Query:
 class Mutation:
     createUser: List[types.UserType] = sb.django.mutations.create(types.UserCreate)
     updateUser: List[types.UserType] = sb.django.mutations.update(types.UserUpdate, filters=types.UserFilter)
+    deleteUser: List[types.UserType] = sb.django.mutations.delete(filters=types.UserFilter)
 
 
 schema = sb.Schema(query=Query, mutation=Mutation)

@@ -7,17 +7,28 @@
 
     const users = urql.operationStore(`
         query {
-            users {
-                id
-                username
-                email
-                firstName
-                lastName
-            }
+            users { id username email firstName lastName }
         }
     `);
 
+    const deleteUser = urql.mutation({query: `
+        mutation deleteUser($id: ID!) {
+            deleteUser(filters: {id: {exact: $id}})
+            { id }
+        }
+    `});
+
     urql.query(users);
+
+    function remove(user) {
+        deleteUser({id: user.id}).then(result => {
+            if (result.error) {
+                console.log(result.error);
+            } else {
+                //data = result.data.updateUser[0];
+            }
+        });
+    }
 </script>
 
 <style>
@@ -39,6 +50,7 @@
             <th>E-mail</th>
             <th>First name</th>
             <th>Last name</th>
+            <th></th>
         </tr>
         {#each $users.data.users as user}
         <tr>
@@ -47,6 +59,7 @@
             <td>{user.email}</td>
             <td>{user.firstName}</td>
             <td>{user.lastName}</td>
+            <td><a href="" on:click|preventDefault={() => remove(user)}>Remove</a></td>
         </tr>
         {/each}
     </table>

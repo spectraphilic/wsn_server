@@ -13,7 +13,7 @@
         url: '/graphql',
     });
 
-    const mutation = urql.mutation({query: `
+    const updateUser = urql.mutation({query: `
         mutation updateUser(
             $id: ID!,
             $username: String,
@@ -30,8 +30,8 @@
                 },
                 filters: {
                     id: { inList: [$id] }
-                }
-            ) {
+                })
+            {
                 id
                 username
                 email
@@ -44,9 +44,9 @@
     function update(ev) {
         ev.preventDefault();
         const input = {id, username, email, firstName, lastName};
-        mutation(input).then(result => {
+        updateUser(input).then(result => {
             if (result.error) {
-                console.log('ERROR', result.error);
+                console.log(result.error);
             } else {
                 data = result.data.updateUser[0];
             }
