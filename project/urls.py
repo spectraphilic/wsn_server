@@ -14,17 +14,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.contrib.auth.decorators import login_required
 from django.urls import include, path
-from strawberry.django.views import GraphQLView
 
-from api.schema import schema
-
-
-graphql = GraphQLView.as_view(schema=schema)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-#   path('boot/', include('boot.urls')),
-#   path('graphql', login_required(graphql)),
+#   path('demo/', include('demo.urls')),
 ]

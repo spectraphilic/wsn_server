@@ -31,7 +31,6 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'myadmin', # Custom admin replaces 'django.contrib.admin'
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -41,7 +40,9 @@ INSTALLED_APPS = [
     'django_vite',
     'strawberry.django',
     # For testing Svelte integration
-    'boot',
+    'apps.boot',
+#   'apps.demo',
+    'apps.myadmin', # Custom admin replaces 'django.contrib.admin'
 ]
 
 MIDDLEWARE = [

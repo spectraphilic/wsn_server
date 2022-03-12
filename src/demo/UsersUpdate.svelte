@@ -10,7 +10,7 @@
     let data = {id, username, email, firstName, lastName};
 
     urql.initClient({
-        url: '/graphql',
+        url: '/demo/graphql/',
     });
 
     const updateUser = urql.mutation({query: `

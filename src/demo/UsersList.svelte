@@ -2,7 +2,7 @@
     import * as urql from '@urql/svelte';
 
     urql.initClient({
-        url: '/graphql',
+        url: '/demo/graphql/',
     });
 
     const users = urql.operationStore(`
