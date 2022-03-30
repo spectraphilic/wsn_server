@@ -1,14 +1,18 @@
 Django==4.0.3
 django-sendfile2==0.6.1
 django-vite==2.0.2
-Pillow==9.0.1
+gunicorn==20.1.0
 strawberry-graphql-django==0.3rc1
-uWSGI==2.0.20
+uvicorn==0.17.6
+
+{% if django_debug %}
+whitenoise==6.0.0
+{% endif %}
 
 {% if django_database.engine == 'postgres' %}
-psycopg2==2.9.1
+psycopg2==2.9.3
 {% endif %}
 
 {% if django_cache.backend == 'memcached' %}
-pymemcache==3.5.0
+pymemcache==3.5.1
 {% endif %}

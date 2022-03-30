@@ -25,4 +25,4 @@
 #     location        : "127.0.0.1:11211"
 #     location        : "unix:/run/memcached/memcached.sock"
 
-    django_port       : 8000 # Used by uwsgi
+    django_port       : 8000
