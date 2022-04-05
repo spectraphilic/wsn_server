@@ -12,9 +12,6 @@ from .views_wsn import UploadEddyproView
 
 app_name = 'api'
 
-#from wsn.utils import profile
-#query_profile = profile('/tmp/query.prof')
-
 urlpatterns = [
     # wsn: import data
     path('api/create/', CreateView.as_view()),

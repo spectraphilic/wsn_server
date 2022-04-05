@@ -1,9 +1,5 @@
 # Standard Library
-import cProfile
 import datetime
-import os
-import pstats
-import time
 
 # Django
 from django.db.models import Func, DateField
@@ -28,30 +24,6 @@ class TimeModelMixin:
     @attrs(short_description='Time', admin_order_field='time')
     def time_str(self):
         return fmt_time(self.time)
-
-
-def profile(log_file):
-    assert os.path.isabs(log_file)
-
-    profiler = cProfile.Profile()
-    def decorator(fn):
-        def inner(*args, **kwargs):
-            # Add a timestamp to the profile output when the callable
-            # is actually called.
-            base, ext = os.path.splitext(log_file)
-            base = base + "-" + time.strftime("%Y%m%dT%H%M%S", time.gmtime())
-            final_log_file = base + ext
-
-            result = None
-            try:
-                result = profiler.runcall(fn, *args, **kwargs)
-            finally:
-                stats = pstats.Stats(profiler)
-                stats.dump_stats(final_log_file)
-            return result
-        return inner
-
-    return decorator
 
 
 class GetDate(Func):
