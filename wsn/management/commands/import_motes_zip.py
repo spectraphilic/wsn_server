@@ -22,7 +22,7 @@ class Command(BaseCommand):
         add_argument('paths', nargs='+', help='Path to file or directory')
 
     def handle(self, *args, **kw):
-        expr = re.compile(r'^.*\b([0-9]{6})\.TXT$')
+        expr = re.compile(r'.*DATA/([0-9]{6})\.TXT$')
 
         series = {}
         state = {}
@@ -64,14 +64,6 @@ class Command(BaseCommand):
                                 # Preprocess frame, changes from flat structure
                                 # to {'tags': {}, 'frames': []} structure
                                 frame = waspmote.data_to_json(frame)
-
-                                # Discard bad frames (TODO)
-#                               time = frame['frames'][0]['time']
-#                               time = datetime.strptime(time, '%Y-%m-%dT%H:%M:%S+00:00')
-#                               if time.date() != date:
-#                                   print(name)
-#                                   print(frame)
-#                                   continue
 
                                 # Append frame to series
                                 key = (serial, name)
