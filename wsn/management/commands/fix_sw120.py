@@ -66,6 +66,7 @@ class Command(BaseCommand):
         ]
 
         lora = False
+        gps_time = None
         max_time = None
 
         prev = Line(0, 0.0, b'\n', b'')
@@ -73,14 +74,19 @@ class Command(BaseCommand):
             time, tail = line.split(b' ', 1)
             time = float(time)
 
-            if time < prev.time and (prev.time - time) > 60:
-                delta = float(Decimal(str(prev.time)) - Decimal(str(time)))
-                #self.stdout.write(f'{lineno} Back in time {delta}')
-
             if startswith(tail, [b'INFO LoRa started']):
                 lora = True
             elif startswith(tail, [b'INFO LoRa stopped', b'INFO Welcome to wsn']):
                 lora = False
+
+#           if startswith(tail, [b'INFO GPS Time updated!']):
+#               gps_time = time
+#               if gps_time < max_time:
+#                   logger.warning(f'{lineno}: Bad GPS time {gps_time} {max_time} {max_time - gps_time}')
+
+            if time < prev.time and (prev.time - time) > 60:
+                delta = float(Decimal(str(prev.time)) - Decimal(str(time)))
+                logger.warning(f'{lineno}: Back in time {delta}')
 
             if startswith(tail, prefixes):
                 ref = Line(lineno, time, line, tail)
@@ -90,11 +96,11 @@ class Command(BaseCommand):
                     max_time = ref_time
                 elif ref_time > max_time:
 #                   if (ref_time - max_time) > 2401:
-#                       self.stdout.write(f'{lineno} {ref_time - max_time}')
+#                       logger.warning(f'{lineno} {ref_time - max_time}')
                     max_time = ref_time
                 else:
                     fixed_time = ref_time + delta
-#                   self.stdout.write(f'!! {lineno}: {ref_time} {max_time} {fixed_time} {fixed_time - max_time}')
+#                   logger.warning(f'!! {lineno}: {ref_time} {max_time} {fixed_time} {fixed_time - max_time}')
 #                   ref_time += delta
             elif tail.startswith(b'INFO Frame saved to') and not lora:
 #               self.print_line(ref.lineno, ref.line)
@@ -106,7 +112,7 @@ class Command(BaseCommand):
 #               self.stdout.write(data)
                 if not prev.tail.startswith(b'INFO Welcome to wsn'):
                     if data['tst'] != ref_time:
-                        self.stdout.write('UNEXPECTED !!!')
+                        logger.error('UNEXPECTED !!!')
                         break
 
                 # Get frame from database
