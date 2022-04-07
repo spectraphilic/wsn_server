@@ -66,8 +66,9 @@ class Command(BaseCommand):
         ]
 
         lora = False
-        gps_time = None
+#       gps_time = None
         max_time = None
+        ref = None
 
         prev = Line(0, 0.0, b'\n', b'')
         for lineno, line in enumerate(logfile, start=1):
@@ -76,7 +77,7 @@ class Command(BaseCommand):
 
             if startswith(tail, [b'INFO LoRa started']):
                 lora = True
-            elif startswith(tail, [b'INFO LoRa stopped', b'INFO Welcome to wsn']):
+            elif startswith(tail, [b'INFO LoRa stopped', b'INFO Welcome to wsn', b'INFO ===== Loop ']):
                 lora = False
 
 #           if startswith(tail, [b'INFO GPS Time updated!']):
@@ -84,7 +85,10 @@ class Command(BaseCommand):
 #               if gps_time < max_time:
 #                   logger.warning(f'{lineno}: Bad GPS time {gps_time} {max_time} {max_time - gps_time}')
 
-            if time < prev.time and (prev.time - time) > 60:
+            if startswith(tail, [b'INFO Time loaded from TIME.TXT']):
+                logger.warning(f'{lineno}: Time restored from TIME.TXT')
+                delta = 0
+            elif time < prev.time and (prev.time - time) > 60:
                 delta = float(Decimal(str(prev.time)) - Decimal(str(time)))
                 logger.warning(f'{lineno}: Back in time {delta}')
 
@@ -103,6 +107,11 @@ class Command(BaseCommand):
 #                   logger.warning(f'!! {lineno}: {ref_time} {max_time} {fixed_time} {fixed_time - max_time}')
 #                   ref_time += delta
             elif tail.startswith(b'INFO Frame saved to') and not lora:
+                # May happen if log file is truncated for some reason (e.g.
+                # happens with sw-110)
+                if ref is None:
+                    continue
+
 #               self.print_line(ref.lineno, ref.line)
 #               self.print_line(lineno, line)
 
@@ -111,8 +120,14 @@ class Command(BaseCommand):
                 data = data_iterator.next(date)
 #               self.stdout.write(data)
                 if not prev.tail.startswith(b'INFO Welcome to wsn'):
+                    # This may happen if the log file is truncated for some
+                    # reason, then there may be frames in the data files not
+                    # in the log file.
+                    while data['tst'] < ref_time:
+                        data = data_iterator.next(date)
+
                     if data['tst'] != ref_time:
-                        logger.error('UNEXPECTED !!!')
+                        logger.error(f'{lineno}: log-time={ref_time} data-time={data["tst"]}')
                         break
 
                 # Get frame from database
