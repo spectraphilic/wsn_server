@@ -102,7 +102,7 @@ class Command(BaseCommand):
 #                   if (ref_time - max_time) > 2401:
 #                       logger.warning(f'{lineno} {ref_time - max_time}')
                     max_time = ref_time
-                else:
+                elif delta:
                     fixed_time = ref_time + delta
 #                   logger.warning(f'!! {lineno}: {ref_time} {max_time} {fixed_time} {fixed_time - max_time}')
 #                   ref_time += delta
