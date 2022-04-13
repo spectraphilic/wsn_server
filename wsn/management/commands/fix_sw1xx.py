@@ -2,6 +2,7 @@
 import collections
 from datetime import datetime
 from decimal import Decimal
+import itertools
 import logging
 from pathlib import Path
 
@@ -28,14 +29,20 @@ def startswith(tail, prefixes):
 
 class DataIterator:
     def __init__(self, path):
-        self.iterators = {}
+        self.frames = {}
         for path in sorted(path.iterdir()):
             if path.suffix == '.TXT':
                 data_file = path.open('rb')
-                self.iterators[path.stem] = waspmote.read_wasp_data(data_file)
+                for frame in waspmote.read_wasp_data(data_file):
+                    time = frame['tst']
+                    self.frames.setdefault(time, []).append(frame)
 
-    def next(self, name):
-        return next(self.iterators[name])
+    def next(self, time):
+        time = int(time)
+        frame = self.frames[time].pop(0)
+        if not self.frames[time]:
+            del self.frames[time]
+        return frame
 
 
 class Command(BaseCommand):
@@ -72,6 +79,9 @@ class Command(BaseCommand):
 
         prev = Line(0, 0.0, b'\n', b'')
         for lineno, line in enumerate(logfile, start=1):
+            if b' ' not in line:
+                continue
+
             time, tail = line.split(b' ', 1)
             time = float(time)
 
@@ -116,19 +126,8 @@ class Command(BaseCommand):
 #               self.print_line(lineno, line)
 
                 # Get data from data file
-                date = datetime.utcfromtimestamp(time).strftime('%y%m%d')
-                data = data_iterator.next(date)
+                data = data_iterator.next(ref_time)
 #               self.stdout.write(data)
-                if not prev.tail.startswith(b'INFO Welcome to wsn'):
-                    # This may happen if the log file is truncated for some
-                    # reason, then there may be frames in the data files not
-                    # in the log file.
-                    while data['tst'] < ref_time:
-                        data = data_iterator.next(date)
-
-                    if data['tst'] != ref_time:
-                        logger.error(f'{lineno}: log-time={ref_time} data-time={data["tst"]}')
-                        break
 
                 # Get frame from database
                 if fixed_time is not None:
@@ -149,6 +148,8 @@ class Command(BaseCommand):
         with (path / 'LOG.TXT').open('rb') as file:
             self.__fix_time(file, data_iterator)
 
+        return data_iterator.frames
+
     def handle(self, path, save, *args, **kw):
         if not save:
             logger.info('The changes will not be saved')
@@ -156,7 +157,7 @@ class Command(BaseCommand):
         abort_message = 'Abort the transaction'
         try:
             with transaction.atomic():
-                self.fix_time(path)
+                frames = self.fix_time(path)
 
                 # Raise an exception to abort the transaction
                 if not save:
@@ -166,3 +167,7 @@ class Command(BaseCommand):
                 raise
 
             logger.info(abort_message)
+
+        if frames:
+            print('Frames not in the log file:')
+            print(list(itertools.chain(*frames.values())))
