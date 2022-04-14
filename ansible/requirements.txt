@@ -1,14 +1,10 @@
-Django==4.0.3
+Django==4.0.4
 django-sendfile2==0.6.1
 django-vite==2.0.2
 gunicorn==20.1.0
 python-dotenv==0.20.0
 strawberry-graphql-django==0.3rc1
 uvicorn==0.17.6
-
-{% if django_debug %}
-whitenoise==6.0.0
-{% endif %}
 
 {% if django_database.engine == 'postgres' %}
 psycopg2==2.9.3
