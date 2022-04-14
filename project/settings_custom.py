@@ -35,9 +35,6 @@ INSTALLED_APPS += [
 #   'apps.demo',
 ]
 
-from pprint import pprint
-pprint(INSTALLED_APPS)
-
 # Static files
 STATICFILES_DIRS = [
     BASE_DIR / 'project' / 'static',
