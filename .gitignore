@@ -6,7 +6,8 @@
 /node_modules/
 /project/settings_ansible.py
 /project/settings_local.py
-/project/static/build/
+/project/static/assets/
+/project/static/manifest.json
 /var/
 /venv*/
 

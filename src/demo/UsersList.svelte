@@ -59,7 +59,7 @@
             <td>{user.email}</td>
             <td>{user.firstName}</td>
             <td>{user.lastName}</td>
-            <td><a href="" on:click|preventDefault={() => remove(user)}>Remove</a></td>
+            <td><button on:click|preventDefault={() => remove(user)}>Remove</button></td>
         </tr>
         {/each}
     </table>
