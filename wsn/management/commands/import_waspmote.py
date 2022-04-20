@@ -1,9 +1,12 @@
 # Standard Library
+import contextlib
 from datetime import datetime
+import pathlib
 import re
 from time import time
 import zipfile
 
+# Requirements
 import tqdm
 
 # Django
@@ -15,13 +18,41 @@ from wsn.parsers import waspmote
 from wsn.settings import WSN_MIN_DATE
 
 
+# TODO Replace the code below with zipfile.Path (after migration to Python 3.8)
+class Directory:
+
+    def __init__(self, path):
+        self.path = path
+
+    def namelist(self):
+        return [str(x.relative_to(self.path)) for x in self.path.rglob('*')]
+
+    def open(self, name):
+        return open(self.path / name, 'rb')
+
+@contextlib.contextmanager
+def opencontainer(path):
+    path = pathlib.Path(path)
+
+    if path.is_dir():
+        yield Directory(path)
+    elif zipfile.is_zipfile(path):
+        f = zipfile.ZipFile(path)
+        yield f
+        f.close()
+    else:
+        raise ValueError(f'{path} is not a directory nor a zip file')
+
+
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
         add_argument = parser.add_argument
         add_argument('paths', nargs='+', help='Path to file or directory')
+        add_argument('--merge', action='store_true', default=False,
+                     help='Merge split frames (for xbee, where pkg size is too small)')
 
-    def handle(self, *args, **kw):
+    def handle(self, paths, merge, *args, **kw):
         expr = re.compile(r'.*DATA/([0-9]{6})\.TXT$')
 
         series = {}
@@ -29,11 +60,10 @@ class Command(BaseCommand):
 
         # Parse
         skipped = []
-        for path in kw['paths']:
-            assert zipfile.is_zipfile(path)
-            self.stdout.write('Parsing %s' % path)
-            with zipfile.ZipFile(path, 'r') as zf:
-                names = sorted(zf.namelist())
+        for path in paths:
+            self.stdout.write(f'Parsing {path}')
+            with opencontainer(path) as container:
+                names = sorted(container.namelist())
                 for name in tqdm.tqdm(names):
                     match = expr.match(name)
                     if match:
@@ -51,7 +81,7 @@ class Command(BaseCommand):
                             skipped.append(name)
                             continue
 
-                        with zf.open(name) as data_file:
+                        with container.open(name) as data_file:
                             for frame in waspmote.read_wasp_data(data_file):
                                 # Add name to frame if it's missing
                                 serial = frame['serial']
@@ -104,5 +134,5 @@ class Command(BaseCommand):
             yes = input('Insert into database? Yes/[No]: ')
             if yes.lower() == 'yes':
                 t0 = time()
-                frame_to_database(serie, update=False)
+                frame_to_database(serie, update=False, merge=merge)
                 self.stdout.write('Done in 5{} seconds'.format(time() - t0))

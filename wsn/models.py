@@ -209,7 +209,7 @@ class Frame(TimeModelMixin, FlexModel):
     non_data_fields = {'metadata', 'time', 'inserted', json_field, 'frame_max'}
 
     @classmethod
-    def create(self, metadata, time, seq, data, update=False):
+    def create(self, metadata, time, seq, data, update=False, merge=True):
         """
         Create a new frame:
 
@@ -262,7 +262,7 @@ class Frame(TimeModelMixin, FlexModel):
             logger.warning(msg, obj.pk)
 
         # Merge
-        if created and seq is not None:
+        if merge and created and seq is not None:
             try:
                 self.merge_frames(metadata, time, save=True)
             except Exception:
@@ -351,7 +351,7 @@ class Frame(TimeModelMixin, FlexModel):
         return ('%016X' % value) if value else None
 
 
-def frame_to_database(validated_data, update=False):
+def frame_to_database(validated_data, update=False, merge=True):
     tags = validated_data['tags']
     frames = validated_data['frames']
     metadata, created = Metadata.get_or_create(tags)
@@ -361,7 +361,7 @@ def frame_to_database(validated_data, update=False):
         time = frame['time']
         data = frame['data']
         seq = data.pop('frame', None)
-        obj, created = Frame.create(metadata, time, seq, data, update=update)
+        obj, created = Frame.create(metadata, time, seq, data, update=update, merge=merge)
         if obj is not None:
             objs.append(obj)
 
