@@ -32,7 +32,7 @@ INSTALLED_APPS += [
     'strawberry.django',
     # For testing Svelte integration
     'apps.boot',
-#   'apps.demo',
+    'apps.demo',
 ]
 
 # Static files
@@ -68,5 +68,5 @@ DEFAULT_FROM_EMAIL = 'webmaster@' + fqdn
 SERVER_EMAIL = 'root@' + fqdn
 
 # Vite
-DJANGO_VITE_ASSETS_PATH = BASE_DIR / 'project' / 'static'
+DJANGO_VITE_ASSETS_PATH = BASE_DIR / 'project' / 'static' / 'build'
 DJANGO_VITE_DEV_MODE = DEBUG
