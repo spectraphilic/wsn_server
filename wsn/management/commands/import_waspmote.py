@@ -3,7 +3,6 @@ import contextlib
 from datetime import datetime
 import pathlib
 import re
-from time import time
 import zipfile
 
 # Requirements
@@ -13,9 +12,9 @@ import tqdm
 from django.core.management.base import BaseCommand
 
 # Project
-from wsn.models import frame_to_database
 from wsn.parsers import waspmote
 from wsn.settings import WSN_MIN_DATE
+from wsn import utils
 
 
 # TODO Replace the code below with zipfile.Path (after migration to Python 3.8)
@@ -108,31 +107,4 @@ class Command(BaseCommand):
             self.stdout.write('Data files skipped: %s' % skipped)
 
         # Import series
-        for serie in series.values():
-            tags = serie['tags']
-            frames = serie['frames']
-            n = len(frames)
-
-            # Sort by time
-            #frames.sort(key=lambda x: x['time'])
-
-            # Print
-            self.stdout.write('')
-            self.stdout.write('serial={serial} name={name}'.format(**tags))
-            first = frames[0]['time']
-            if n > 1:
-                last = frames[-1]['time']
-                assert first < last
-                first = datetime.utcfromtimestamp(first)
-                last = datetime.utcfromtimestamp(last)
-                self.stdout.write('{} frames from {} to {}'.format(n, first, last))
-            else:
-                first = datetime.utcfromtimestamp(first)
-                self.stdout.write('{} frame at {}'.format(n, first))
-
-            # Inserting
-            yes = input('Insert into database? Yes/[No]: ')
-            if yes.lower() == 'yes':
-                t0 = time()
-                frame_to_database(serie, update=False, merge=merge)
-                self.stdout.write('Done in 5{} seconds'.format(time() - t0))
+        utils.import_waspmote_series(series, self.stdout, merge=merge)

@@ -1,6 +1,5 @@
 # Standard Library
 import collections
-from datetime import datetime
 from decimal import Decimal
 import itertools
 import logging
@@ -13,6 +12,7 @@ from django.db import transaction
 # Project
 from wsn.models import Frame
 from wsn.parsers import waspmote
+from wsn import utils
 
 
 logger = logging.getLogger(__name__)
@@ -37,11 +37,17 @@ class DataIterator:
                     time = frame['tst']
                     self.frames.setdefault(time, []).append(frame)
 
-    def next(self, time):
+    def next(self, time, lineno):
         time = int(time)
-        frame = self.frames[time].pop(0)
-        if not self.frames[time]:
-            del self.frames[time]
+
+        frames = self.frames
+        if time not in frames:
+            logger.warning(f'{lineno}: frame time={time} not found in data files')
+            return None
+
+        frame = frames[time].pop(0)
+        if not frames[time]:
+            del frames[time]
         return frame
 
 
@@ -51,6 +57,8 @@ class Command(BaseCommand):
         add_argument = parser.add_argument
         add_argument('path', help='Path to SD directory')
         add_argument('--save', action='store_true', default=False)
+        add_argument('--fix', action='store_true', default=False,
+                     help='Fix frames in the database instead of importing')
 
     def print_line(self, *args):
         line = [x.decode() if type(x) is bytes else str(x) for x in args]
@@ -62,14 +70,18 @@ class Command(BaseCommand):
             self.frames[name] = Frame.objects.filter(metadata__name=name)
 
         frames = self.frames[name]
-        return frames.get(time=data['tst'], frame=data['frame'])
+        try:
+            return frames.get(time=data['tst'], frame=data['frame'])
+        except Frame.DoesNotExist:
+            return None
 
-    def __fix_time(self, logfile, data_iterator):
+    def __fix_time(self, logfile, data_iterator, fix):
         self.frames = {}
 
         prefixes = [
             b'INFO Welcome to wsn',
             b'INFO ===== Loop ',
+            b'INFO ping() ...', # rssimap
         ]
 
         lora = False
@@ -77,6 +89,9 @@ class Command(BaseCommand):
         max_time = None
         ref = None
 
+        series = {}
+        # series: {(serial, name): <serie>}
+        # serie: {tags: {serial: , name:}, frames: [{time: data: {} ...}]}
         prev = Line(0, 0.0, b'\n', b'')
         for lineno, line in enumerate(logfile, start=1):
             if b' ' not in line:
@@ -126,38 +141,52 @@ class Command(BaseCommand):
 #               self.print_line(lineno, line)
 
                 # Get data from data file
-                data = data_iterator.next(ref_time)
-#               self.stdout.write(data)
-
-                # Get frame from database
-                if fixed_time is not None:
-                    frame = self.__get_frame(data)
-                    self.stdout.write(f'pk={frame.id} time={ref_time} fixed={fixed_time}')
-                    frame.time = fixed_time
-                    frame.save()
-
-#               frame = self.__get_frame(data)
-#               self.stdout.write(f'pk = {frame.id}')
-#               self.stdout.write()
+                data = data_iterator.next(ref_time, lineno)
+                if data is not None:
+                    # Get frame from database
+                    if fix is False:
+                        frame = self.__get_frame(data)
+                        if frame is None:
+                            if fixed_time is not None:
+                                data['tst'] = int(fixed_time)
+                            frame = waspmote.data_to_json(data)
+                            # Append frame to series
+                            serial = frame['tags']['serial']
+                            name = frame['tags']['name']
+                            key = (serial, name)
+                            if key not in series:
+                                series[key] = frame
+                            else:
+                                series[key]['frames'].extend(frame['frames'])
+                    elif fixed_time is not None:
+                        frame = self.__get_frame(data)
+                        assert frame is not None
+                        self.stdout.write(f'pk={frame.id} time={ref_time} fixed={fixed_time}')
+                        frame.time = fixed_time
+                        frame.save()
 
             prev = Line(lineno, time, line, tail)
 
-    def fix_time(self, path):
+        # Import
+        if fix is False:
+            utils.import_waspmote_series(series, self.stdout, merge=False)
+
+    def __handle(self, path, fix):
         path = Path(path)
         data_iterator = DataIterator(path / 'DATA')
         with (path / 'LOG.TXT').open('rb') as file:
-            self.__fix_time(file, data_iterator)
+            self.__fix_time(file, data_iterator, fix)
 
         return data_iterator.frames
 
-    def handle(self, path, save, *args, **kw):
+    def handle(self, path, save, fix, *args, **kwargs):
         if not save:
             logger.info('The changes will not be saved')
 
         abort_message = 'Abort the transaction'
         try:
             with transaction.atomic():
-                frames = self.fix_time(path)
+                frames = self.__handle(path, fix)
 
                 # Raise an exception to abort the transaction
                 if not save:
