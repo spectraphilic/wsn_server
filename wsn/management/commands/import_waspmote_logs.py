@@ -96,11 +96,11 @@ class Command(BaseCommand):
         # serie: {tags: {serial: , name:}, frames: [{time: data: {} ...}]}
         prev = Line(0, 0.0, b'\n', b'')
         for lineno, line in enumerate(logfile, start=1):
-            if b' ' not in line:
+            try:
+                time, tail = line.split(b' ', 1)
+                time = float(time)
+            except ValueError:
                 continue
-
-            time, tail = line.split(b' ', 1)
-            time = float(time)
 
             if startswith(tail, [b'INFO LoRa started']):
                 lora = True
