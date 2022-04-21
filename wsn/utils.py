@@ -53,6 +53,12 @@ def import_waspmote_series(series, stdout, merge=True):
         frames = serie['frames']
         n = len(frames)
 
+        # Do not import frames with the I2C bug
+        serial = tags['serial']
+        if serial == 0:
+            stdout.write(f'Do not import {n} frames with serial={serial}')
+            continue
+
         # Sort by time
         #frames.sort(key=lambda x: x['time'])
 

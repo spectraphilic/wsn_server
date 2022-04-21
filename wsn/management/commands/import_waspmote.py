@@ -104,7 +104,7 @@ class Command(BaseCommand):
 
         # Skipped data files
         if skipped:
-            self.stdout.write('Data files skipped: %s' % skipped)
+            self.stdout.write(f'Data files skipped: {skipped}')
 
         # Import series
         utils.import_waspmote_series(series, self.stdout, merge=merge)

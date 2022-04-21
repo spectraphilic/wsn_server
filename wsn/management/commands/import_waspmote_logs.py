@@ -70,8 +70,10 @@ class Command(BaseCommand):
             self.frames[name] = Frame.objects.filter(metadata__name=name)
 
         frames = self.frames[name]
+        frames = frames.filter(time=data['tst'], frame=data['frame'])
+#       frames = frames.filter(bat=data.get('bat'))
         try:
-            return frames.get(time=data['tst'], frame=data['frame'])
+            return frames.get()
         except Frame.DoesNotExist:
             return None
 
