@@ -35,9 +35,14 @@ INSTALLED_APPS += [
     'apps.demo',
 ]
 
+# Vite
+DJANGO_VITE_ASSETS_PATH = BASE_DIR / 'var' / 'build'
+DJANGO_VITE_DEV_MODE = DEBUG
+
 # Static files
 STATICFILES_DIRS = [
     BASE_DIR / 'project' / 'static',
+    DJANGO_VITE_ASSETS_PATH,
 ]
 
 # Templates
@@ -66,7 +71,3 @@ MANAGERS = ADMINS
 fqdn = getfqdn()
 DEFAULT_FROM_EMAIL = 'webmaster@' + fqdn
 SERVER_EMAIL = 'root@' + fqdn
-
-# Vite
-DJANGO_VITE_ASSETS_PATH = BASE_DIR / 'project' / 'static' / 'build'
-DJANGO_VITE_DEV_MODE = DEBUG
