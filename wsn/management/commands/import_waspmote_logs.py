@@ -152,6 +152,10 @@ class Command(BaseCommand):
                             if fixed_time is not None:
                                 data['tst'] = int(fixed_time)
                             frame = waspmote.data_to_json(data)
+
+                            # Exclude boot frames
+                            frame['frames'] = [x for x in frame['frames'] if x['data'] != {'type': 2, 'frame': 0}]
+
                             # Append frame to series
                             serial = frame['tags']['serial']
                             name = frame['tags']['name']

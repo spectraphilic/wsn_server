@@ -94,6 +94,9 @@ class Command(BaseCommand):
                                 # to {'tags': {}, 'frames': []} structure
                                 frame = waspmote.data_to_json(frame)
 
+                                # Exclude boot frames
+                                frame['frames'] = [x for x in frame['frames'] if x['data'] != {'type': 2, 'frame': 0}]
+
                                 # Append frame to series
                                 key = (serial, name)
                                 if key not in series:
