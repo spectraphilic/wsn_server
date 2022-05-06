@@ -5,13 +5,13 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 export default defineConfig({
   base: '/static/',
   build: {
+    lib: {
+        entry: 'src/main.js',
+        formats: ['es'],
+        fileName: (format) => 'main.js',
+    },
     manifest: true,
     outDir: 'var/build',
-    rollupOptions: {
-      input: {
-        main: 'src/main.js',
-      }
-    }
   },
   plugins: [svelte({
     //preserveLocalState: true,
