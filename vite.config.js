@@ -13,7 +13,7 @@ export default defineConfig({
     manifest: true,
     outDir: 'var/build',
   },
-  plugins: [svelte({
-    //preserveLocalState: true,
-  })]
+  plugins: [
+    svelte(),
+  ]
 })
