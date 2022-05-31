@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 
 # GraphQL
 import strawberry as sb
-from strawberry.django import auto
+from strawberry import auto
 
 
 User = get_user_model()

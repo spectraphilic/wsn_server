@@ -41,9 +41,12 @@ DJANGO_VITE_DEV_MODE = DEBUG
 
 # Static files
 STATICFILES_DIRS = [
-    BASE_DIR / 'project' / 'static',
-    DJANGO_VITE_ASSETS_PATH,
+    #BASE_DIR / 'project' / 'static',
 ]
+
+if not DJANGO_VITE_DEV_MODE:
+    STATICFILES_DIRS.append(DJANGO_VITE_ASSETS_PATH)
+
 
 # Templates
 TEMPLATES = [
