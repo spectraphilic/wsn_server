@@ -10,25 +10,28 @@
   - role: "jdavid.django"
     django_debug      : false
     django_pull       : true
-    django_with_nginx : true
     django_with_monit : true
-    django_with_sudo  : false
 
     #django_domain     : ""
     django_name       : "django-boot-production"
     django_root       : "/tmp/django-boot-production"
 
-    django_http       : false
-    django_https      : true
-    django_hsts       : 0
-    certbot_email     : ""
-
-    django_cache      :
+    django_cache:
       backend         : "memcached"
       location        : "unix:/run/memcached/memcached.sock"
 
-    django_database   :
+    django_database:
       engine          : "postgres"
       name            : ""
       user            : ""
       password        : ""
+
+    django_server:
+      workers         : 6
+
+    django_web:
+      http            : false
+      https           : true
+
+    django_cert:
+      email           : ""

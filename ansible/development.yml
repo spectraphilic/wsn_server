@@ -10,9 +10,13 @@
   - role              : "jdavid.django"
     django_debug      : true
     django_pull       : false
-    django_with_nginx : false
     django_with_monit : false
     django_with_sudo  : false
+
+#   django_cache      :
+#     backend         : "memcached"
+#     location        : "127.0.0.1:11211"
+#     location        : "unix:/run/memcached/memcached.sock"
 
 #   django_database   :
 #     engine          : "postgres"
@@ -20,9 +24,5 @@
 #     user            : ""
 #     password        : ""
 
-#   django_cache      :
-#     backend         : "memcached"
-#     location        : "127.0.0.1:11211"
-#     location        : "unix:/run/memcached/memcached.sock"
-
-    django_port       : 8000
+    django_server     :
+      port            : 8000

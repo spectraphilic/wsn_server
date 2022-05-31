@@ -11,5 +11,5 @@ psycopg2==2.9.3
 {% endif %}
 
 {% if django_cache.backend == 'memcached' %}
-pymemcache==3.5.1
+pymemcache==3.5.2
 {% endif %}
