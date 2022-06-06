@@ -11,7 +11,6 @@
     django_debug      : true
     django_pull       : false
     django_with_monit : false
-    django_with_sudo  : false
 
 #   django_cache      :
 #     backend         : "memcached"

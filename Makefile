@@ -29,6 +29,9 @@ staging:
 production:
 	ansible-playbook -i ansible/hosts ansible/production.yml
 
+requirements:
+	ansible-playbook -i ansible/hosts ansible/development.yml --tags "pip"
+
 #
 # Start, stop
 #
