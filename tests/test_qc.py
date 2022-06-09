@@ -160,13 +160,10 @@ def test_qc(client_ro, client_rw, data, db):
 
     # Download
     for client in [client_ro, client_rw]:
-        download_url = reverse('api:qc-download')
+        download_url = reverse('api:qc-download', args=[name])
         response = client.get(download_url)
         assert response.status_code == 200
         response_json = response.json()
-        assert response_json['count'] == 1
-        results = response_json['results']
-        assert len(results) == 1
-        result = results[0]
-        assert result['name'] == name
-        assert result['data'] == data
+        results = response_json
+        assert len(results) == len(data)
+        assert results == data

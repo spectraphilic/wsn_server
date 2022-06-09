@@ -4,7 +4,7 @@ from django.core.paginator import Paginator
 from django.db import connection, transaction
 from django.utils.functional import cached_property
 
-from rangefilter.filter import DateRangeFilter
+from rangefilter.filters import DateRangeFilter
 
 # Project
 from . import models
