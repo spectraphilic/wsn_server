@@ -1,46 +1,11 @@
 # Django
 from django.contrib import admin
-from django.core.paginator import Paginator
-from django.db import connection, transaction
-from django.utils.functional import cached_property
 
 from rangefilter.filters import DateRangeFilter
 
 # Project
 from . import models
 from . import utils
-
-
-class EstimatedCountPaginator(Paginator):
-    """
-    From https://code.djangoproject.com/ticket/8408#comment:49
-    See also https://hakibenita.com/optimizing-the-django-admin-paginator
-    And https://www.citusdata.com/blog/2016/10/12/count-performance/
-    """
-
-    @cached_property
-    def count(self):
-        # The filtered search is not optimazed
-        # TODO Usign a function that parses EXPLAIN, see links
-        if self.object_list.query.where:
-            return self.object_list.count()
-
-        # Speed up the unfiltered search (total count)
-        db_table = self.object_list.model._meta.db_table
-        with transaction.atomic(), connection.cursor() as cursor:
-            cursor.execute(
-            f"""
-                SELECT
-                  (reltuples/relpages) * (
-                    pg_relation_size('{db_table}') /
-                    (current_setting('block_size')::integer)
-                  )
-                  FROM pg_class where relname = '{db_table}'
-            """)
-            result = cursor.fetchone()
-            if not result:
-                return 0
-            return int(result[0])
 
 
 #
@@ -141,7 +106,6 @@ class FrameAdmin(admin.ModelAdmin):
 
     # Speed up
     show_full_result_count = False
-    paginator = EstimatedCountPaginator
 
     def get_readonly_fields(self, request, obj=None):
         fields = [
