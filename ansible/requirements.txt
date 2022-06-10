@@ -13,7 +13,7 @@ pymemcache==3.5.0
 {% endif %}
 
 # Project
-celery==4.4.7
+celery==4.3.1
 clickhouse-driver[lz4]==0.2.3
 django-admin-rangefilter==0.8.4
 django-filter==21.1
