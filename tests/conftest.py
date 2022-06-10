@@ -1,5 +1,5 @@
 """
-Writing these tests has been harder that I expected. Follows a description of
+Writing these tests has been harder than I expected. Follows a description of
 the chain of choices, problems, and solutions.
 
 Choice: We want to reuse fixtures to speed up tests.
