@@ -1,5 +1,6 @@
 <script>
     import * as urql from '@urql/svelte';
+    import { client } from './client.js';
 
     export let id;
     export let username = '';
@@ -9,48 +10,48 @@
 
     let data = {id, username, email, firstName, lastName};
 
-    urql.initClient({
-        url: '/demo/graphql/',
-    });
-
-    const updateUser = urql.mutation({query: `
-        mutation updateUser(
-            $id: ID!,
-            $username: String,
-            $email: String,
-            $firstName: String,
-            $lastName: String)
-        {
-            updateUser(
-                data: {
-                    username: $username,
-                    email: $email,
-                    firstName: $firstName,
-                    lastName: $lastName
-                },
-                filters: {
-                    id: { inList: [$id] }
-                })
-            {
-                id
-                username
-                email
-                firstName
-                lastName
-            }
-        }
-    `});
-
+    let result;
     function update(ev) {
         ev.preventDefault();
-        const input = {id, username, email, firstName, lastName};
-        updateUser(input).then(result => {
-            if (result.error) {
-                console.log(result.error);
-            } else {
-                data = result.data.updateUser[0];
-            }
+        result = urql.mutationStore({
+            client: $client,
+            variables: {id, username, email, firstName, lastName},
+            query: urql.gql`
+                mutation updateUser(
+                    $id: ID!,
+                    $username: String,
+                    $email: String,
+                    $firstName: String,
+                    $lastName: String)
+                {
+                    updateUser(
+                        data: {
+                            username: $username,
+                            email: $email,
+                            firstName: $firstName,
+                            lastName: $lastName
+                        },
+                        filters: {
+                            id: { inList: [$id] }
+                        })
+                    {
+                        id
+                        username
+                        email
+                        firstName
+                        lastName
+                    }
+                }
+            `,
         });
+    }
+
+    $: if ($result && $result.fetching == false) {
+        if ($result.error) {
+            console.log('ERROR', $result.error);
+        } else {
+            data = $result.data.updateUser[0];
+        }
     }
 </script>
 

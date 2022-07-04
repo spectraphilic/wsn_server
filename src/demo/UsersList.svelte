@@ -1,33 +1,37 @@
 <script>
     import * as urql from '@urql/svelte';
+    import { client } from './client.js';
 
-    urql.initClient({
-        url: '/demo/graphql/',
+    let users = urql.queryStore({
+        client: $client,
+        query: urql.gql`
+            query {
+                users { id username email firstName lastName }
+            }`,
     });
 
-    const users = urql.operationStore(`
-        query {
-            users { id username email firstName lastName }
-        }
-    `);
-
-    const deleteUser = urql.mutation({query: `
-        mutation deleteUser($id: ID!) {
-            deleteUser(filters: {id: {exact: $id}})
-            { id }
-        }
-    `});
-
-    urql.query(users);
+    let result;
 
     function remove(user) {
-        deleteUser({id: user.id}).then(result => {
-            if (result.error) {
-                console.log(result.error);
-            } else {
-                //data = result.data.updateUser[0];
-            }
+        result = urql.mutationStore({
+            client: $client,
+            variables: {id: user.id},
+            query: urql.gql`
+                mutation deleteUser($id: ID!) {
+                    deleteUser(filters: {id: {exact: $id}})
+                    { id }
+                }
+            `,
         });
+    }
+
+    $: if ($result && $result.fetching == false) {
+        if ($result.error) {
+            console.log('ERROR', $result.error);
+        } else {
+            const id = $result.data.deleteUser[0].id;
+            console.log('DELETED', id);
+        }
     }
 </script>
 

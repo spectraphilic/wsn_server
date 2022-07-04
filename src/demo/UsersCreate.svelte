@@ -1,5 +1,6 @@
 <script>
     import * as urql from '@urql/svelte';
+    import { client } from './client.js';
 
     let id;
     let username = '';
@@ -7,44 +8,46 @@
     let firstName = '';
     let lastName = '';
 
-    urql.initClient({
-        url: '/demo/graphql/',
-    });
-
-    const mutation = urql.mutation({query: `
-        mutation createUser(
-            $username: String!,
-            $email: String,
-            $firstName: String,
-            $lastName: String)
-        {
-            createUser(
-                data: {
-                    username: $username,
-                    email: $email,
-                    firstName: $firstName,
-                    lastName: $lastName
-                },
-            ) {
-                id
-                username
-                email
-                firstName
-                lastName
-            }
-        }
-    `});
+    let result;
 
     function update(ev) {
         ev.preventDefault();
-        const input = {id, username, email, firstName, lastName};
-        mutation(input).then(result => {
-            if (result.error) {
-                console.log(result.error);
-            } else {
-                window.location.href = '..';
-            }
+
+        result = urql.mutationStore({
+            client: $client,
+            variables: {id, username, email, firstName, lastName},
+            query: urql.gql`
+                mutation createUser(
+                    $username: String!,
+                    $email: String,
+                    $firstName: String,
+                    $lastName: String)
+                {
+                    createUser(
+                        data: {
+                            username: $username,
+                            email: $email,
+                            firstName: $firstName,
+                            lastName: $lastName
+                        },
+                    ) {
+                        id
+                        username
+                        email
+                        firstName
+                        lastName
+                    }
+                }
+            `,
         });
+    }
+
+    $: if ($result && $result.fetching == false) {
+        if ($result.error) {
+            console.log('ERROR', $result.error);
+        } else {
+            window.location.href = '..';
+        }
     }
 </script>
 
