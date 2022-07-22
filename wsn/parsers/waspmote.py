@@ -62,7 +62,7 @@ def post_ds2(name, value):
     # ds2_dir
     return value
 
-def post_atmos_old(name, value):
+def post_atmos22_old(name, value):
     if name in {'wind_temp', 'wind_x', 'wind_y'}:
         return round(value * 10) / 10
     elif name in {'wind_speed', 'wind_gust'}:
@@ -71,7 +71,7 @@ def post_atmos_old(name, value):
     # wind_dir
     return value
 
-def post_atmos(name, value):
+def post_atmos22(name, value):
     if name in {'wind_temp', 'wind_x', 'wind_y'}:
         return value / 10
     elif name in {'wind_speed', 'wind_gust'}:
@@ -79,6 +79,26 @@ def post_atmos(name, value):
 
     # wind_dir
     return value
+
+def post_atmos41(name, value):
+    scale = {
+        'solar': 1,
+        'precipitation': 1000,
+        'strikes': 1,
+        'strike_distance': 1,
+        'wind_speed': 100,
+        'wind_dir': 10,
+        'wind_gust': 100,
+        'wind_temp': 10,
+        'vapor_pressure': 100,
+        'atmos_pressure': 100,
+        'humidity': 1000,
+        'humidity_temp': 10,
+        'wind_x': 10,
+        'wind_y': 10,
+    }[name]
+
+    return value / scale if scale != 1 else value
 
 
 """
@@ -92,50 +112,53 @@ n - Array of int16_t (specially compressed)
 """
 
 SENSORS = {
-     15: ('f', ['pa']),                                  # Legacy (agr board: pressure)
-     33: ('f', ['tcb']),                                 # Legacy (agr board: temperature)
-     35: ('f', ['humb']),                                # Legacy (agr board: humidity)
-     38: ('f', ['lw']),                                  # Legacy (agr board: leaf-wetness)
-     52: ('u', ['bat']),                                 # Battery level %
-     53: ('ff', ['latitude', 'longitude']),              # GPS location
-     54: ('j', ['rssi']),                                # RSSI
-     55: ('s', ['mac']),                                 # Legacy (MAC address)
-     62: ('f', ['in_temp']),                             # Legacy (v12 RTC: internal temp)
-     63: ('jjj', ['acc_x', 'acc_y', 'acc_z'], post_acc), # Accelerometer
-     65: ('s', ['str']),                                 # Legacy (string field)
-     74: ('f', ['bme_tc']),                              # Legacy (BME, see 210)
-     76: ('f', ['bme_hum']),                             # Legacy (BME, see 210)
-     77: ('f', ['bme_pres']),                            # Legacy (BME, see 210)
-     85: ('u', ['tx_pwr']),                              # Legacy (transmission power)
-     91: ('f', ['altitude']),                            # GPS altitude
-    123: ('w', ['tst']),                                 # Time stamp (epoch)
-    200: ('fff', ['ctd_depth', 'ctd_temp', 'ctd_cond'],  # Legacy (CTD-10, see 216)
+     15: ('f', ['pa']),                                    # Legacy (agr board: pressure)
+     33: ('f', ['tcb']),                                   # Legacy (agr board: temperature)
+     35: ('f', ['humb']),                                  # Legacy (agr board: humidity)
+     38: ('f', ['lw']),                                    # Legacy (agr board: leaf-wetness)
+     52: ('u', ['bat']),                                   # Battery level %
+     53: ('ff', ['latitude', 'longitude']),                # GPS location
+     54: ('j', ['rssi']),                                  # RSSI
+     55: ('s', ['mac']),                                   # Legacy (MAC address)
+     62: ('f', ['in_temp']),                               # Legacy (v12 RTC: internal temp)
+     63: ('jjj', ['acc_x', 'acc_y', 'acc_z'], post_acc),   # Accelerometer
+     65: ('s', ['str']),                                   # Legacy (string field)
+     74: ('f', ['bme_tc']),                                # Legacy (BME, see 210)
+     76: ('f', ['bme_hum']),                               # Legacy (BME, see 210)
+     77: ('f', ['bme_pres']),                              # Legacy (BME, see 210)
+     85: ('u', ['tx_pwr']),                                # Legacy (transmission power)
+     91: ('f', ['altitude']),                              # GPS altitude
+    123: ('w', ['tst']),                                   # Time stamp (epoch)
+    200: ('fff', ['ctd_depth', 'ctd_temp', 'ctd_cond'],    # Legacy (CTD-10, see 216)
           post_ctd_old),
-    201: ('fff', ['ds2_speed', 'ds2_dir', 'ds2_temp']),  # Legacy (DS-2, see 217)
+    201: ('fff', ['ds2_speed', 'ds2_dir', 'ds2_temp']),    # Legacy (DS-2, see 217)
     202: ('fff', ['ds2_meridional', 'ds2_zonal', 'ds2_gust']), # Legacy (DS-2, see 217)
-    203: ('n', ['ds1820'], post_ds1820),                 # DS18B20 string, array of temperatures
-    204: ('ww', ['mb_median', 'mb_sd']),                 # Legacy (MB73XX, see 214)
-    205: ('uf', ['gps_satellites', 'gps_accuracy']),     # GPS number of satellites and (horizontal) accuracy
-    206: ('f', ['volts']),                               # Battery level volts
-    207: ('fffuf', ['precip_abs', 'precip_dif',          # WS-100
+    203: ('n', ['ds1820'], post_ds1820),                   # DS18B20 string, array of temperatures
+    204: ('ww', ['mb_median', 'mb_sd']),                   # Legacy (MB73XX, see 214)
+    205: ('uf', ['gps_satellites', 'gps_accuracy']),       # GPS number of satellites and (horizontal) accuracy
+    206: ('f', ['volts']),                                 # Battery level volts
+    207: ('fffuf', ['precip_abs', 'precip_dif',            # WS-100
                     'precip_int_h', 'precip_type',
                     'precip_int_min']),
-    208: ('ffffff', ['ds2_speed', 'ds2_dir', 'ds2_temp', # Legacy (DS-2, see 217)
+    208: ('ffffff', ['ds2_speed', 'ds2_dir', 'ds2_temp',   # Legacy (DS-2, see 217)
                      'ds2_meridional', 'ds2_zonal', 'ds2_gust'], post_ds2_old),
-    209: ('fff', ['int_tc', 'int_hum', 'int_pres']),     # BME internal 0x76
-    210: ('fff', ['bme_tc', 'bme_hum', 'bme_pres']),     # BME external 0x77
-    211: ('ff', ['mlx_object', 'mlx_ambient']),          # MLX90614 temperature
-    212: ('f', ['tmp_temperature']),                     # TMP102 temperature
-    213: ('n', ['vl_distance']),                         # VL53L1X distance
-    214: ('n', ['mb_distance']),                         # MB73XX array of distances
-    215: ('ffffff', ['wind_speed', 'wind_dir',           # Legacy (ATMOS, see 218)
-                     'wind_gust', 'wind_temp', 'wind_x', 'wind_y'], post_atmos_old),
-    216: ('jjk', ['ctd_depth', 'ctd_temp', 'ctd_cond'],  # CTD-10
+    209: ('fff', ['int_tc', 'int_hum', 'int_pres']),       # BME internal 0x76
+    210: ('fff', ['bme_tc', 'bme_hum', 'bme_pres']),       # BME external 0x77
+    211: ('ff', ['mlx_object', 'mlx_ambient']),            # MLX90614 temperature
+    212: ('f', ['tmp_temperature']),                       # TMP102 temperature
+    213: ('n', ['vl_distance']),                           # VL53L1X distance
+    214: ('n', ['mb_distance']),                           # MB73XX array of distances
+    215: ('ffffff',                                        # Legacy (ATMOS-22, see 218)
+          ['wind_speed', 'wind_dir', 'wind_gust', 'wind_temp', 'wind_x', 'wind_y'],
+          post_atmos22_old),
+    216: ('jjk', ['ctd_depth', 'ctd_temp', 'ctd_cond'],    # CTD-10
           post_ctd),
-    217: ('jjjjjj', ['ds2_speed', 'ds2_dir', 'ds2_temp', # DS-2 (wind)
-                     'ds2_meridional', 'ds2_zonal', 'ds2_gust'], post_ds2),
-    218: ('jjjjjj', ['wind_speed', 'wind_dir',           # ATMOS (wind)
-                     'wind_gust', 'wind_temp', 'wind_x', 'wind_y'], post_atmos),
+    217: ('jjjjjj',                                        # DS-2 (wind)
+          ['ds2_speed', 'ds2_dir', 'ds2_temp', 'ds2_meridional', 'ds2_zonal', 'ds2_gust'],
+          post_ds2),
+    218: ('jjjjjj',                                        # ATMOS-22 (wind)
+          ['wind_speed', 'wind_dir', 'wind_gust', 'wind_temp', 'wind_x', 'wind_y'],
+          post_atmos22),
     219: ('ff', ['sht_tc', 'sht_hum']),                    # SHT31
     220: ('vvvvvvvvvv', ['channel_f1', 'channel_f2', 'channel_f3',
                          'channel_f4', 'channel_f5', 'channel_f6',
@@ -146,6 +169,15 @@ SENSORS = {
                          'icm_gyro_y', 'icm_gyro_z']),     # ICM20X
     222: ('vvv', ['vcnl_prox', 'vcnl_lux', 'vcnl_white']), # VCNL4040
     223: ('ffv', ['veml_lux', 'veml_white', 'veml_als']),  # VEML7700
+    224: ('jjjjjjjjjjjjjj',                                # ATMOS-41
+          [
+            'solar', 'precipitation', 'strikes', 'strike_distance',
+            'wind_speed', 'wind_dir', 'wind_gust', 'wind_temp',
+            'vapor_pressure', 'atmos_pressure',
+            'humidity', 'humidity_temp',
+            'wind_x', 'wind_y'
+          ],
+          post_atmos41),
 }
 
 
@@ -375,7 +407,7 @@ def data_to_json(data):
     """
     # Tags
     tags = {}
-    for key in 'source_addr_long', 'serial', 'name':
+    for key in 'name', 'serial', 'source_addr', 'source_addr_long':
         value = data.pop(key, None)
         if value is not None:
             tags[key] = value
