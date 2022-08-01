@@ -1,17 +1,19 @@
 {% load django_vite svelte %}
+
+<!DOCTYPE html>
 <html>
 
 <head>
-  {% vite_hmr_client %}
+    {% vite_hmr_client %}
 </head>
 
 <body>
-  {% if view.page_title %}
-  <h1>{{ view.page_title  }}</h1>
-  {% endif %}
+    {% if view.page_title %}
+    <h1>{{ view.page_title  }}</h1>
+    {% endif %}
 
-  <div id="app"></div>
-  {% vite_mount 'src/main.js' view.page_app view.props 'app' %}
+    <div id="app"></div>
+    {% vite_mount 'src/main.js' view.page_app view.props 'app' %}
 </body>
 
 </html>
