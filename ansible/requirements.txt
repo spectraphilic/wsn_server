@@ -1,4 +1,4 @@
-Django==4.0.6
+Django==4.1
 django-sendfile2==0.6.1
 django-vite==2.0.2
 gunicorn==20.1.0
