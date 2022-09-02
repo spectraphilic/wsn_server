@@ -4,7 +4,7 @@ django-vite==2.0.2
 gunicorn==20.1.0
 python-dotenv==0.20.0
 strawberry-graphql-django==0.4.0
-uvicorn==0.18.2
+uvicorn==0.18.3
 
 {% if django_database.engine == 'postgres' %}
 psycopg2==2.9.3
