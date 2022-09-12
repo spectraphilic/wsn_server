@@ -26,7 +26,7 @@ dev_conda: dev
 	ansible-playbook -i ansible/hosts ansible/dev_conda.yml
 
 dev_venv: dev
-	ansible-playbook -i ansible/hosts ansible/dev_venv.yml
+	ansible-playbook -i ansible/hosts ansible/development.yml
 
 production:
 	ansible-playbook -i ansible/hosts ansible/production.yml

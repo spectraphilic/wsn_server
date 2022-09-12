@@ -1,4 +1,4 @@
-from project.settings_ansible import *
+from project.settings_custom import *
 
 
 CELERY_TASK_MAX_RETRIES = 0

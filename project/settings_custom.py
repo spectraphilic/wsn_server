@@ -25,7 +25,6 @@ load_dotenv(f'{BASE_DIR}/.envrc')
 def replace(l, a, b):
     return [b if x == a else x for x in l]
 
-INSTALLED_APPS = replace(INSTALLED_APPS, 'django.contrib.admin', 'apps.myadmin')
 INSTALLED_APPS += [
     # Requirements
     'django_vite',

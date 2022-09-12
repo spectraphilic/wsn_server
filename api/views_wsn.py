@@ -5,7 +5,7 @@ import time
 
 # Django
 from django.conf import settings
-from django.contrib.postgres.fields.jsonb import KeyTextTransform
+from django.db.models.fields.json import KeyTextTransform
 from django.db.models import FloatField
 from django.db.models import Q, F
 from django.db.models import Avg, Count, Max, Min, StdDev, Sum, Variance
