@@ -3,7 +3,10 @@
 # the environment (development, staging, production, ...)
 #
 
-#python_version : "3.7"
+#python_version : "3.9"
 
 # This is automacally found, but can be explicetely set
 django_repo    : "https://github.com/spectraphilic/wsn_server.git"
+
+# Extra path to load Python modules
+pythonpath  : "apps"

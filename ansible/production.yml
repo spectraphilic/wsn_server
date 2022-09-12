@@ -10,26 +10,17 @@
   - role: "jdavid.django"
     django_debug      : false
     django_pull       : true
-    django_with_nginx : true
     django_with_monit : true
-    django_with_sudo  : false
 
     django_domain     : "wsn.latice.eu"
     django_name       : "wsn"
     django_root       : "/home/wsn/wsn_server"
 
-    django_http       : false
-    django_https      : true
-    django_hsts       : 0
-    nginx_timeout     : "600s"
-    nginx_max_body_size: "30m"
-    certbot_email     : "jdavid@geo.uio.no"
-
-#   django_cache      :
+#   django_cache:
 #     backend         : "memcached"
 #     location        : "unix:/run/memcached/memcached.sock"
 
-    django_database   :
+    django_database:
       engine          : "postgres"
       name            : "wsn"
       user            : "wsn"
@@ -37,3 +28,15 @@
 
     nginx_template    : "{{ playbook_dir }}/templates/nginx.conf"
     monit_template    : "{{ playbook_dir }}/templates/monit.conf"
+
+    django_server:
+      workers         : 6
+
+    django_web:
+      http            : false
+      https           : true
+      max_body_size   : "30m"
+      timeout         : "600s"
+
+    django_cert:
+      email           : "jdavid@geo.uio.no"

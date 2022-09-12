@@ -1,12 +1,5 @@
-import Hello from './Hello.svelte';
+import UsersCreate from './demo/UsersCreate.svelte';
+import UsersList from './demo/UsersList.svelte';
+import UsersUpdate from './demo/UsersUpdate.svelte';
 
-
-export default {
-  Hello,
-};
-
-
-// This will be executed once the document has been loaded
-window.addEventListener('load', function() {
-  //console.debug('Document ready');
-});
+export { UsersCreate, UsersList, UsersUpdate };

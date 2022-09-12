@@ -10,7 +10,7 @@ help:
 	@echo "    Check Makefile, every target is just an Ansible playbook"
 	@echo
 	@echo "make start / stop / restart / reload"
-	@echo "    Start (or stop, ...) the django instance using uwsgi."
+	@echo "    Start (or stop, ...) the django instance using asgi."
 	@echo
 
 
@@ -31,22 +31,25 @@ dev_venv: dev
 production:
 	ansible-playbook -i ansible/hosts ansible/production.yml
 
+requirements:
+	ansible-playbook -i ansible/hosts ansible/development.yml --tags "pip"
+
 #
 # Start, stop
 #
 
 start:
-	uwsgi var/etc/uwsgi.ini
+	gunicorn -c etc/gunicorn.conf.py
 
 stop:
-	uwsgi --stop var/run/uwsgi.pid
+	kill -TERM `cat var/run/asgi.pid`
 
 restart:
-	uwsgi --stop var/run/uwsgi.pid
-	uwsgi var/etc/uwsgi.ini
+	kill -TERM `cat var/run/asgi.pid`
+	gunicorn -c etc/gunicorn.conf.py
 
 reload:
-	echo r > var/run/uwsgi.fifo
+	kill -HUP `cat var/run/asgi.pid`
 
 
 #
