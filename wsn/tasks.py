@@ -63,7 +63,7 @@ def archive(entry_name, envelop):
     # File path where the file will be saved
     dt = datetime.datetime.utcfromtimestamp(envelop['received'])
     filepath = os.path.join(
-        settings.DATA_DIR,
+        settings.WSN_DATA_DIR,
         entry_name,
         str(dt.year),
         dt.strftime('%Y%m%d')
@@ -147,7 +147,7 @@ def in_meshlium(envelop):
         data = base64.b16decode(data)
         while data:
             try:
-                frame, data = waspmote.parse_frame(data)
+                frame, data = waspmote.parse_frame(data, cipher_key=settings.WSN_CIPHER_KEY)
             except waspmote.FrameNotFound:
                 break
 
@@ -217,7 +217,7 @@ def in_iridium(envelop):
     n = 0
     while data:
         try:
-            frame, data = waspmote.parse_frame(data)
+            frame, data = waspmote.parse_frame(data, cipher_key=settings.WSN_CIPHER_KEY)
         except waspmote.FrameNotFound:
             break
 

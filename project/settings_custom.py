@@ -9,6 +9,7 @@ Settings structure:
 """
 
 # Standard Library
+import os
 from socket import getfqdn
 
 # Requirements
@@ -155,4 +156,5 @@ REST_FRAMEWORK = {
 }
 
 # wsn: folder where frames are archived
-DATA_DIR = BASE_DIR / 'var' / 'data'
+WSN_DATA_DIR = BASE_DIR / 'var' / 'data'
+WSN_CIPHER_KEY = os.environ.get('WSN_CIPHER_KEY', None)
