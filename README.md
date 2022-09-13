@@ -50,7 +50,6 @@ Deployment is as simple as:
 System wide requirements:
 
     $ sudo apt-get install python3-venv # Required in Debian derivatives
-    $ sudo apt-get install uwsgi uwsgi-plugin-python3
     $ sudo apt-get install nginx monit rabbitmq-server
 
 Create the database as seen above. If PostgreSQL is configured to allow *peer*
