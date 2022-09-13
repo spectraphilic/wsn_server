@@ -31,7 +31,7 @@ Virtual env:
 
     $ sudo apt-get install python3-venv # Required in Debian derivatives
     $ sudo apt-get install ansible
-    $ make dev_venv
+    $ make development
     $ source venv/bin/activate
 
 Create a super user the first time. And run the server:
