@@ -26,13 +26,13 @@
       user            : "wsn"
       password        : "change-this-one"
 
-    nginx_template    : "{{ playbook_dir }}/templates/nginx.conf"
     monit_template    : "{{ playbook_dir }}/templates/monit.conf"
 
     django_server:
       workers         : 6
 
     django_web:
+      template        : "{{ playbook_dir }}/templates/nginx.conf"
       http            : false
       https           : true
       max_body_size   : "30m"

@@ -21,7 +21,7 @@ django-admin-rangefilter==0.8.8
 django-filter==22.1
 djangorestframework==3.13.1
 djangorestframework-api-key==2.2.0
-drf-spectacular==0.23.1
+drf-spectacular==0.24.0
 pycryptodome==3.15.0
 tabulate==0.8.10
 tqdm==4.64.1
