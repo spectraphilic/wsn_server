@@ -158,3 +158,9 @@ REST_FRAMEWORK = {
 # wsn: folder where frames are archived
 WSN_DATA_DIR = BASE_DIR / 'var' / 'data'
 WSN_CIPHER_KEY = os.environ.get('WSN_CIPHER_KEY', None)
+
+# Local settings, these should not be committed
+try:
+    from .settings_local import *
+except ImportError:
+    pass
