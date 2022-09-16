@@ -73,3 +73,9 @@ DJANGO_VITE_ASSETS_PATH = BASE_DIR / 'var' / 'build'
 DJANGO_VITE_DEV_MODE = DEBUG
 if not DJANGO_VITE_DEV_MODE:
     STATICFILES_DIRS.append(DJANGO_VITE_ASSETS_PATH)
+
+# Local settings, these should not be committed
+try:
+    from .settings_local import *
+except ImportError:
+    pass
