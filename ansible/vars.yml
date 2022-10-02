@@ -11,5 +11,5 @@ django_repo    : ""
 # Extra path to load Python modules
 pythonpath  : "apps"
 
-# This project uses node
+# Extra services
 django_with_node: false

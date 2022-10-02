@@ -29,9 +29,12 @@
     django_server:
       workers         : 6
 
-    django_web:
+    django_cert:
+      email           : ""
+
+    nginx:
       http            : false
       https           : true
 
-    django_cert:
-      email           : ""
+    supervisor:
+      daemon          : true
