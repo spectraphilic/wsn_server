@@ -12,11 +12,6 @@
     django_pull       : false
     django_with_monit : false
 
-#   django_cache      :
-#     backend         : "memcached"
-#     location        : "127.0.0.1:11211"
-#     location        : "unix:/run/memcached/memcached.sock"
-
     django_database   :
       engine          : "postgres"
       name            : "wsn"
@@ -25,3 +20,6 @@
 
     django_server     :
       port            : 8000
+
+    supervisor:
+      daemon          : false

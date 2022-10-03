@@ -16,10 +16,6 @@
     django_name       : "wsn"
     django_root       : "/home/wsn/wsn_server"
 
-#   django_cache:
-#     backend         : "memcached"
-#     location        : "unix:/run/memcached/memcached.sock"
-
     django_database:
       engine          : "postgres"
       name            : "wsn"
@@ -31,12 +27,15 @@
     django_server:
       workers         : 6
 
-    django_web:
+    django_cert:
+      email           : "jdavid@geo.uio.no"
+
+    nginx:
       template        : "{{ playbook_dir }}/templates/nginx.conf"
       http            : false
       https           : true
       max_body_size   : "30m"
       timeout         : "600s"
 
-    django_cert:
-      email           : "jdavid@geo.uio.no"
+    supervisor:
+      daemon          : true

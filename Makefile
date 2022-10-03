@@ -39,18 +39,16 @@ requirements:
 #
 
 start:
-	gunicorn -c etc/gunicorn.conf.py
+	supervisord -c etc/supervisor.conf
 
 stop:
-	kill -TERM `cat var/run/asgi.pid`
+	kill -TERM `cat var/run/supervisord.pid`
 
-restart:
-	kill -TERM `cat var/run/asgi.pid`
-	gunicorn -c etc/gunicorn.conf.py
+ctl:
+	supervisorctl -c etc/supervisor.conf
 
 reload:
-	kill -HUP `cat var/run/asgi.pid`
-
+	kill -HUP `cat var/run/supervisord.pid`
 
 #
 # Celery
