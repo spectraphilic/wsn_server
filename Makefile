@@ -49,10 +49,3 @@ ctl:
 
 reload:
 	kill -HUP `cat var/run/supervisord.pid`
-
-#
-# Celery
-#
-
-celery:
-	celery -A project worker -Q celery_wsn --loglevel=info

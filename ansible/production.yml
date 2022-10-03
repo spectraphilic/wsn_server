@@ -30,6 +30,10 @@
     django_cert:
       email           : "jdavid@geo.uio.no"
 
+    celery:
+      queues          : celery_wsn
+      workers         : 1
+
     nginx:
       template        : "{{ playbook_dir }}/templates/nginx.conf"
       http            : false

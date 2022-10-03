@@ -21,5 +21,9 @@
     django_server     :
       port            : 8000
 
+    celery:
+      queues          : celery_wsn
+      workers         : 1
+
     supervisor:
       daemon          : false

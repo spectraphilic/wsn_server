@@ -17,11 +17,11 @@ pymemcache==3.5.2
 # Project
 celery==4.3.1
 clickhouse-driver[lz4]==0.2.4
-django-admin-rangefilter==0.8.8
+django-admin-rangefilter==0.9.0
 django-filter==22.1
-djangorestframework==3.13.1
+djangorestframework==3.14.0
 djangorestframework-api-key==2.2.0
-drf-spectacular==0.24.0
+drf-spectacular==0.24.2
 pycryptodome==3.15.0
 tabulate==0.8.10
 tqdm==4.64.1
