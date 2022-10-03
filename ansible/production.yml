@@ -22,8 +22,6 @@
       user            : "wsn"
       password        : "change-this-one"
 
-    monit_template    : "{{ playbook_dir }}/templates/monit.conf"
-
     django_server:
       workers         : 6
 
