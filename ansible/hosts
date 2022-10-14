@@ -1,9 +1,0 @@
-#
-# Host is defined as ssh_host and ssh_user
-#
-
-development ansible_connection=local
-
-# To test ansible
-#staging     ansible_ssh_host=xxx ansible_ssh_user=xxx ansible_python_interpreter=/usr/bin/python3
-#production  ansible_ssh_host=xxx ansible_ssh_user=xxx ansible_python_interpreter=/usr/bin/python3

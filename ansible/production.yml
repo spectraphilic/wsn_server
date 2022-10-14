@@ -3,7 +3,7 @@
 #
 
 - name: "Production"
-  hosts: "production"
+  hosts: "hosts"
   vars_files:
   - "vars.yml"
   roles:
@@ -14,7 +14,6 @@
 
     #django_domain     : ""
     django_name       : "django-boot-production"
-    django_root       : "/tmp/django-boot-production"
 
     django_cache:
       backend         : "memcached"
@@ -33,8 +32,8 @@
       email           : ""
 
     nginx:
-      http            : false
-      https           : true
+      http            : true
+      https           : false
 
     supervisor:
       daemon          : true

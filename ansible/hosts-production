@@ -1,0 +1,7 @@
+[hosts]
+# Change this in your project: hostname of the remote server, username, and
+# absolute path where the project will be cloned
+hostname-or-ip-address ansible_ssh_user=username django_root=/home/username/django-boot
+
+[hosts:vars]
+ansible_python_interpreter = auto_silent

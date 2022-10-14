@@ -1,36 +1,32 @@
-#
-# Help
-#
-
 help:
 	@echo "Please use 'make <rule>' where <rule> is one of..."
 	@echo
-	@echo "make <target-environment>"
-	@echo "    Available options: development, staging, production."
-	@echo "    Check Makefile, every target is just an Ansible playbook"
-	@echo
-	@echo "make start / stop / restart / reload"
-	@echo "    Start (or stop, ...) the django instance using asgi."
-	@echo
+	@echo "  make local              -- Installs or updates a local development environment"
+	@echo "  make local-requirements -- Updates requirements of local development environment"
+	@echo "  make install-server     -- Installs or updates server environment"
+	@echo "  make deploy-production  -- Remotely updates server environment"
+	@echo ""
+	@echo "  make start              -- Start the program by runnint Supervisor"
+	@echo "  make stop               -- Stop Supervisor"
+	@echo "  make reload             -- Reload all programs in Supervisor"
+	@echo "  make ctl                -- Run supervisorctl to manage all programs"
+	@echo ""
 
-
-#
-# Ansible
-#
-
-development:
+local:
 	git submodule init
 	git submodule update
-	ansible-playbook -i ansible/hosts ansible/development.yml
+	ansible-playbook -i ansible/hosts-local ansible/development.yml
 
-staging:
-	ansible-playbook -i ansible/hosts ansible/staging.yml
+local-requirements:
+	ansible-playbook -i ansible/hosts-local ansible/development.yml --tags "pip"
 
-production:
-	ansible-playbook -i ansible/hosts ansible/production.yml
+install-production:
+	git submodule init
+	git submodule update
+	ansible-playbook -i ansible/hosts-local ansible/production.yml
 
-requirements:
-	ansible-playbook -i ansible/hosts ansible/development.yml --tags "pip"
+deploy-production:
+	ansible-playbook -i ansible/hosts-production ansible/production.yml
 
 #
 # Start, stop

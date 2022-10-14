@@ -3,7 +3,7 @@
 #
 
 - name: "Development"
-  hosts: "development"
+  hosts: "hosts"
   vars_files:
   - "vars.yml"
   roles:
