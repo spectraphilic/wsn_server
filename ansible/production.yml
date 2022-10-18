@@ -19,7 +19,7 @@
       engine          : "postgres"
       name            : "wsn"
       user            : "wsn"
-      password        : "change-this-one"
+      password        : "wsn"
 
     django_server:
       workers         : 6
