@@ -1,7 +1,0 @@
-#
-# Host is defined as ssh_host and ssh_user
-#
-
-development ansible_connection=local
-
-production  ansible_ssh_host=wsn ansible_ssh_user=wsn ansible_python_interpreter=/usr/bin/python3
