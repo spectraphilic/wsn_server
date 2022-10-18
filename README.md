@@ -32,7 +32,7 @@ Create a superuser, and run the server:
     python manage.py createsuperuser
     make start
 
-# Update a server inst
+# Update a server deployment
 
 If you have deployed the project in a server, see `INSTALL.md`, then you can
 update it remotely from your local instance.
