@@ -8,28 +8,30 @@
   - "vars.yml"
   roles:
   - role: "jdavid.django"
-    django_debug      : false
     django_pull       : true
     django_with_monit : true
 
-    #django_domain     : ""
     django_name       : "django-boot-production"
 
-    django_cache:
+    cache:
       backend         : "memcached"
       location        : "unix:/run/memcached/memcached.sock"
 
-    django_database:
+    database:
       engine          : "postgres"
       name            : ""
       user            : ""
       password        : ""
 
-    django_server:
+    django            :
+      debug           : false
       workers         : 6
 
     django_cert:
       email           : ""
+
+#   domains          :
+#   - ""
 
     nginx:
       http            : true

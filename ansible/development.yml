@@ -8,17 +8,17 @@
   - "vars.yml"
   roles:
   - role              : "jdavid.django"
-    django_debug      : true
     django_pull       : false
     django_with_monit : false
 
-#   django_database   :
-#     engine          : "postgres"
-#     name            : ""
-#     user            : ""
-#     password        : ""
+    database:
+      engine          : "postgres"
+      name            : "django-boot"
+      user            : "django-boot"
+      password        : "django-boot"
 
-    django_server     :
+    django            :
+      debug           : true
       port            : 8000
 
     supervisor:

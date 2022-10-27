@@ -6,10 +6,10 @@ strawberry-graphql-django==0.7
 supervisor==4.2.4
 uvicorn==0.19.0
 
-{% if django_database.engine == 'postgres' %}
+{% if database.engine == 'postgres' %}
 psycopg2==2.9.5
 {% endif %}
 
-{% if django_cache.backend == 'memcached' %}
+{% if cache.backend == 'memcached' %}
 pymemcache==3.5.2
 {% endif %}
