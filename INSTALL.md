@@ -8,7 +8,7 @@ available software is not too old.
 
 Install the system wide requirements:
 
-    apt install git make postgresql python3-venv rabbitmq-server
+    apt install git make postgresql python3-venv rabbitmq-server redis
     apt install certbot monit nginx
     apt install ansible
 
