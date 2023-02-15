@@ -54,9 +54,10 @@ correct version:
 There are a number of configuration options in the `ansible/production.yml`
 that must be changed for a different deployment.
 
-Set up a domain for the project and then edit the `django_domain` variable:
+Set up a domain for the project and then edit the `domains` variable:
 
-    django_domain: "wsn.example.com"
+    domains:
+    - "wsn.example.com"
 
 Change the email address used for Let's Encrypt:
 
@@ -103,20 +104,18 @@ And if it is, then reload the service:
 
     service nginx reload
 
-# Test
+# Permissions
 
-At this point we can test the application, start it:
+For Nginx to have access to the socket file of the Django server, it must have the
+permissions to reach it. Otherwise you will get a 502 response and see these errors
+in the Nginx logs:
 
-    make start
+    [...] connect() to unix:/home/wsn/wsn_server/var/run/uvicorn.socket failed (13: Permission denied) [...]
 
-Then visit the site wsn.example.com and login with the superuser account
-created ealier.
+One way to fix this is to set set the executable permission in parent directories,
+like this:
 
-If it's good then stop the program:
-
-    make stop
-
-If it's not then inspect the log files, in the `var/log/` directory.
+    chmod o+x /home/wsn
 
 # Monit
 
