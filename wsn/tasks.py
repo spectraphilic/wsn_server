@@ -10,7 +10,7 @@ import pytz
 # Celery
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from celery_once import QueueOnce
+from celery_singleton import Singleton
 
 # Django
 from django.conf import settings
@@ -32,11 +32,10 @@ logger = get_task_logger(__name__)
     max_retries=settings.CELERY_TASK_MAX_RETRIES,
     default_retry_delay=300,    # Retry after 5min (default is 3 minutes)
     # Run only one at a time
-    base=QueueOnce,
-    once={
-        'keys': ['entry_name'],
-        'timeout': 60,
-    },
+    base=Singleton,
+    unique_on=['entry_name'],
+    raise_on_duplicate=True,
+    lock_expiry=10,
 )
 def archive(entry_name, envelop):
     """

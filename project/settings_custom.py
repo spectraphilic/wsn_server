@@ -124,18 +124,13 @@ CELERY_TASK_ROUTES = {
     '*': {'queue': 'celery_wsn'},
 }
 
+# Celery singleton
+CELERY_SINGLETON_BACKEND_URL = 'redis://localhost:6379/wsn'
+
 # Task options (not standard)
 CELERY_TASK_MAX_RETRIES = None # Retry forever
 
-# Celery Once: use the file backend, to avoid adding another service (Redis)
-CELERY_ONCE = {
-    'backend': 'celery_once.backends.File',
-    'settings': {
-        #'location': '/tmp/celery_once',
-        #'default_timeout': 60 * 60
-    }
-}
-
+# ClickHouse
 CLICKHOUSE_HOST = 'localhost'
 CLICKHOUSE_USER = 'default'
 CLICKHOUSE_PASSWORD = ''

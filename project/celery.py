@@ -14,7 +14,7 @@ app = Celery('wsn')
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
 app.config_from_object('django.conf:settings', namespace='CELERY')
-app.conf.ONCE = settings.CELERY_ONCE
+app.conf.singleton_backend_url = settings.CELERY_SINGLETON_BACKEND_URL
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()

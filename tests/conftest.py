@@ -70,7 +70,7 @@ class API:
 
 @pytest.fixture(scope='session')
 def celery_session_app(celery_session_app):
-    celery_session_app.conf.ONCE = settings.CELERY_ONCE
+    celery_session_app.conf.singleton_backend_url = settings.CELERY_SINGLETON_BACKEND_URL
 
     # Run tasks synchronously and propagate errors to have meaningful
     # tracebacks.
