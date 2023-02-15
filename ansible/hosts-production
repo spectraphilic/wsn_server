@@ -4,4 +4,4 @@
 hostname-or-ip-address ansible_ssh_user=username django_root=/home/username/django-boot
 
 [hosts:vars]
-ansible_python_interpreter = auto_silent
+ansible_python_interpreter = /usr/bin/python3
