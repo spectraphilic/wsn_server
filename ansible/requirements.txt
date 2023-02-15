@@ -1,17 +1,17 @@
-Django==4.1.2
+Django==4.1.7
 django-sendfile2==0.7.0
 django-vite==2.0.2
-python-dotenv==0.21.0
-strawberry-graphql-django==0.6
-supervisor==4.2.4
-uvicorn==0.18.3
+python-dotenv==0.21.1
+strawberry-graphql-django==0.9.2
+supervisor==4.2.5
+uvicorn==0.20.0
 
-{% if django_database.engine == 'postgres' %}
-psycopg2-binary==2.9.3
+{% if database.engine == 'postgres' %}
+psycopg2-binary==2.9.5
 {% endif %}
 
-{% if django_cache.backend == 'memcached' %}
-pymemcache==3.5.2
+{% if cache.backend == 'memcached' %}
+pymemcache==4.0.0
 {% endif %}
 
 # Project

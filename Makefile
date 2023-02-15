@@ -12,17 +12,17 @@ help:
 	@echo "  make ctl                -- Run supervisorctl to manage all programs"
 	@echo ""
 
-local:
+submodules:
 	git submodule init
 	git submodule update
+
+local: submodules
 	ansible-playbook -i ansible/hosts-local ansible/development.yml
 
-local-requirements:
+local-requirements: submodules
 	ansible-playbook -i ansible/hosts-local ansible/development.yml --tags "pip"
 
-install-production:
-	git submodule init
-	git submodule update
+install-production: submodules
 	ansible-playbook -i ansible/hosts-local ansible/production.yml
 
 deploy-production:

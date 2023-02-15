@@ -8,17 +8,17 @@
   - "vars.yml"
   roles:
   - role              : "jdavid.django"
-    django_debug      : true
     django_pull       : false
     django_with_monit : false
 
-    django_database   :
+    database          :
       engine          : "postgres"
       name            : "wsn"
       user            : "wsn"
       password        : "wsn"
 
-    django_server     :
+    django            :
+      debug           : true
       port            : 8000
 
     celery:

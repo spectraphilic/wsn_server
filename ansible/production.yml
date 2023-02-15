@@ -8,20 +8,19 @@
   - "vars.yml"
   roles:
   - role: "jdavid.django"
-    django_debug      : false
     django_pull       : true
     django_with_monit : true
 
-    django_domain     : "wsn.latice.eu"
     django_name       : "wsn"
 
-    django_database:
+    database:
       engine          : "postgres"
       name            : "wsn"
       user            : "wsn"
       password        : "wsn"
 
-    django_server:
+    django            :
+      debug           : false
       workers         : 6
 
     django_cert:
@@ -30,6 +29,9 @@
     celery:
       queues          : celery_wsn
       workers         : 1
+
+    domains           :
+    - "wsn.latice.eu"
 
     nginx:
       template        : "{{ playbook_dir }}/templates/nginx.conf"

@@ -4,4 +4,4 @@
 wsn ansible_ssh_user=wsn django_root=/home/wsn/wsn_server
 
 [hosts:vars]
-ansible_python_interpreter = auto_silent
+ansible_python_interpreter = /usr/bin/python3
