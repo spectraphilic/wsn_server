@@ -164,6 +164,11 @@ Disable HTTP:
       http            : false
       https           : true
 
+At this point you probably need to change permissions of the `/etc/letsencrypt/live`
+directory, or the next step will fail with a `Permission denied` error:
+
+    chmod o+x /etc/letsencrypt/live
+
 Update the project:
 
     make install-production
