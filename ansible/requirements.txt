@@ -15,16 +15,16 @@ pymemcache==4.0.0
 {% endif %}
 
 # Project
-celery==4.4.7
+celery[pytest]==5.2.7
 celery-singleton==0.3.1
-clickhouse-driver[lz4]==0.2.4
+clickhouse-driver[lz4]==0.2.5
 django-admin-rangefilter==0.9.0
 django-filter==22.1
 djangorestframework==3.14.0
-djangorestframework-api-key==2.2.0
-drf-spectacular==0.24.2
-pycryptodome==3.15.0
-tabulate==0.8.10
+djangorestframework-api-key==2.3.0
+drf-spectacular==0.25.1
+pycryptodome==3.17
+tabulate==0.9.0
 tqdm==4.64.1
 
 # Tests
