@@ -136,8 +136,12 @@ def postfix(frame, save=False, verbose=False):
     default_retry_delay=300,    # Retry after 5min (default is 3 minutes)
 )
 def in_meshlium(envelop):
-    # Pop the payload, what is left is metadata that we'll add later to the
-    # frames
+    # Changes to the envelop will be persistent! If processing fails the envelop won't be
+    # the same next time. So first we make a copy.
+    assert type(envelop) is dict
+    envelop = envelop.copy()
+
+    # Pop the payload, what is left is metadata that we'll add later to the frames
     payload = envelop.pop('payload')
     assert type(payload) is list
 
@@ -186,6 +190,10 @@ def in_iridium(envelop):
       'data': ['48656c6c6f21205468697320697320612074657374206d6573736167652066726f6d20526f636b424c4f434b21']
     }
     """
+    # Changes to the envelop will be persistent! If processing fails the envelop won't be
+    # the same next time. So first we make a copy.
+    assert type(envelop) is dict
+    envelop = envelop.copy()
 
     # Pop the payload, what is left is metadata. Now we discard this metadata,
     # but in the future we may add it to the frames.
