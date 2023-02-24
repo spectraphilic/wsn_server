@@ -96,7 +96,7 @@ class MetadataAdmin(admin.ModelAdmin):
 
 @admin.register(models.Frame)
 class FrameAdmin(admin.ModelAdmin):
-    list_display = ['time_str', 'frame', 'metadata', 'data']
+    list_display = ['id', 'time_str', 'frame', 'bat', 'metadata', 'data']
     list_filter = [
         ('time', TimeFilter),
         'metadata__name',
