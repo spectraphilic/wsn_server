@@ -7,7 +7,7 @@
     "build": "vite build && npm run minify && npm run rename",
     "serve": "vite preview",
     "minify": "esbuild var/build/main.js --minify --outdir=var/build --allow-overwrite",
-    "rename": "sh ansible/rename.sh"
+    "rename": "bash ansible/rename.sh"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^1.0.1",
