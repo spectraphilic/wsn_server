@@ -4,13 +4,17 @@ Script to parse frames from waspmote
 Simon Filhol, J. David Ibáñez
 '''
 
-# Standard Library
 import itertools
+import logging
 import math
 import struct
 
+# Requirements
 from Crypto.Cipher import AES
 
+
+
+logger = logging.getLogger(__name__)
 
 class ParseError(ValueError):
     pass
@@ -321,7 +325,8 @@ def parse_frame(src, cipher_key=None):
         line = line[1:]
         sensor = SENSORS.get(sensor_id, ())
         if not sensor:
-            raise ParseError("Sensor type %d not supported" % sensor_id)
+            logger.error("Sensor type %d not supported" % sensor_id)
+            break
 
         form, names, post = unpack(3, sensor)
         if post is None:
@@ -386,8 +391,7 @@ def read_wasp_data(f):
     while src:
         bad, good = search_frame(src)
         if bad:
-            print('Warning: %d bytes of garbage found and discarded' % len(bad))
-            print(bad[:50])
+            logger.error('%d bytes of garbage found and discarded' % len(bad))
 
         if good:
             frame, src = parse_frame(good)
@@ -399,6 +403,8 @@ def read_wasp_data(f):
             # read end of frame: \n
             if src and src[0] == '\n':
                 src = src[1:]
+        else:
+            break
 
 
 def data_to_json(data):
