@@ -52,6 +52,8 @@ def import_waspmote_series(series, stdout, merge=True):
         tags = serie['tags']
         frames = serie['frames']
         n = len(frames)
+        if n == 0:
+            continue
 
         # Do not import frames with the I2C bug
         serial = tags['serial']
