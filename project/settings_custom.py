@@ -29,10 +29,8 @@ INSTALLED_APPS = replace(INSTALLED_APPS, 'django.contrib.admin', 'apps.myadmin')
 INSTALLED_APPS += [
     # Requirements
     'django_vite',
-    'strawberry.django',
     # Project apps
     'apps.boot',
-    'apps.demo',
 ]
 
 # Static files

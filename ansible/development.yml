@@ -12,10 +12,7 @@
     django_with_monit : false
 
     database:
-      engine          : "postgres"
-      name            : "django-boot"
-      user            : "django-boot"
-      password        : "django-boot"
+      engine          : "sqlite"
 
     django            :
       debug           : true

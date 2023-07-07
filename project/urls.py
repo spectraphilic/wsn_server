@@ -18,7 +18,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import HttpResponse
-from django.urls import include, path
+from django.urls import path
 
 
 def ping(request):
@@ -27,7 +27,6 @@ def ping(request):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('demo/', include('demo.urls')),
     path('ping', ping), # Do not remove
 ]
 
