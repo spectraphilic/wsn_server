@@ -28,8 +28,8 @@ def ping(request):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('ping', ping), # Do not remove
     path('favicon.ico', RedirectView.as_view(url='/static/img/favicon.ico')),
+    path('ping', ping), # Do not remove
 ]
 
 if settings.DEBUG:
