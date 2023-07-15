@@ -19,6 +19,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import path
+from django.views.generic import RedirectView
 
 
 def ping(request):
@@ -28,6 +29,7 @@ def ping(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('ping', ping), # Do not remove
+    path('favicon.ico', RedirectView.as_view(url='/static/img/favicon.ico')),
 ]
 
 if settings.DEBUG:
