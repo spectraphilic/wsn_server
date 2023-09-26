@@ -1,4 +1,3 @@
-# Standard Library
 import lzma
 import os
 import pathlib
@@ -17,10 +16,11 @@ from wsn.upload import upload2pg, upload2ch
 
 
 CONFIG = {
-    'eton2': [upload2pg],
-    'finseflux': [upload2ch],
-    'mobileflux': [upload2ch],
-    'sommer': [upload2ch],
+    'eton2': [upload2pg],       # Frequency: 1h
+    'finseflux': [upload2ch],   # Frequency: 10s
+    'mobileflux': [upload2ch],  # Frequency: 5s
+    'sommer': [upload2ch],      # Frequency: 1m
+    'gruvebadet': [upload2ch],  # Frequency: 1m
 }
 
 PARSERS = {
