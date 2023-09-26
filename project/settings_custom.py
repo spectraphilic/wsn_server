@@ -29,7 +29,6 @@ def replace(l, a, b):
 INSTALLED_APPS += [
     # Requirements
     'django_vite',
-    'strawberry.django',
     # Project apps
     'apps.boot',
     # Requirements
@@ -69,7 +68,7 @@ LOGGING = {
 
 # Static files
 STATICFILES_DIRS = [
-    #BASE_DIR / 'project' / 'static',
+    BASE_DIR / 'project' / 'static',
 ]
 
 # Templates

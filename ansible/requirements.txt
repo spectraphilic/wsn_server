@@ -1,10 +1,9 @@
-Django==4.2
+Django==4.2.4
 django-sendfile2==0.7.0
-django-vite==2.0.2
+django-vite==2.1.3
 python-dotenv==1.0.0
-strawberry-graphql-django==0.9.4
 supervisor==4.2.5
-uvicorn==0.21.1
+uvicorn==0.23.2
 
 {% if database.engine == 'postgres' %}
 psycopg2-binary==2.9.6
