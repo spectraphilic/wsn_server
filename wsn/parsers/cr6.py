@@ -59,8 +59,15 @@ class CR6Parser(CSVParser):
         assert value, 'unexpected empty string'
 
         if unit == 'TS':
-            value = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-            return value.replace(tzinfo=datetime.timezone.utc)
+            formats = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M:%S.%f']
+            for fmt in formats:
+                try:
+                    value = datetime.datetime.strptime(value, fmt)
+                    return value.replace(tzinfo=datetime.timezone.utc)
+                except ValueError:
+                    pass
+            else:
+                raise ValueError(f'Failed to parse "{value}" timestamp')
 
         if value == 'NAN':
             return math.nan
