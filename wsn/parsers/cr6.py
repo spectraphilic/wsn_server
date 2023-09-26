@@ -1,4 +1,3 @@
-# Standard Library
 import csv
 import datetime
 import math
@@ -72,10 +71,12 @@ class CR6Parser(CSVParser):
         if value == 'NAN':
             return math.nan
 
-        try:
-            return int(value)
-        except ValueError:
-            return float(value)
+        types = [int, float, str]
+        for t in types:
+            try:
+                return t(value)
+            except ValueError:
+                pass
 
     def _parse_time(self, data):
         time = data.pop('TIMESTAMP')
