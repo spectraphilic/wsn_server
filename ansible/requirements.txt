@@ -6,7 +6,7 @@ supervisor==4.2.5
 uvicorn==0.23.2
 
 {% if database.engine == 'postgres' %}
-psycopg2-binary==2.9.6
+psycopg2-binary==2.9.7
 {% endif %}
 
 {% if cache.backend == 'memcached' %}
@@ -14,17 +14,17 @@ pymemcache==4.0.0
 {% endif %}
 
 # Project
-celery[pytest]==5.2.7
+celery[pytest]==5.3.4
 celery-singleton==0.3.1
-clickhouse-driver[lz4]==0.2.5
-django-admin-rangefilter==0.10.0
-django-filter==23.1
+clickhouse-driver[lz4]==0.2.6
+django-admin-rangefilter==0.11.1
+django-filter==23.3
 djangorestframework==3.14.0
 djangorestframework-api-key==2.3.0
-drf-spectacular==0.26.2
-pycryptodome==3.17
+drf-spectacular==0.26.5
+pycryptodome==3.19.0
 tabulate==0.9.0
-tqdm==4.65.0
+tqdm==4.66.1
 
 # Tests
 pytest-django==4.5.2
