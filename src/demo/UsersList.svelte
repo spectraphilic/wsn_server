@@ -1,15 +1,24 @@
 <script>
-    import * as urql from '@urql/svelte';
-    import { client } from './client.js';
+    let error = false;
+    let users = null;
 
-    let users = urql.queryStore({
-        client: $client,
-        query: urql.gql`
-            query {
-                users { id username email firstName lastName }
-            }`,
-    });
+    fetch('/demo/api/users')
+        .then(function (response) {
+            if (response.ok) {
+                response.json().then(data => {
+                    users = data;
+                })
+            }
+            else {
+                error = "Server Error";
+            }
+        })
+        .catch(function (err) {
+            error = err.message;
+        });
 
+
+    /*
     let result;
 
     function remove(user) {
@@ -33,6 +42,7 @@
             console.log('DELETED', id);
         }
     }
+    */
 </script>
 
 <style>
@@ -41,12 +51,11 @@
     }
 </style>
 
-{#if $users.fetching}
+{#if error}
+    {error}
+{:else if users == null}
     <p>Loading...</p>
-{:else if $users.error}
-    <p>Oh no... {$users.error.message}</p>
 {:else}
-<div>
     <table>
         <tr>
             <th>Id</th>
@@ -56,13 +65,13 @@
             <th>Last name</th>
             <th></th>
         </tr>
-        {#each $users.data.users as user}
+        {#each users as user}
         <tr>
             <td><a href="{user.id}/">{user.id}</a></td>
             <td>{user.username}</td>
             <td>{user.email}</td>
-            <td>{user.firstName}</td>
-            <td>{user.lastName}</td>
+            <td>{user.first_name}</td>
+            <td>{user.last_name}</td>
             <td><button on:click|preventDefault={() => remove(user)}>Remove</button></td>
         </tr>
         {/each}
@@ -71,5 +80,4 @@
     <p>
     <a href="create/">Add</a>
     </p>
-</div>
 {/if}

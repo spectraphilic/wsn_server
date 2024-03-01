@@ -1,12 +1,12 @@
-Django==4.2.7
-django-sendfile2==0.7.0
-django-vite==2.1.3
-python-dotenv==1.0.0
+Django==4.2.10
+django-sendfile2==0.7.1
+django-vite==3.0.3
+python-dotenv==1.0.1
 supervisor==4.2.5
-uvicorn==0.25.0
+uvicorn==0.27.1
 
 {% if database.engine == 'postgres' %}
-psycopg==3.1.16
+psycopg==3.1.18
 {% endif %}
 
 {% if cache.backend == 'memcached' %}
