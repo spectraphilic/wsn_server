@@ -21,6 +21,7 @@ CONFIG = {
     'mobileflux': [upload2ch],  # Frequency: 5s
     'sommer': [upload2ch],      # Frequency: 1m
     'gruvebadet': [upload2ch],  # Frequency: 1m
+    'mobileflux2': [upload2ch], # Frequency: 10s
 }
 
 PARSERS = {
