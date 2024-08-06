@@ -9,6 +9,19 @@ from wsn.parsers.base import CSVParser
 from wsn.parsers.base import EmptyError, TruncatedError
 
 
+
+def parse_datetime(value):
+    formats = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M:%S.%f']
+    for fmt in formats:
+        try:
+            value = datetime.datetime.strptime(value, fmt)
+            return value.replace(tzinfo=datetime.timezone.utc)
+        except ValueError:
+            pass
+    else:
+        raise ValueError(f'Failed to parse "{value}" timestamp')
+
+
 class CR6Parser(CSVParser):
     """
     Campbell CR6.
@@ -55,18 +68,8 @@ class CR6Parser(CSVParser):
         }
 
     def _parse_value(self, name, unit, value):
-        assert value, 'unexpected empty string'
-
         if unit == 'TS':
-            formats = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M:%S.%f']
-            for fmt in formats:
-                try:
-                    value = datetime.datetime.strptime(value, fmt)
-                    return value.replace(tzinfo=datetime.timezone.utc)
-                except ValueError:
-                    pass
-            else:
-                raise ValueError(f'Failed to parse "{value}" timestamp')
+            return parse_datetime(value)
 
         if value == 'NAN':
             return math.nan

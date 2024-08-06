@@ -1,15 +1,40 @@
+import datetime
+
 # Requirements
 from clickhouse_driver import Client
 from django.conf import settings
 
+# Project
+from wsn.parsers.cr6 import parse_datetime
 
-def get_column(name):
-    datatype = {
-        'TIMESTAMP': 'UInt32',
-        'RECORD': 'UInt32',
-    }.get(name, 'Float64 DEFAULT NaN')
 
+DEFAULT_SCHEMA = {
+    'TIMESTAMP': 'UInt32',
+    'RECORD': 'UInt32',
+}
+
+def get_column(name, schema=None):
+    if schema is None:
+        schema = DEFAULT_SCHEMA
+
+    datatype = schema.get(name, 'Float64 DEFAULT NaN')
     return f'"{name}" {datatype}'
+
+
+def get_value(schema, name, value):
+    if schema is None:
+        schema = DEFAULT_SCHEMA
+
+    datatype = schema.get(name)
+    if datatype is None:
+        return value
+    elif datatype.startswith('DateTime64'):
+        return parse_datetime(value)
+    elif datatype.startswith('DateTime'):
+        value = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+        return value.replace(tzinfo=datetime.timezone.utc)
+
+    return value
 
 
 class ClickHouse:
@@ -54,10 +79,12 @@ class ClickHouse:
 
         return n
 
-    def upload(self, name, metadata, fields, rows):
+    def upload(self, name, metadata, fields, rows, schema=None):
         rows2 = []
         for time, data in rows:
-            data = data.copy()
+            data = {
+                name: get_value(schema, name, value) for name, value in data.items()
+            }
             data['TIMESTAMP'] = int(time.timestamp())
             rows2.append(data)
         rows = rows2
@@ -73,8 +100,9 @@ class ClickHouse:
         # The Replacing engine allows to avoid duplicates. Deduplication is
         # done in the background, so there may be duplicates until the parts
         # are merged.
+        column = get_column('TIMESTAMP', schema)
         self.execute(
-            f"CREATE TABLE IF NOT EXISTS {table} ({get_column('TIMESTAMP')}) "
+            f"CREATE TABLE IF NOT EXISTS {table} ({column}) "
             f"ENGINE = ReplacingMergeTree() ORDER BY TIMESTAMP",
             #echo=True,
         )
@@ -91,7 +119,7 @@ class ClickHouse:
         fields = set(fields)
         new = fields - cols
         if new:
-            actions = ', '.join(f'ADD COLUMN {get_column(name)}' for name in new)
+            actions = ', '.join(f'ADD COLUMN {get_column(name, schema)}' for name in new)
             self.execute(f'ALTER TABLE {table} {actions};')
 
         self.insert_rows(table, fields, rows)

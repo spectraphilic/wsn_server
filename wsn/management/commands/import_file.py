@@ -15,13 +15,29 @@ from wsn.parsers.sommer import SommerParser
 from wsn.upload import upload2pg, upload2ch
 
 
-CONFIG = {
+UPLOAD_TO = {
     'eton2': [upload2pg],       # Frequency: 1h
     'finseflux': [upload2ch],   # Frequency: 10s
     'mobileflux': [upload2ch],  # Frequency: 5s
     'sommer': [upload2ch],      # Frequency: 1m
     'gruvebadet': [upload2ch],  # Frequency: 1m
     'mobileflux2': [upload2ch], # Frequency: 10s
+    'mammamia3': [upload2ch],   # Frequency: 1m
+}
+
+SCHEMA = {
+    'mammamia3': {
+        'TIMESTAMP': 'UInt32',
+        'RECORD': 'UInt32',
+        # Borehole
+        'SurfaceTimeStamp': "DateTime('UTC')",
+        # Surface
+        'BoreholeTimeStamp': "DateTime64(3, 'UTC')",
+        'FtpFileName_mm3_Borehole': 'String',
+        'FtpFileName_mm3_Surface': 'String',
+        'SfTimeStamp': "DateTime('UTC')",
+        'TransmitTimeStamp': "DateTime64(3, 'UTC')",
+    },
 }
 
 PARSERS = {
@@ -87,9 +103,10 @@ class Command(BaseCommand):
         dirname = os.path.basename(dirpath)
 
         # Upload
-        for upload_to in CONFIG[dirname]:
+        for upload_to in UPLOAD_TO[dirname]:
+            schema = SCHEMA.get(dirname)
             try:
-                upload_to(self.name or dirname, metadata, fields, rows)
+                upload_to(self.name or dirname, metadata, fields, rows, schema=schema)
             except Exception:
                 self.stderr.write(f"{filepath} ERROR")
                 traceback.print_exc(file=self.stderr)

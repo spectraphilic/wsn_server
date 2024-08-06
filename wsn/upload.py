@@ -20,11 +20,13 @@ METADATA_NAMES = {
 }
 
 
-def upload2pg(name, metadata, fields, rows):
+def upload2pg(name, metadata, fields, rows, schema=None):
     """
     The metadata may be provided externally, as some files don't include
     metadata.
     """
+    assert schema is None, 'schema not supported in PostgreSQL backend'
+
     # Use a different metadata name
     metadata_name = metadata['name']
     metadata_name = METADATA_NAMES.get(metadata_name, metadata_name)
@@ -38,10 +40,10 @@ def upload2pg(name, metadata, fields, rows):
     return metadata
 
 
-def upload2ch(name, metadata, fields, rows):
+def upload2ch(name, metadata, fields, rows, schema=None):
     if len(rows) > 0:
         with ClickHouse() as clickhouse:
-            clickhouse.upload(name, metadata, fields, rows)
+            clickhouse.upload(name, metadata, fields, rows, schema=schema)
 
 
 def archive(name, filename, data):
