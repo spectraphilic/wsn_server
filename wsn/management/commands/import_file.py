@@ -124,14 +124,11 @@ class Command(BaseCommand):
         for path in kw['paths']:
             path = pathlib.Path(path)
 
-            # File
             if path.is_file():
                 self.handle_file(path, path.stat())
-                continue
-
-            # Directory
-            for entry in os.scandir(path):
-                path = pathlib.Path(entry.path)
-                self.handle_file(path, entry.stat())
+            elif path.is_dir():
+                for entry in os.scandir(path):
+                    path = pathlib.Path(entry.path)
+                    self.handle_file(path, entry.stat())
 
         return 0
