@@ -15,8 +15,10 @@ ARCHIVE = os.path.join(settings.BASE_DIR, 'var', 'archive')
 
 # Mapping to load the metadata with a different name
 METADATA_NAMES = {
-    'CR6 Austfonna': 'UIO_Iridium_CR6',
-    'CR1000 Austfonna': 'UIO_Iridium_CR6',
+    'CR6 Austfonna': 'Eton2',
+    'CR1000 Austfonna': 'Eton2',
+    'UIO_Eton2_1': 'Eton2',
+    'UIO_Eton2_2': 'Eton2',
 }
 
 
