@@ -38,6 +38,15 @@ SCHEMA = {
         'SfTimeStamp': "DateTime('UTC')",
         'TransmitTimeStamp': "DateTime64(3, 'UTC')",
     },
+    'gruvebadet': {
+        'TIMESTAMP': 'UInt32',
+        'RECORD': 'UInt32',
+        # Diagnostics
+        'CompileResults': 'String',
+        'OSVersion': 'String',
+        'ProgName': 'String',
+        'StartTime': "DateTime64(3, 'UTC')",
+    },
 }
 
 PARSERS = {
