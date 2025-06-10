@@ -4,6 +4,7 @@ import datetime
 import io
 import lzma
 import os
+import pathlib
 import sys
 import tarfile
 import time
@@ -38,6 +39,28 @@ def zip_to_tar_xz(zip_path, tar_xz_path):
             # Add file to tar
             with zip_ref.open(file_info) as file_obj:
                 tar_ref.addfile(tar_info, fileobj=file_obj)
+
+
+def get_archive_dir_path(path):
+    """
+    Convert a raw file path to an archive directory path.
+
+    Example:
+        Input:  "data/licor/myr2/raw/[...]/2025-06-09T143000_AIU-2084.ghg"
+        Output: "data/licor/myr2/archive/2025/"
+    """
+    # Get the root directory, the common ancestor of raw and archive
+    parts = list(path.parts)
+    raw_index = parts.index('raw')
+    root = pathlib.Path(*parts[:raw_index])
+
+    # Extract date from filename (assuming it starts with YYYY-MM-DD)
+    date = path.name[:len("2025-06-09")]
+    date = datetime.datetime.strptime(date, "%Y-%m-%d")
+
+    # Return the final path, create it if necessary
+    path = root / 'archive' / str(date.year) / f'{date.month:02d}'
+    return path
 
 
 class DataFile:
@@ -176,8 +199,15 @@ class LicorParser(BaseParser):
         self._biomet_data.close()
         self.zipfile.close()
 
-    def archive(self, src):
-        dst = src.with_suffix(".tar.xz")
+    def check_filepath(self, filepath):
+        assert filepath.suffix == '.ghg'
+        get_archive_dir_path(filepath)
+
+    def archive(self):
+        src = self.filepath
+        dirpath = get_archive_dir_path(src)
+        dirpath.mkdir(parents=True, exist_ok=True)
+        dst = dirpath / src.with_suffix(".tar.xz").name
         zip_to_tar_xz(src, dst)
         os.remove(src)
         return dst

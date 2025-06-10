@@ -43,6 +43,7 @@ class BaseParser:
 
         if filepath is not None:
             self.filepath = filepath
+            self.check_filepath(filepath)
 
         metadata = metadata or {}
         assert type(metadata) is dict
@@ -93,7 +94,11 @@ class BaseParser:
     def _close(self):
         pass
 
-    def archive(self, src):
+    def check_filepath(self, filepath):
+        pass
+
+    def archive(self):
+        src = self.filepath
         dst = f'{src}.xz'
         data = open(src, 'rb').read()
         with lzma.open(dst, 'w') as f:

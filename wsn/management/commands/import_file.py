@@ -118,15 +118,15 @@ class Command(BaseCommand):
         # Archive file
         original_size = os.path.getsize(filepath)
         self.stdout.write(f"{filepath} file uploaded")
-        dst = parser.archive(filepath)
+        dst = parser.archive()
         self.stdout.write(f"{filepath} file archived to {dst}")
         # Print statistics
         compressed_size = os.path.getsize(dst)
         ratio = compressed_size / original_size if original_size > 0 else 0
         ratio = ratio * 100
         self.stdout.write(
-            f"Size from {filesizeformat(original_size)} to {filesizeformat(compressed_size)} - "
-            f"{ratio:.0f} % of the original"
+            f"Size from {filesizeformat(original_size)} to {filesizeformat(compressed_size)} "
+            f"({ratio:.0f} % of the original)"
         )
 
     def handle(self, *args, **kw):
