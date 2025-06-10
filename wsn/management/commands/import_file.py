@@ -1,7 +1,10 @@
+import fnmatch
 import os
 import pathlib
 import time
 import traceback
+
+import toml  # TODO Replace by tomllib after upgrading to Python 3.11
 
 # Django
 from django.core.management.base import BaseCommand
@@ -16,13 +19,8 @@ from wsn.upload import upload2pg, upload2ch
 
 
 UPLOAD_TO = {
-    'eton2': [upload2pg],       # Frequency: 1h
-    'finseflux': [upload2ch],   # Frequency: 10s
-    'mobileflux': [upload2ch],  # Frequency: 5s
-    'sommer': [upload2ch],      # Frequency: 1m
-    'gruvebadet': [upload2ch],  # Frequency: 1m
-    'mobileflux2': [upload2ch], # Frequency: 10s
-    'mammamia3': [upload2ch],   # Frequency: 1m
+    "postgres": upload2pg,
+    "clickhouse": upload2ch,
 }
 
 SCHEMA = {
@@ -59,17 +57,13 @@ PARSERS = {
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
-        parser.add_argument('paths', nargs='+',
-            help='Path to file or directory',
-        )
-        parser.add_argument('--name',
-            help="Database table name, by default it's inferred from the filepath and file contents",
-        )
+        parser.add_argument('config', help="Path to the TOML configuration file")
+        parser.add_argument('--name', help="Import only the given name from the config file")
         parser.add_argument('--skip', default=5,
             help='Skip files older than the given minutes (default 5)',
         )
 
-    def handle_file(self, filepath, stat):
+    def handle_file(self, filepath, stat, upload_to, table_name):
         Parser = PARSERS.get(filepath.suffix)
         if Parser is None:
             return
@@ -106,14 +100,13 @@ class Command(BaseCommand):
         # Upload
         dirpath, filename = os.path.split(filepath)
         dirname = os.path.basename(dirpath)
-        for upload_to in UPLOAD_TO.get(dirname, [upload2ch]):
-            schema = SCHEMA.get(dirname)
-            try:
-                upload_to(self.name or dirname, metadata, fields, rows, schema=schema)
-            except Exception:
-                self.stderr.write(f"{filepath} ERROR")
-                traceback.print_exc(file=self.stderr)
-                return
+        schema = SCHEMA.get(dirname)
+        try:
+            upload_to(table_name or dirname, metadata, fields, rows, schema=schema)
+        except Exception:
+            self.stderr.write(f"{filepath} ERROR")
+            traceback.print_exc(file=self.stderr)
+            return
 
         # Archive file
         original_size = os.path.getsize(filepath)
@@ -130,17 +123,35 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kw):
-        self.name = kw.get('name')
+        config = toml.load(kw['config'])
+        config = config['import']
+        root = pathlib.Path(config['root'])
+
         self.upto = time.time() - (kw['skip'] * 60)
 
-        for path in kw['paths']:
-            path = pathlib.Path(path)
+        name = kw.get('name')
+        for key, values in config.items():
+            if not isinstance(values, dict):
+                continue
 
-            if path.is_file():
-                self.handle_file(path, path.stat())
-            elif path.is_dir():
-                for entry in os.scandir(path):
+            if name and key != name:
+                continue
+
+            # Proceed
+            path = root / values['path']
+
+            database = values.get('database', 'clickhouse')
+            table_name = values.get('table_name')
+            upload_to = UPLOAD_TO[database]
+
+            pattern = values.get('pattern')
+            for entry in os.scandir(path):
+                # Do not go inside directories
+                if not entry.is_file():
+                    continue
+
+                if pattern is None or fnmatch.fnmatch(entry.path, pattern):
                     path = pathlib.Path(entry.path)
-                    self.handle_file(path, entry.stat())
+                    self.handle_file(path, entry.stat(), upload_to, table_name)
 
         return 0
