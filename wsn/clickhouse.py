@@ -79,22 +79,15 @@ class ClickHouse:
 
         return n
 
-    def upload(self, name, metadata, fields, rows, schema=None):
+    def upload(self, table_name, metadata, fields, rows, schema=None):
         rows2 = []
         for time, data in rows:
             data = {
-                name: get_value(schema, name, value) for name, value in data.items()
+                key: get_value(schema, key, value) for key, value in data.items()
             }
             data['TIMESTAMP'] = int(time.timestamp())
             rows2.append(data)
         rows = rows2
-
-        # Guess the table name
-        table_name = metadata.get('table_name')
-        if table_name:
-            table = f"{name}_{table_name}"
-        else:
-            table = str(name)
 
         # Create the table if it does not exist
         # The Replacing engine allows to avoid duplicates. Deduplication is
@@ -102,7 +95,7 @@ class ClickHouse:
         # are merged.
         column = get_column('TIMESTAMP', schema)
         self.execute(
-            f"CREATE TABLE IF NOT EXISTS {table} ({column}) "
+            f"CREATE TABLE IF NOT EXISTS {table_name} ({column}) "
             f"ENGINE = ReplacingMergeTree() ORDER BY TIMESTAMP",
             #echo=True,
         )
@@ -111,7 +104,7 @@ class ClickHouse:
         database = settings.CLICKHOUSE_NAME
         cols = set([name for name, in self.execute(
             f"SELECT name FROM system.columns "
-            f"WHERE database = '{database}' AND table = '{table}';",
+            f"WHERE database = '{database}' AND table = '{table_name}';",
             #echo=True,
         )])
 
@@ -120,9 +113,9 @@ class ClickHouse:
         new = fields - cols
         if new:
             actions = ', '.join(f'ADD COLUMN {get_column(name, schema)}' for name in new)
-            self.execute(f'ALTER TABLE {table} {actions};')
+            self.execute(f'ALTER TABLE {table_name} {actions};')
 
-        self.insert_rows(table, fields, rows)
+        self.insert_rows(table_name, fields, rows)
 
         return metadata
 

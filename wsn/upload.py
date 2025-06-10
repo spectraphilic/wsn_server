@@ -22,7 +22,7 @@ METADATA_NAMES = {
 }
 
 
-def upload2pg(name, metadata, fields, rows, schema=None):
+def upload2pg(table_name, metadata, fields, rows, schema=None):
     """
     The metadata may be provided externally, as some files don't include
     metadata.
@@ -42,10 +42,10 @@ def upload2pg(name, metadata, fields, rows, schema=None):
     return metadata
 
 
-def upload2ch(name, metadata, fields, rows, schema=None):
+def upload2ch(table_name, metadata, fields, rows, schema=None):
     if len(rows) > 0:
         with ClickHouse() as clickhouse:
-            clickhouse.upload(name, metadata, fields, rows, schema=schema)
+            clickhouse.upload(table_name, metadata, fields, rows, schema=schema)
 
 
 def archive(name, filename, data):

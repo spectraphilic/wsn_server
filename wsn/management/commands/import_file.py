@@ -102,7 +102,7 @@ class Command(BaseCommand):
         dirname = os.path.basename(dirpath)
         schema = SCHEMA.get(dirname)
         try:
-            upload_to(table_name or dirname, metadata, fields, rows, schema=schema)
+            upload_to(table_name, metadata, fields, rows, schema=schema)
         except Exception:
             self.stderr.write(f"{filepath} ERROR")
             traceback.print_exc(file=self.stderr)
@@ -130,27 +130,21 @@ class Command(BaseCommand):
         self.upto = time.time() - (kw['skip'] * 60)
 
         name = kw.get('name')
-        for key, values in config.items():
+        for table_name, values in config.items():
             if not isinstance(values, dict):
                 continue
 
-            if name and key != name:
+            if name and table_name != name:
                 continue
 
             # Proceed
             path = root / values['path']
+            pattern = values['pattern']
 
             database = values.get('database', 'clickhouse')
-            table_name = values.get('table_name')
             upload_to = UPLOAD_TO[database]
-
-            pattern = values.get('pattern')
             for entry in os.scandir(path):
-                # Do not go inside directories
-                if not entry.is_file():
-                    continue
-
-                if pattern is None or fnmatch.fnmatch(entry.path, pattern):
+                if entry.is_file() and fnmatch.fnmatch(entry.path, pattern):
                     path = pathlib.Path(entry.path)
                     self.handle_file(path, entry.stat(), upload_to, table_name)
 

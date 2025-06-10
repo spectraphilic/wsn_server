@@ -16,7 +16,7 @@ pymemcache==4.0.0
 # Project
 celery[pytest]==5.3.4
 celery-singleton==0.3.1
-clickhouse-driver[lz4]==0.2.6
+clickhouse-driver[lz4]==0.2.9
 django-admin-rangefilter==0.11.1
 django-filter==23.3
 djangorestframework==3.14.0
