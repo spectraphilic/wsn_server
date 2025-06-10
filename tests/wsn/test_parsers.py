@@ -64,7 +64,7 @@ def test_cr6(datadir):
 
 
 def test_licor_empty():
-    filename = 'tests/data/licor/2018-05-07T160000_LATICE-Flux_Finse_empty.ghg'
+    filename = 'tests/data/licor/raw/2018-05-07T160000_LATICE-Flux_Finse_empty.ghg'
 
     parser = LicorParser(filename)
     with pytest.raises(BadZipFile):
@@ -77,7 +77,7 @@ def test_licor_empty():
 
 
 def test_licor():
-    filename = 'tests/data/licor/2018-05-07T160000_LATICE-Flux_Finse.ghg'
+    filename = 'tests/data/licor/raw/2018-05-07T160000_LATICE-Flux_Finse.ghg'
 
     parser = LicorParser(filename)
     metadata, fields, rows = parser.parse()

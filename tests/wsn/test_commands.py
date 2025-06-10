@@ -41,9 +41,12 @@ def test_import_eton2(api_user, db, datadir):
     path = datadir / 'cr6' / 'eton2'
     files = list(path.iterdir())
 
+    config = datadir / 'config.toml'
+    name = 'eton2'
+
     # Test skipping files
     skip = int(time.time() - datetime.datetime(2018, 1, 1).timestamp()) // 60
-    assert call_command('import_file', path, skip=skip) == 0
+    assert call_command('import_file', config, name=name, root=datadir, skip=skip) == 0
     # Verify no data has been imported
     response = api_user.query_pg()
     assert response.status_code == 200
@@ -51,7 +54,7 @@ def test_import_eton2(api_user, db, datadir):
     assert len(json['rows']) == 0
 
     # Test importing data
-    assert call_command('import_file', path, skip=0) == 0
+    assert call_command('import_file', config, name=name, root=datadir, skip=0) == 0
     # Verify the data has been imported
     response = api_user.query_pg()
     assert response.status_code == 200
@@ -67,17 +70,19 @@ def test_import_eton2(api_user, db, datadir):
 @requires_clickhouse
 def test_import_finseflux(api_user, clickhouse, datadir):
     path = datadir / 'cr6' / 'finseflux'
-    table = 'finseflux_Biomet'
     files = list(path.iterdir())
+
+    config = datadir / 'config.toml'
+    name = 'finseflux_Biomet'
 
     # Test skipping files
     skip = int(time.time() - datetime.datetime(2018, 1, 1).timestamp()) // 60
-    assert call_command('import_file', path, skip=skip) == 0
+    assert call_command('import_file', config, name=name, root=datadir, skip=skip) == 0
 
     # Test importing data
-    assert call_command('import_file', path, skip=0) == 0
+    assert call_command('import_file', config, name=name, root=datadir, skip=0) == 0
     # Verify the data has been imported
-    response = api_user.query_ch(table)
+    response = api_user.query_ch(name)
     assert response.status_code == 200
     json = response.json()
     assert len(json['rows']) == 288
@@ -95,17 +100,19 @@ def test_import_finseflux(api_user, clickhouse, datadir):
 @requires_clickhouse
 def test_import_sommer(api_user, clickhouse, datadir):
     path = datadir / 'sommer'
-    table = 'finse_sommer'
     files = list(path.iterdir())
+
+    config = datadir / 'config.toml'
+    name = 'finse_sommer'
 
     # Test skipping files
     skip = int(time.time() - datetime.datetime(2018, 1, 1).timestamp()) // 60
-    assert call_command('import_file', path, name=table, skip=skip) == 0
+    assert call_command('import_file', config, root=datadir, name=name, skip=skip) == 0
 
     # Test importing data
-    assert call_command('import_file', path, name=table, skip=0) == 0
+    assert call_command('import_file', config, root=datadir, name=name, skip=0) == 0
     # Verify the data has been imported
-    response = api_user.query_ch(table)
+    response = api_user.query_ch(name)
     assert response.status_code == 200
     json = response.json()
     assert len(json['rows']) == 30

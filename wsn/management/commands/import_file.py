@@ -45,6 +45,10 @@ SCHEMA = {
         'ProgName': 'String',
         'StartTime': "DateTime64(3, 'UTC')",
     },
+    'finseflux_HFData': {
+        'TIMESTAMP': "DateTime64(3, 'UTC')",
+        'RECORD': 'UInt32',
+    },
 }
 
 PARSERS = {
@@ -59,6 +63,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('config', help="Path to the TOML configuration file")
         parser.add_argument('--name', help="Import only the given name from the config file")
+        parser.add_argument('--root', help="Root path to search for data files")
         parser.add_argument('--skip', default=5,
             help='Skip files older than the given minutes (default 5)',
         )
@@ -98,9 +103,12 @@ class Command(BaseCommand):
             return
 
         # Upload
-        dirpath, filename = os.path.split(filepath)
-        dirname = os.path.basename(dirpath)
-        schema = SCHEMA.get(dirname)
+        schema = SCHEMA.get(table_name)
+        if schema is None:
+            dirpath, filename = os.path.split(filepath)
+            dirname = os.path.basename(dirpath)
+            schema = SCHEMA.get(dirname)
+
         try:
             upload_to(table_name, metadata, fields, rows, schema=schema)
         except Exception:
@@ -122,14 +130,13 @@ class Command(BaseCommand):
             f"({ratio:.0f} % of the original)"
         )
 
-    def handle(self, *args, **kw):
-        config = toml.load(kw['config'])
+    def handle(self, config, name, root, skip, *args, **kwargs):
+        config = toml.load(config)
         config = config['import']
-        root = pathlib.Path(config['root'])
+        root = pathlib.Path(root or config['root'])
 
-        self.upto = time.time() - (kw['skip'] * 60)
+        self.upto = time.time() - (skip * 60)
 
-        name = kw.get('name')
         for table_name, values in config.items():
             if not isinstance(values, dict):
                 continue
@@ -144,8 +151,11 @@ class Command(BaseCommand):
             database = values.get('database', 'clickhouse')
             upload_to = UPLOAD_TO[database]
             for entry in os.scandir(path):
-                if entry.is_file() and fnmatch.fnmatch(entry.path, pattern):
-                    path = pathlib.Path(entry.path)
+                if not entry.is_file():
+                    continue
+
+                path = pathlib.Path(entry.path)
+                if fnmatch.fnmatch(path.name, pattern):
                     self.handle_file(path, entry.stat(), upload_to, table_name)
 
         return 0
