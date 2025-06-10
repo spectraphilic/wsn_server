@@ -1,4 +1,3 @@
-import lzma
 import os
 import pathlib
 import time
@@ -6,6 +5,7 @@ import traceback
 
 # Django
 from django.core.management.base import BaseCommand
+from django.template.defaultfilters import filesizeformat
 
 # Project
 from wsn.parsers.base import EmptyError, TruncatedError
@@ -69,15 +69,9 @@ class Command(BaseCommand):
             help='Skip files older than the given minutes (default 5)',
         )
 
-    def archive(self, filename):
-        data = open(filename, 'rb').read()
-        with lzma.open(f'{filename}.xz', 'w') as f:
-            f.write(data)
-        os.remove(filename)
-
     def handle_file(self, filepath, stat):
-        parser = PARSERS.get(filepath.suffix)
-        if parser is None:
+        Parser = PARSERS.get(filepath.suffix)
+        if Parser is None:
             return
 
         # If the file has been modified within the last few minutes, skip it.
@@ -89,7 +83,8 @@ class Command(BaseCommand):
 
         # Parse file
         try:
-            metadata, fields, rows = parser(filepath, stat=stat).parse()
+            parser = Parser(filepath, stat=stat)
+            metadata, fields, rows = parser.parse()
         except EmptyError:
             self.stderr.write(f'{filepath} WARNING file is empty')
             os.rename(filepath, f'{filepath}.empty')
@@ -108,11 +103,10 @@ class Command(BaseCommand):
             traceback.print_exc(file=self.stderr)
             return
 
+        # Upload
         dirpath, filename = os.path.split(filepath)
         dirname = os.path.basename(dirpath)
-
-        # Upload
-        for upload_to in UPLOAD_TO[dirname]:
+        for upload_to in UPLOAD_TO.get(dirname, [upload2ch]):
             schema = SCHEMA.get(dirname)
             try:
                 upload_to(self.name or dirname, metadata, fields, rows, schema=schema)
@@ -122,9 +116,18 @@ class Command(BaseCommand):
                 return
 
         # Archive file
+        original_size = os.path.getsize(filepath)
         self.stdout.write(f"{filepath} file uploaded")
-        self.archive(filepath)
-        self.stdout.write(f"{filepath} file archived")
+        dst = parser.archive(filepath)
+        self.stdout.write(f"{filepath} file archived to {dst}")
+        # Print statistics
+        compressed_size = os.path.getsize(dst)
+        ratio = compressed_size / original_size if original_size > 0 else 0
+        ratio = ratio * 100
+        self.stdout.write(
+            f"Size from {filesizeformat(original_size)} to {filesizeformat(compressed_size)} - "
+            f"{ratio:.0f} % of the original"
+        )
 
     def handle(self, *args, **kw):
         self.name = kw.get('name')

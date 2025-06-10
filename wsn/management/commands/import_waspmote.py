@@ -17,7 +17,6 @@ from wsn.settings import WSN_MIN_DATE
 from wsn import utils
 
 
-# TODO Replace the code below with zipfile.Path (after migration to Python 3.8)
 class Directory:
 
     def __init__(self, path):

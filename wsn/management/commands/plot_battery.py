@@ -1,6 +1,4 @@
-# Standard library
 from datetime import datetime
-import sys
 
 # Requirements
 import matplotlib.pyplot as plt
@@ -13,7 +11,8 @@ from django.core.management.base import BaseCommand
 from wsn.models import Frame
 
 
-ts2dt = lambda x: datetime.utcfromtimestamp(x)
+def ts2dt(x):
+    return datetime.utcfromtimestamp(x)
 
 
 def info(name):

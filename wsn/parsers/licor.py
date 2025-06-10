@@ -1,17 +1,43 @@
-# Standard Library
 import configparser
 import csv
 import datetime
 import io
+import lzma
 import os
 import sys
-from zipfile import ZipFile
+import tarfile
+import time
+import zipfile
 
 # Django
 from django.utils.functional import cached_property
 
 # Project
 from .base import BaseParser
+
+
+def zip_to_tar_xz(zip_path, tar_xz_path):
+    with (
+        zipfile.ZipFile(zip_path, 'r') as zip_ref,
+        lzma.open(tar_xz_path, 'wb') as xz_file,
+        tarfile.open(fileobj=xz_file, mode='w|') as tar_ref
+    ):
+
+        for file_info in zip_ref.infolist():
+            # Create TarInfo object
+            tar_info = tarfile.TarInfo(name=file_info.filename)
+            tar_info.size = file_info.file_size
+
+            # Convert ZIP's date_time tuple to Unix timestamp
+            if hasattr(file_info, 'date_time'):
+                dt_tuple = file_info.date_time
+                # Note: ZIP stores local time, but we'll assume it's UTC
+                timestamp = time.mktime(dt_tuple + (0, 0, 0))
+                tar_info.mtime = timestamp
+
+            # Add file to tar
+            with zip_ref.open(file_info) as file_obj:
+                tar_ref.addfile(tar_info, fileobj=file_obj)
 
 
 class DataFile:
@@ -84,7 +110,7 @@ class LicorParser(BaseParser):
     """
     Licor.
 
-    https://www.licor.com/env/help/eddypro/topics_eddypro/LI-COR_GHG_File_Format.html
+    https://www.licor.com/support/EddyPro/topics/ghg-file-format.html
     https://github.com/JeremyRueffer/ClimateDataIO.jl#licor
     """
 
@@ -92,7 +118,7 @@ class LicorParser(BaseParser):
 
     @cached_property
     def zipfile(self):
-        return ZipFile(self.file)
+        return zipfile.ZipFile(self.file)
 
     @cached_property
     def filename_root(self):
@@ -129,7 +155,19 @@ class LicorParser(BaseParser):
         return data
 
     def _load(self):
+        # Example of metadata
+        # {
+        #     'Model:': 'LI-7200 Enclosed CO2/H2O Analyzer',
+        #     'SN:': '72H-0848',
+        #     'Instrument:': 'LATICE-Flux_Finse',
+        #     'File Type:': '2',
+        #     'Software Version:': '8.7.5',
+        #     'Timestamp:': '16:00:00',
+        #     'Timezone:': 'UTC'
+        # }
         self.metadata = self._data.header
+        assert self.metadata['Timezone:'] == 'UTC'
+
         self.fields = self._data.fields
         self.rows = list(self._data)
 
@@ -137,6 +175,12 @@ class LicorParser(BaseParser):
         self._data.close()
         self._biomet_data.close()
         self.zipfile.close()
+
+    def archive(self, src):
+        dst = src.with_suffix(".tar.xz")
+        zip_to_tar_xz(src, dst)
+        os.remove(src)
+        return dst
 
 
 # For trying purposes

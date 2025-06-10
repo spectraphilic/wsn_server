@@ -1,5 +1,5 @@
-# Standard Library
 import logging
+import lzma
 import os
 from pathlib import Path
 
@@ -92,6 +92,14 @@ class BaseParser:
 
     def _close(self):
         pass
+
+    def archive(self, src):
+        dst = f'{src}.xz'
+        data = open(src, 'rb').read()
+        with lzma.open(dst, 'w') as f:
+            f.write(data)
+        os.remove(src)
+        return dst
 
 
 class CSVParser(BaseParser):
