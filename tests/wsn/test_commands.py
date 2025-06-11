@@ -88,13 +88,51 @@ def test_import_finseflux(api_user, clickhouse, datadir):
     assert len(json['rows']) == 288
 
     # Verify the files have been archived
+    prefix = 'Biomet_'
     for path in files:
-        assert not path.exists()
-        assert (
-            Path(f'{path}.xz').exists() or
-            Path(f'{path}.empty').exists() or
-            Path(f'{path}.truncated').exists()
-        )
+        if path.name.startswith(prefix):
+            assert not path.exists()
+            assert (
+                Path(f'{path}.xz').exists() or
+                Path(f'{path}.empty').exists() or
+                Path(f'{path}.truncated').exists()
+            )
+        else:
+            assert path.exists()
+
+
+@requires_clickhouse
+def test_import_hfdata(api_user, clickhouse, datadir):
+    path = datadir / 'cr6' / 'finseflux'
+    files = list(path.iterdir())
+
+    config = datadir / 'config.toml'
+    name = 'finseflux_HFData'
+
+    # Test skipping files
+    skip = int(time.time() - datetime.datetime(2018, 1, 1).timestamp()) // 60
+    assert call_command('import_file', config, name=name, root=datadir, skip=skip) == 0
+
+    # Test importing data
+    assert call_command('import_file', config, name=name, root=datadir, skip=0) == 0
+    # Verify the data has been imported
+    response = api_user.query_ch(name)
+    assert response.status_code == 200
+    json = response.json()
+    assert len(json['rows']) == 2399
+
+    # Verify the files have been archived
+    prefix = 'HFData_'
+    for path in files:
+        if path.name.startswith(prefix):
+            assert not path.exists()
+            assert (
+                Path(f'{path}.xz').exists() or
+                Path(f'{path}.empty').exists() or
+                Path(f'{path}.truncated').exists()
+            )
+        else:
+            assert path.exists()
 
 
 @requires_clickhouse

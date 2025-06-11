@@ -14,17 +14,11 @@ DEFAULT_SCHEMA = {
 }
 
 def get_column(name, schema=None):
-    if schema is None:
-        schema = DEFAULT_SCHEMA
-
     datatype = schema.get(name, 'Float64 DEFAULT NaN')
     return f'"{name}" {datatype}'
 
 
 def get_value(schema, name, value):
-    if schema is None:
-        schema = DEFAULT_SCHEMA
-
     datatype = schema.get(name)
     if datatype is None:
         return value
@@ -80,12 +74,23 @@ class ClickHouse:
         return n
 
     def upload(self, table_name, metadata, fields, rows, schema=None):
+        if schema is None:
+            schema = DEFAULT_SCHEMA
+
         rows2 = []
         for time, data in rows:
             data = {
                 key: get_value(schema, key, value) for key, value in data.items()
             }
-            data['TIMESTAMP'] = int(time.timestamp())
+
+            # Time
+            key = 'TIMESTAMP'
+            value = time
+            datatype = schema.get(key)
+            if datatype == 'UInt32':
+                value = int(time.timestamp())
+            data[key] = value
+
             rows2.append(data)
         rows = rows2
 

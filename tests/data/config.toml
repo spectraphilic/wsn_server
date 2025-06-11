@@ -1,0 +1,19 @@
+[import]
+root = "/home/jdavid/sandboxes/UiO/wsn_server/tests/data"
+
+[import.eton2]
+path = "cr6/eton2"
+pattern = "*.dat"
+database = "postgres"
+
+[import.finse_sommer]
+path = "sommer"
+pattern = "*.csv"
+
+[import.finseflux_Biomet]
+path = "cr6/finseflux"
+pattern = "Biomet_*.dat"
+
+[import.finseflux_HFData]
+path = "cr6/finseflux"
+pattern = "HFData_*.dat"

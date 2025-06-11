@@ -1,4 +1,3 @@
-# Standard Library
 import argparse
 import json
 import sys
