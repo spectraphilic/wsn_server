@@ -5,6 +5,7 @@ from rangefilter.filters import DateRangeFilter
 
 # Project
 from . import models
+from . import models_clickhouse
 from . import utils
 
 
@@ -148,3 +149,38 @@ class FrameAdmin(admin.ModelAdmin):
         }
         kwargs.update({'help_texts': help_texts})
         return super().get_form(request, obj, **kwargs)
+
+
+#
+# ClickHouse
+#
+
+def get_fields(model, replace=None):
+    if replace is None:
+        replace = {}
+
+    return [
+        replace.get(field.name, field.name)
+        for field in models_clickhouse.FinsefluxHfdata._meta.get_fields()
+    ]
+
+class ReadOnlyModelAdmin(admin.ModelAdmin):
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(models_clickhouse.FinsefluxHfdata)
+class FinsefluxHfdataAdmin(ReadOnlyModelAdmin):
+    list_display = get_fields(models_clickhouse.FinsefluxHfdata, replace={'timestamp': 'formatted_timestamp'})
+
+    @admin.display(description='Timestamp', ordering='timestamp')
+    def formatted_timestamp(self, obj):
+        # Format the timestamp with milliseconds
+        return obj.timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
