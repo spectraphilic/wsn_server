@@ -32,6 +32,7 @@ INSTALLED_APPS += [
     # Project apps
     'apps.boot',
     # Requirements
+    'clickhouse_backend',
     'drf_spectacular',
     'rangefilter',
     'rest_framework',
@@ -106,6 +107,16 @@ DJANGO_VITE_ASSETS_PATH = BASE_DIR / 'var' / 'build'
 DJANGO_VITE_DEV_MODE = DEBUG
 if not DJANGO_VITE_DEV_MODE:
     STATICFILES_DIRS.append(DJANGO_VITE_ASSETS_PATH)
+
+# ClickHouse
+DATABASES['clickhouse'] = {
+    "ENGINE": "clickhouse_backend.backend",
+    "NAME": "wsn",
+    "HOST": "localhost",
+    "USER": os.environ.get('WSN_CLICKHOUSE_USER', 'default'),
+    "PASSWORD": os.environ.get('WSN_CLICKHOUSE_PASSWORD', ''),
+}
+DATABASE_ROUTERS = ["project.dbrouters.ClickHouseRouter"]
 
 # If not defined the producer will hang forever when the broker is not
 # available. Iridium requires the callback to run in less than 3s.

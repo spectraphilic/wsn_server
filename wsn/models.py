@@ -1,8 +1,7 @@
-# Standard Library
-from datetime import datetime
+import datetime
 import logging
 import math
-from time import time as epoch_float
+import time
 
 # Django
 from django.contrib.postgres.indexes import GinIndex
@@ -12,7 +11,6 @@ from django.db.models import ForeignKey, PROTECT
 from django.db.models import CharField
 from django.db.models import FloatField # 8 bytes
 from django.db.models import IntegerField # 4 bytes (signed)
-#from django.db.models import PositiveIntegerField # 4 bytes (signed)
 from django.db.models import SmallIntegerField # 2 bytes (signed)
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
@@ -162,7 +160,7 @@ class Metadata(FlexModel):
 
 
 def epoch():
-    return round(epoch_float())
+    return round(time.time())
 
 class Frame(TimeModelMixin, FlexModel):
 
@@ -222,7 +220,7 @@ class Frame(TimeModelMixin, FlexModel):
         Data fields which do not have a column in the database are stored in
         the 'data' column, of json datatype.
         """
-        if type(time) is datetime:
+        if type(time) is datetime.datetime:
             if time.tzinfo is None:
                 raise ValueError('unexpected naive datetime, expected integer (epoch) or aware datetime')
             time = int(time.timestamp())

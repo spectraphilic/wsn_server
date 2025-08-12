@@ -1,7 +1,7 @@
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db.models import F
-from wsn.models import Frame, Metadata
+from wsn.models import Frame
 
 
 NAME = 'pf-guolasjavri'

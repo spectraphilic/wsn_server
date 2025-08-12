@@ -1,4 +1,3 @@
-# Standard Library
 import lzma
 import os
 
