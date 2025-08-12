@@ -108,13 +108,23 @@ DJANGO_VITE_DEV_MODE = DEBUG
 if not DJANGO_VITE_DEV_MODE:
     STATICFILES_DIRS.append(DJANGO_VITE_ASSETS_PATH)
 
-# ClickHouse
-DATABASES['clickhouse'] = {
-    "ENGINE": "clickhouse_backend.backend",
-    "NAME": "wsn",
-    "HOST": "localhost",
-    "USER": os.environ.get('WSN_CLICKHOUSE_USER', 'default'),
-    "PASSWORD": os.environ.get('WSN_CLICKHOUSE_PASSWORD', ''),
+# Databases: PostgreSQL and ClickHouse
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'wsn',
+        'USER': 'wsn',
+        'PASSWORD': os.environ.get('WSN_POSTGRESQL_PASSWORD', ''),
+        'HOST': '',
+        'PORT': '',
+    },
+    'clickhouse': {
+        "ENGINE": "clickhouse_backend.backend",
+        "NAME": "wsn",
+        "HOST": "localhost",
+        "USER": os.environ.get('WSN_CLICKHOUSE_USER', 'default'),
+        "PASSWORD": os.environ.get('WSN_CLICKHOUSE_PASSWORD', ''),
+    },
 }
 DATABASE_ROUTERS = ["project.dbrouters.ClickHouseRouter"]
 
