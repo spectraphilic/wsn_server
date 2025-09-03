@@ -23,9 +23,6 @@ from project.settings_ansible import *
 load_dotenv(f'{BASE_DIR}/.envrc')
 
 # Applications
-def replace(l, a, b):
-    return [b if x == a else x for x in l]
-
 INSTALLED_APPS += [
     # Requirements
     'django_vite',
@@ -102,11 +99,14 @@ DEFAULT_FROM_EMAIL = 'webmaster@' + fqdn
 SERVER_EMAIL = 'root@' + fqdn
 
 # Vite
-DJANGO_VITE_DEV_SERVER_PORT = 5173
-DJANGO_VITE_ASSETS_PATH = BASE_DIR / 'var' / 'build'
-DJANGO_VITE_DEV_MODE = DEBUG
-if not DJANGO_VITE_DEV_MODE:
-    STATICFILES_DIRS.append(DJANGO_VITE_ASSETS_PATH)
+DJANGO_VITE = {
+    'default': {
+        'dev_mode': DEBUG,
+    },
+}
+
+if not DEBUG:
+    STATICFILES_DIRS.append(BASE_DIR / 'var' / 'build')
 
 # Databases: PostgreSQL and ClickHouse
 DATABASES = {
