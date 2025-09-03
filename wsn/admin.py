@@ -5,7 +5,7 @@ from rangefilter.filters import DateRangeFilter
 
 # Project
 from . import models
-from . import models_clickhouse
+from . import models_unmanaged
 from . import utils
 
 
@@ -161,7 +161,7 @@ def get_fields(model, replace=None):
 
     return [
         replace.get(field.name, field.name)
-        for field in models_clickhouse.FinsefluxHfdata._meta.get_fields()
+        for field in models_unmanaged.FinsefluxHfdata._meta.get_fields()
     ]
 
 class ReadOnlyModelAdmin(admin.ModelAdmin):
@@ -176,9 +176,9 @@ class ReadOnlyModelAdmin(admin.ModelAdmin):
         return False
 
 
-@admin.register(models_clickhouse.FinsefluxHfdata)
+@admin.register(models_unmanaged.FinsefluxHfdata)
 class FinsefluxHfdataAdmin(ReadOnlyModelAdmin):
-    list_display = get_fields(models_clickhouse.FinsefluxHfdata, replace={'timestamp': 'formatted_timestamp'})
+    list_display = get_fields(models_unmanaged.FinsefluxHfdata, replace={'timestamp': 'formatted_timestamp'})
 
     @admin.display(description='Timestamp', ordering='timestamp')
     def formatted_timestamp(self, obj):
