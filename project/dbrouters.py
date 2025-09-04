@@ -1,41 +1,22 @@
-from clickhouse_backend.models import ClickhouseModel
-
-
-def get_subclasses(class_):
-    classes = class_.__subclasses__()
-
-    index = 0
-    while index < len(classes):
-        classes.extend(classes[index].__subclasses__())
-        index += 1
-
-    return list(set(classes))
-
 
 class ClickHouseRouter:
-    def __init__(self):
-        self.route_model_names = set()
-        for model in get_subclasses(ClickhouseModel):
-            if model._meta.abstract:
-                continue
-            self.route_model_names.add(model._meta.label)
 
     def db_for_read(self, model, **hints):
-        name = model._meta.label
-        if name in self.route_model_names or hints.get("clickhouse"):
-            return "clickhouse"
+        app_label = model._meta.app_label
+        if app_label == 'ch':
+            return 'clickhouse'
+
         return None
 
     def db_for_write(self, model, **hints):
-        name = model._meta.label
-        if name in self.route_model_names or hints.get("clickhouse"):
-            return "clickhouse"
+        app_label = model._meta.app_label
+        if app_label == 'ch':
+            return 'clickhouse'
+
         return None
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
-        name = f"{app_label}.{model_name}"
-        if name in self.route_model_names or hints.get("clickhouse"):
-            return db == "clickhouse"
-        elif db == "clickhouse":
-            return False
-        return None
+        if app_label == 'ch':
+            return db == 'clickhouse'
+
+        return False

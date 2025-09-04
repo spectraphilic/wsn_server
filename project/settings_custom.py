@@ -37,6 +37,7 @@ INSTALLED_APPS += [
     'rest_framework_api_key',
     # Project
     'api',
+    'ch',
     'qc',
     'wsn',
 ]
