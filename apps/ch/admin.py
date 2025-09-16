@@ -1,4 +1,5 @@
 from django.contrib import admin
+from rangefilter.filters import DateTimeRangeFilter
 
 from . import models
 from . import models_unmanaged
@@ -25,6 +26,9 @@ class ReadOnlyModelAdmin(admin.ModelAdmin):
 @admin.register(models_unmanaged.FinsefluxHfdata)
 class FinsefluxHfdataAdmin(ReadOnlyModelAdmin):
     list_display = get_fields(models_unmanaged.FinsefluxHfdata, replace={'timestamp': 'formatted_timestamp'})
+    list_filter = [
+        ('timestamp', DateTimeRangeFilter),
+    ]
 
     @admin.display(description='Timestamp', ordering='timestamp')
     def formatted_timestamp(self, obj):
