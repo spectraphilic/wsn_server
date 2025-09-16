@@ -71,6 +71,13 @@ class CR6Parser(CSVParser):
         if unit == 'TS':
             return parse_datetime(value)
 
+        # Found "-" in the U_ana column of a HFData file
+        if unit == 'm/S':
+            try:
+                return float(value)
+            except ValueError:
+                return math.nan
+
         if value == 'NAN':
             return math.nan
 
