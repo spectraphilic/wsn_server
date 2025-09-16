@@ -18,6 +18,7 @@ from wsn.parsers.sommer import SommerParser
 from wsn.upload import upload2pg, upload2ch
 
 
+# TODO Remove upload2pg: we only have 1 data source using this, move to ClickHouse
 UPLOAD_TO = {
     "postgres": upload2pg,
     "clickhouse": upload2ch,
@@ -51,6 +52,12 @@ SCHEMA = {
     },
 }
 
+DEFAULT_SCHEMA = {
+    'TIMESTAMP': 'UInt32',
+    'RECORD': 'UInt32',
+}
+
+
 PARSERS = {
     '.csv': SommerParser, # Sommer MRL-7
     '.dat': CR6Parser,
@@ -80,9 +87,19 @@ class Command(BaseCommand):
             self.stdout.write(f"{filepath} skip for now, will handle later")
             return
 
+        # Schema
+        if upload_to is upload2ch:
+            schema = SCHEMA.get(table_name)
+            if schema is None:
+                dirpath, filename = os.path.split(filepath)
+                dirname = os.path.basename(dirpath)
+                schema = SCHEMA.get(dirname, DEFAULT_SCHEMA)
+        else:
+            schema = None
+
         # Parse file
         try:
-            parser = Parser(filepath, stat=stat)
+            parser = Parser(filepath, stat=stat, schema=schema)
             metadata, fields, rows = parser.parse()
         except EmptyError:
             self.stderr.write(f'{filepath} WARNING file is empty')
@@ -103,12 +120,6 @@ class Command(BaseCommand):
             return
 
         # Upload
-        schema = SCHEMA.get(table_name)
-        if schema is None:
-            dirpath, filename = os.path.split(filepath)
-            dirname = os.path.basename(dirpath)
-            schema = SCHEMA.get(dirname)
-
         try:
             upload_to(table_name, metadata, fields, rows, schema=schema)
         except Exception:

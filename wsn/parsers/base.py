@@ -27,6 +27,7 @@ class BaseParser:
         filepath=None, # Used for better error messages
         metadata=None, # Externally provided metadata
         stat=None,     # os.stat_result instance
+        schema=None,   # used to desirialize values
     ):
 
         if type(file) is str:
@@ -51,6 +52,8 @@ class BaseParser:
 
         if stat is not None:
             self.stat = stat
+
+        self.schema = schema
 
     @cached_property
     def filepath(self):

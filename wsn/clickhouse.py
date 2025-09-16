@@ -8,11 +8,6 @@ from django.conf import settings
 from wsn.parsers.cr6 import parse_datetime
 
 
-DEFAULT_SCHEMA = {
-    'TIMESTAMP': 'UInt32',
-    'RECORD': 'UInt32',
-}
-
 def get_column(name, schema=None):
     datatype = schema.get(name, 'Float64 DEFAULT NaN')
     return f'"{name}" {datatype}'
@@ -74,8 +69,7 @@ class ClickHouse:
         return n
 
     def upload(self, table_name, metadata, fields, rows, schema=None):
-        if schema is None:
-            schema = DEFAULT_SCHEMA
+        assert schema is not None
 
         rows2 = []
         for time, data in rows:
