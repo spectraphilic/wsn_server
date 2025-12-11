@@ -516,3 +516,31 @@ class MobilefluxStationstatus(models.ClickhouseModel):
     class Meta:
         managed = False
         db_table = 'mobileflux_StationStatus'
+
+
+class LicorFinseflux(models.ClickhouseModel):
+    timestamp = models.DateTime64Field(db_column='TIMESTAMP', precision=3, primary_key=True)  # Field name made lowercase.
+    total_pressure_kpa_field = models.Float64Field(db_column='Total Pressure (kPa)')  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
+    cell_temperature_c_field = models.Float64Field(db_column='Cell Temperature (C)')  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
+    aux_1_u_m_s_field = models.Float64Field(db_column='Aux 1 - U (m/s)')  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
+    h2o_mmol_m_3_field = models.Float64Field(db_column='H2O (mmol/m^3)')  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
+    aux_3_w_m_s_field = models.Float64Field(db_column='Aux 3 - W (m/s)')  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
+    chk = models.Float64Field(db_column='CHK')  # Field name made lowercase.
+    co2_mmol_m_3_field = models.Float64Field(db_column='CO2 (mmol/m^3)')  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
+    co2_signal_strength = models.Float64Field(db_column='CO2 Signal Strength')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    diagnostic_value = models.Float64Field(db_column='Diagnostic Value')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    delta_signal_strength = models.Float64Field(db_column='Delta Signal Strength')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    co2_dry_umol_mol_field = models.Float64Field(db_column='CO2 dry(umol/mol)')  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
+    aux_4_sos_m_s_field = models.Float64Field(db_column='Aux 4 - SOS (m/s)')  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
+    h2o_signal_strength = models.Float64Field(db_column='H2O Signal Strength')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    aux_2_v_m_s_field = models.Float64Field(db_column='Aux 2 - V (m/s)')  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
+    average_signal_strength = models.Float64Field(db_column='Average Signal Strength')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    flow_rate_lpm_field = models.Float64Field(db_column='Flow Rate (lpm)')  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
+    h2o_dry_mmol_mol_field = models.Float64Field(db_column='H2O dry(mmol/mol)')  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
+    diagnostic_value_2 = models.Float64Field(db_column='Diagnostic Value 2')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    temperature_in_c_field = models.Float64Field(db_column='Temperature In (C)')  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
+    temperature_out_c_field = models.Float64Field(db_column='Temperature Out (C)')  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
+
+    class Meta:
+        managed = False
+        db_table = 'licor_finseflux'

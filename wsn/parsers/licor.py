@@ -30,11 +30,11 @@ def zip_to_tar_xz(zip_path, tar_xz_path):
             tar_info.size = file_info.file_size
 
             # Convert ZIP's date_time tuple to Unix timestamp
+            # Assume it's UTC (TODO Parse the UT extra field)
             if hasattr(file_info, 'date_time'):
                 dt_tuple = file_info.date_time
-                # Note: ZIP stores local time, but we'll assume it's UTC
-                timestamp = time.mktime(dt_tuple + (0, 0, 0))
-                tar_info.mtime = timestamp
+                dt_utc = datetime.datetime(*dt_tuple, tzinfo=datetime.timezone.utc)
+                tar_info.mtime = int(dt_utc.timestamp())
 
             # Add file to tar
             with zip_ref.open(file_info) as file_obj:
@@ -65,11 +65,14 @@ def get_archive_dir_path(path):
 
 class DataFile:
 
+    SKIP_FIELDS = {'DATAH', 'DATE', 'TIME', 'Seconds', 'Nanoseconds', 'Date', 'Time'}
+
     def __init__(self, parser):
         self.file = None
         self.parser = parser
         self.reader = None
         self.header = {}
+        self.raw_fields = []
         self.fields = []
 
     def open(self, filename):
@@ -84,7 +87,9 @@ class DataFile:
         # Read Header
         for row in self.reader:
             if len(row) != 2:
-                self.fields = row
+                self.raw_fields = row
+                assert 'TIMESTAMP' not in row
+                self.fields = ['TIMESTAMP'] + [x for x in row if x not in self.SKIP_FIELDS]
                 break
             self.header[row[0]] = row[1]
 
@@ -100,14 +105,12 @@ class DataFile:
             return value # text
 
     def __iter__(self):
-        skip = {'DATE', 'TIME', 'Seconds', 'Nanoseconds', 'Date', 'Time'}
-
-        if 'DATE' in self.fields:
-            i_date = self.fields.index('DATE')
-            i_time = self.fields.index('TIME')
+        if 'DATE' in self.raw_fields:
+            i_date = self.raw_fields.index('DATE')
+            i_time = self.raw_fields.index('TIME')
         else:
-            i_date = self.fields.index('Date')
-            i_time = self.fields.index('Time')
+            i_date = self.raw_fields.index('Date')
+            i_time = self.raw_fields.index('Time')
 
         def get_time(row):
             date = row[i_date]
@@ -122,8 +125,10 @@ class DataFile:
             time = get_time(row)
             data = {}
             for i, value in enumerate(row):
-                name = self.fields[i]
-                if name not in skip:
+                name = self.raw_fields[i]
+                if name == 'DATAH':
+                    assert value == 'DATA'
+                elif name not in self.SKIP_FIELDS:
                     data[name] = self.__convert(value)
 
             yield (time, data)

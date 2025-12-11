@@ -52,6 +52,10 @@ SCHEMA = {
     },
 }
 
+DEFAULT_LICOR_SCHEMA = {
+    'TIMESTAMP': "DateTime64(3, 'UTC')",
+}
+
 DEFAULT_SCHEMA = {
     'TIMESTAMP': 'UInt32',
     'RECORD': 'UInt32',
@@ -71,7 +75,7 @@ class Command(BaseCommand):
         parser.add_argument('config', help="Path to the TOML configuration file")
         parser.add_argument('--name', help="Import only the given name from the config file")
         parser.add_argument('--root', help="Root path to search for data files")
-        parser.add_argument('--skip', default=5,
+        parser.add_argument('--skip', default=5, type=int,
             help='Skip files older than the given minutes (default 5)',
         )
 
@@ -90,7 +94,9 @@ class Command(BaseCommand):
         # Schema
         if upload_to is upload2ch:
             schema = SCHEMA.get(table_name)
-            if schema is None:
+            if table_name.startswith('licor_'):
+                schema = DEFAULT_LICOR_SCHEMA
+            elif schema is None:
                 dirpath, filename = os.path.split(filepath)
                 dirname = os.path.basename(dirpath)
                 schema = SCHEMA.get(dirname, DEFAULT_SCHEMA)

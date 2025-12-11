@@ -87,10 +87,7 @@ def test_licor():
     assert len(rows) == 18000
 
     fields = set(fields)
-    fields.remove('Seconds')
-    fields.remove('Nanoseconds')
-    fields.remove('Date')
-    fields.remove('Time')
+    fields.remove('TIMESTAMP')
     for time, data in rows:
         assert type(time) is datetime and time.tzinfo == timezone.utc
         assert type(data) is dict
