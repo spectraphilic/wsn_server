@@ -15,6 +15,7 @@ from django.utils.functional import cached_property
 
 # Project
 from .base import BaseParser
+from .utils import clean_column_name
 
 
 def zip_to_tar_xz(zip_path, tar_xz_path):
@@ -74,6 +75,7 @@ class DataFile:
         self.header = {}
         self.raw_fields = []
         self.fields = []
+        self.cleaned_field_map = {}  # maps raw name → cleaned name
 
     def open(self, filename):
         self.file = io.TextIOWrapper(self.parser.zipfile.open(filename))
@@ -89,20 +91,43 @@ class DataFile:
             if len(row) != 2:
                 self.raw_fields = row
                 assert 'TIMESTAMP' not in row
-                self.fields = ['TIMESTAMP'] + [x for x in row if x not in self.SKIP_FIELDS]
+
+                # Build cleaned field names, skipping unneeded ones
+                cleaned_fields = []
+                self.cleaned_field_map = {}
+                seen_cleaned = {}  # maps cleaned_name → first raw_name that produced it
+
+                for raw_name in self.raw_fields:
+                    if raw_name in self.SKIP_FIELDS:
+                        continue
+                    cleaned = clean_column_name(raw_name)
+
+                    if cleaned in seen_cleaned:
+                        # Conflict! Two different raw names map to same cleaned name
+                        first_raw = seen_cleaned[cleaned]
+                        raise ValueError(
+                            f"Column name collision after cleaning: "
+                            f"'{first_raw}' and '{raw_name}' both normalize to '{cleaned}'."
+                        )
+
+                    seen_cleaned[cleaned] = raw_name
+                    self.cleaned_field_map[raw_name] = cleaned
+                    cleaned_fields.append(cleaned)
+
+                self.fields = ['TIMESTAMP'] + cleaned_fields
                 break
             self.header[row[0]] = row[1]
 
     def __convert(self, value):
         try:
-            return int(value) # integer
+            return int(value)
         except ValueError:
             pass
 
         try:
-            return float(value) # float
+            return float(value)
         except ValueError:
-            return value # text
+            return value
 
     def __iter__(self):
         if 'DATE' in self.raw_fields:
@@ -116,7 +141,7 @@ class DataFile:
             date = row[i_date]
             time, ms = row[i_time].rsplit(':', 1)
             dt = datetime.datetime.strptime(date + time, '%Y-%m-%d%H:%M:%S')
-            dt = dt.replace(microsecond=int(ms)*1000)
+            dt = dt.replace(microsecond=int(ms) * 1000)
             dt = dt.replace(tzinfo=datetime.timezone.utc)
             # TODO Assert it matches Seconds/Nanoseconds
             return dt
@@ -125,11 +150,12 @@ class DataFile:
             time = get_time(row)
             data = {}
             for i, value in enumerate(row):
-                name = self.raw_fields[i]
-                if name == 'DATAH':
+                raw_name = self.raw_fields[i]
+                if raw_name == 'DATAH':
                     assert value == 'DATA'
-                elif name not in self.SKIP_FIELDS:
-                    data[name] = self.__convert(value)
+                elif raw_name not in self.SKIP_FIELDS:
+                    cleaned_name = self.cleaned_field_map[raw_name]
+                    data[cleaned_name] = self.__convert(value)
 
             yield (time, data)
 
