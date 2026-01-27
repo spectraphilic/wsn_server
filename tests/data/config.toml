@@ -17,3 +17,4 @@ pattern = "Biomet_*.dat"
 [import.finseflux_HFData]
 path = "cr6/finseflux"
 pattern = "HFData_*.dat"
+schema = "hfdata"

@@ -66,8 +66,6 @@ def get_archive_dir_path(path):
 
 class DataFile:
 
-    SKIP_FIELDS = {'DATAH', 'DATE', 'TIME', 'Seconds', 'Nanoseconds', 'Date', 'Time'}
-
     def __init__(self, parser):
         self.file = None
         self.parser = parser
@@ -85,6 +83,8 @@ class DataFile:
         self.file.close()
 
     def parse(self):
+        schema = self.parser.schema
+
         self.reader = csv.reader(self.file, dialect='excel-tab')
         # Read Header
         for row in self.reader:
@@ -98,9 +98,14 @@ class DataFile:
                 seen_cleaned = {}  # maps cleaned_name → first raw_name that produced it
 
                 for raw_name in self.raw_fields:
-                    if raw_name in self.SKIP_FIELDS:
+                    field = schema.get_field(raw_name)
+                    if field is None:
                         continue
-                    cleaned = clean_column_name(raw_name)
+
+                    if field.name == raw_name:
+                        cleaned = clean_column_name(raw_name)
+                    else:
+                        cleaned = field.name
 
                     if cleaned in seen_cleaned:
                         # Conflict! Two different raw names map to same cleaned name
@@ -130,6 +135,8 @@ class DataFile:
             return value
 
     def __iter__(self):
+        schema = self.parser.schema
+
         if 'DATE' in self.raw_fields:
             i_date = self.raw_fields.index('DATE')
             i_time = self.raw_fields.index('TIME')
@@ -153,9 +160,13 @@ class DataFile:
                 raw_name = self.raw_fields[i]
                 if raw_name == 'DATAH':
                     assert value == 'DATA'
-                elif raw_name not in self.SKIP_FIELDS:
-                    cleaned_name = self.cleaned_field_map[raw_name]
-                    data[cleaned_name] = self.__convert(value)
+
+                field = schema.get_field(raw_name)
+                if field is None:
+                    continue
+
+                cleaned_name = self.cleaned_field_map[raw_name]
+                data[cleaned_name] = self.__convert(value)
 
             yield (time, data)
 

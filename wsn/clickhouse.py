@@ -9,12 +9,14 @@ from wsn.parsers.cr6 import parse_datetime
 
 
 def get_column(name, schema=None):
-    datatype = schema.get(name, 'Float64 DEFAULT NaN')
-    return f'"{name}" {datatype}'
+    field = schema.get_field(name)
+    return f'"{name}" {field.type}'
 
 
 def get_value(schema, name, value):
-    datatype = schema.get(name)
+    field = schema.get_field(name)
+
+    datatype = field.type
     if datatype is None:
         return value
     elif datatype.startswith('DateTime64'):
@@ -80,8 +82,8 @@ class ClickHouse:
             # Time
             key = 'TIMESTAMP'
             value = time
-            datatype = schema.get(key)
-            if datatype == 'UInt32':
+            field = schema.get_field(key)
+            if field.type == 'UInt32':
                 value = int(time.timestamp())
             data[key] = value
 

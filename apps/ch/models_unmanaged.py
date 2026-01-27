@@ -127,23 +127,24 @@ class FinsefluxBiomet(models.ClickhouseModel):
 class FinsefluxHfdata(models.ClickhouseModel):
     timestamp = models.DateTime64Field(db_column='TIMESTAMP', precision=3, primary_key=True)  # Field name made lowercase.
     co2 = models.Float64Field(db_column='CO2')  # Field name made lowercase.
+    co2_dry = models.Float64Field(db_column='CO2_dry')  # Field name made lowercase.
+    h2o = models.Float64Field(db_column='H2O')  # Field name made lowercase.
+    h2o_dry = models.Float64Field(db_column='H2O_dry')  # Field name made lowercase.
     t_in = models.Float64Field(db_column='T_in')  # Field name made lowercase.
+    t_out = models.Float64Field(db_column='T_out')  # Field name made lowercase.
+    ptotal = models.Float64Field(db_column='Ptotal')  # Field name made lowercase.
+    u_ana = models.Float64Field(db_column='U_ana')  # Field name made lowercase.
+    v_ana = models.Float64Field(db_column='V_ana')  # Field name made lowercase.
+    w_ana = models.Float64Field(db_column='W_ana')  # Field name made lowercase.
+    sos_ana = models.Float64Field(db_column='SOS_ana')  # Field name made lowercase.
+    agc = models.Float64Field(db_column='AGC')  # Field name made lowercase.
+
+    record = models.UInt32Field(db_column='RECORD')  # Field name made lowercase.
     ux = models.Float64Field(db_column='Ux')  # Field name made lowercase.
     uy = models.Float64Field(db_column='Uy')  # Field name made lowercase.
     uz = models.Float64Field(db_column='Uz')  # Field name made lowercase.
-    h2o = models.Float64Field(db_column='H2O')  # Field name made lowercase.
-    ptotal = models.Float64Field(db_column='Ptotal')  # Field name made lowercase.
-    sos_ana = models.Float64Field(db_column='SOS_ana')  # Field name made lowercase.
-    sonic_diag = models.Float64Field()
-    w_ana = models.Float64Field(db_column='W_ana')  # Field name made lowercase.
-    u_ana = models.Float64Field(db_column='U_ana')  # Field name made lowercase.
-    record = models.UInt32Field(db_column='RECORD')  # Field name made lowercase.
-    v_ana = models.Float64Field(db_column='V_ana')  # Field name made lowercase.
-    t_out = models.Float64Field(db_column='T_out')  # Field name made lowercase.
-    co2_dry = models.Float64Field(db_column='CO2_dry')  # Field name made lowercase.
     sos = models.Float64Field(db_column='SOS')  # Field name made lowercase.
-    h2o_dry = models.Float64Field(db_column='H2O_dry')  # Field name made lowercase.
-    agc = models.Float64Field(db_column='AGC')  # Field name made lowercase.
+    sonic_diag = models.Float64Field()
 
     class Meta:
         managed = False
@@ -520,27 +521,27 @@ class MobilefluxStationstatus(models.ClickhouseModel):
 
 class LicorFinseflux(models.ClickhouseModel):
     timestamp = models.DateTime64Field(db_column='TIMESTAMP', precision=3, primary_key=True)
+    co2 = models.Float64Field(db_column='CO2')
+    co2_dry = models.Float64Field(db_column='CO2_dry')
+    h2o = models.Float64Field(db_column='H2O')
+    h2o_dry = models.Float64Field(db_column='H2O_dry')
+    t_in = models.Float64Field(db_column='T_in')
+    t_out = models.Float64Field(db_column='T_out')
+    ptotal = models.Float64Field(db_column='Ptotal')
+    u_ana = models.Float64Field(db_column='U_ana')
+    v_ana = models.Float64Field(db_column='V_ana')
+    w_ana = models.Float64Field(db_column='W_ana')
+    sos_ana = models.Float64Field(db_column='SOS_ana')
+    agc = models.Float64Field(db_column='AGC')
 
     co2_signal_strength = models.Float64Field(db_column='CO2_Signal_Strength')
-    co2_dry_umol_mol = models.Float64Field(db_column='CO2_dry_umol_mol')
-    h2o_dry_mmol_mol = models.Float64Field(db_column='H2O_dry_mmol_mol')
-    cell_temperature_c = models.Float64Field(db_column='Cell_Temperature_C')
-    diagnostic_value = models.Float64Field(db_column='Diagnostic_Value')
-    temperature_out_c = models.Float64Field(db_column='Temperature_Out_C')
-    aux_2_v_m_s = models.Float64Field(db_column='Aux_2_V_m_s')
-    total_pressure_kpa = models.Float64Field(db_column='Total_Pressure_kPa')
-    aux_1_u_m_s = models.Float64Field(db_column='Aux_1_U_m_s')
     h2o_signal_strength = models.Float64Field(db_column='H2O_Signal_Strength')
-    aux_3_w_m_s = models.Float64Field(db_column='Aux_3_W_m_s')
-    flow_rate_lpm = models.Float64Field(db_column='Flow_Rate_lpm')
-    co2_mmol_m_3 = models.Float64Field(db_column='CO2_mmol_m_3')
-    average_signal_strength = models.Float64Field(db_column='Average_Signal_Strength')
-    h2o_mmol_m_3 = models.Float64Field(db_column='H2O_mmol_m_3')
+    cell_temperature_c = models.Float64Field(db_column='Cell_Temperature_C')
     chk = models.Float64Field(db_column='CHK')
     delta_signal_strength = models.Float64Field(db_column='Delta_Signal_Strength')
-    aux_4_sos_m_s = models.Float64Field(db_column='Aux_4_SOS_m_s')
-    temperature_in_c = models.Float64Field(db_column='Temperature_In_C')
+    diagnostic_value = models.Float64Field(db_column='Diagnostic_Value')
     diagnostic_value_2 = models.Float64Field(db_column='Diagnostic_Value_2')
+    flow_rate_lpm = models.Float64Field(db_column='Flow_Rate_lpm')
 
     class Meta:
         managed = False

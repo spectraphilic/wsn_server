@@ -4,7 +4,11 @@ import pathlib
 import time
 import traceback
 
-import toml  # TODO Replace by tomllib after upgrading to Python 3.11
+try:
+    import tomllib as toml
+except ImportError:
+    # TODO Remove once we upgrde to Python 3.11
+    import toml
 
 # Django
 from django.core.management.base import BaseCommand
@@ -14,52 +18,9 @@ from django.template.defaultfilters import filesizeformat
 from wsn.parsers.base import EmptyError, TruncatedError
 from wsn.parsers.cr6 import CR6Parser
 from wsn.parsers.licor import LicorParser
+from wsn.parsers.schemas import Schema
 from wsn.parsers.sommer import SommerParser
 from wsn.upload import upload2pg, upload2ch
-
-
-# TODO Remove upload2pg: we only have 1 data source using this, move to ClickHouse
-UPLOAD_TO = {
-    "postgres": upload2pg,
-    "clickhouse": upload2ch,
-}
-
-SCHEMA = {
-    'mammamia3': {
-        'TIMESTAMP': 'UInt32',
-        'RECORD': 'UInt32',
-        # Borehole
-        'SurfaceTimeStamp': "DateTime('UTC')",
-        # Surface
-        'BoreholeTimeStamp': "DateTime64(3, 'UTC')",
-        'FtpFileName_mm3_Borehole': 'String',
-        'FtpFileName_mm3_Surface': 'String',
-        'SfTimeStamp': "DateTime('UTC')",
-        'TransmitTimeStamp': "DateTime64(3, 'UTC')",
-    },
-    'gruvebadet': {
-        'TIMESTAMP': 'UInt32',
-        'RECORD': 'UInt32',
-        # Diagnostics
-        'CompileResults': 'String',
-        'OSVersion': 'String',
-        'ProgName': 'String',
-        'StartTime': "DateTime64(3, 'UTC')",
-    },
-    'finseflux_HFData': {
-        'TIMESTAMP': "DateTime64(3, 'UTC')",
-        'RECORD': 'UInt32',
-    },
-}
-
-DEFAULT_LICOR_SCHEMA = {
-    'TIMESTAMP': "DateTime64(3, 'UTC')",
-}
-
-DEFAULT_SCHEMA = {
-    'TIMESTAMP': 'UInt32',
-    'RECORD': 'UInt32',
-}
 
 
 PARSERS = {
@@ -70,6 +31,7 @@ PARSERS = {
 
 
 class Command(BaseCommand):
+    """Django management command for importing data files into the database."""
 
     def add_arguments(self, parser):
         parser.add_argument('config', help="Path to the TOML configuration file")
@@ -79,7 +41,7 @@ class Command(BaseCommand):
             help='Skip files older than the given minutes (default 5)',
         )
 
-    def handle_file(self, filepath, stat, upload_to, table_name):
+    def handle_file(self, filepath, stat, database, table_name, schema):
         Parser = PARSERS.get(filepath.suffix)
         if Parser is None:
             return
@@ -91,17 +53,8 @@ class Command(BaseCommand):
             self.stdout.write(f"{filepath} skip for now, will handle later")
             return
 
-        # Schema
-        if upload_to is upload2ch:
-            schema = SCHEMA.get(table_name)
-            if table_name.startswith('licor_'):
-                schema = DEFAULT_LICOR_SCHEMA
-            elif schema is None:
-                dirpath, filename = os.path.split(filepath)
-                dirname = os.path.basename(dirpath)
-                schema = SCHEMA.get(dirname, DEFAULT_SCHEMA)
-        else:
-            schema = None
+        if type(schema) is str:
+            schema = Schema(schema)
 
         # Parse file
         try:
@@ -127,7 +80,11 @@ class Command(BaseCommand):
 
         # Upload
         try:
-            upload_to(table_name, metadata, fields, rows, schema=schema)
+            if database == 'postgres':
+                # TODO Remove postgres: we only have 1 data source using this, move to ClickHouse
+                upload2pg(table_name, metadata, fields, rows)
+            else:
+                upload2ch(table_name, metadata, fields, rows, schema)
         except Exception:
             self.stderr.write(f"{filepath} ERROR")
             traceback.print_exc(file=self.stderr)
@@ -164,15 +121,15 @@ class Command(BaseCommand):
             # Proceed
             path = root / values['path']
             pattern = values['pattern']
-
             database = values.get('database', 'clickhouse')
-            upload_to = UPLOAD_TO[database]
+            schema = values.get('schema', 'default')
+
             for entry in os.scandir(path):
                 if not entry.is_file():
                     continue
 
                 path = pathlib.Path(entry.path)
                 if fnmatch.fnmatch(path.name, pattern):
-                    self.handle_file(path, entry.stat(), upload_to, table_name)
+                    self.handle_file(path, entry.stat(), database, table_name, schema)
 
         return 0

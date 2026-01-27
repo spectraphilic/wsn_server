@@ -6,6 +6,9 @@ from pathlib import Path
 # Django
 from django.utils.functional import cached_property
 
+# Project
+from wsn.parsers.schemas import Schema
+
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +55,9 @@ class BaseParser:
 
         if stat is not None:
             self.stat = stat
+
+        if schema is None:
+            schema = Schema('default')
 
         self.schema = schema
 
