@@ -122,6 +122,7 @@ class Command(BaseCommand):
             path = root / values['path']
             pattern = values['pattern']
             database = values.get('database', 'clickhouse')
+            table_name = values.get('table', table_name)
             schema = values.get('schema', 'default')
 
             for entry in os.scandir(path):

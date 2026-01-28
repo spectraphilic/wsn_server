@@ -139,12 +139,23 @@ class FinsefluxHfdata(models.ClickhouseModel):
     sos_ana = models.Float64Field(db_column='SOS_ana')  # Field name made lowercase.
     agc = models.Float64Field(db_column='AGC')  # Field name made lowercase.
 
+    # Only available in new data
     record = models.UInt32Field(db_column='RECORD')  # Field name made lowercase.
     ux = models.Float64Field(db_column='Ux')  # Field name made lowercase.
     uy = models.Float64Field(db_column='Uy')  # Field name made lowercase.
     uz = models.Float64Field(db_column='Uz')  # Field name made lowercase.
     sos = models.Float64Field(db_column='SOS')  # Field name made lowercase.
     sonic_diag = models.Float64Field()
+
+    # Only available in old data
+    co2_signal_strength = models.Float64Field(db_column='CO2_Signal_Strength')
+    h2o_signal_strength = models.Float64Field(db_column='H2O_Signal_Strength')
+    cell_temperature_c = models.Float64Field(db_column='Cell_Temperature_C')
+    chk = models.Float64Field(db_column='CHK')
+    delta_signal_strength = models.Float64Field(db_column='Delta_Signal_Strength')
+    diagnostic_value = models.Float64Field(db_column='Diagnostic_Value')
+    diagnostic_value_2 = models.Float64Field(db_column='Diagnostic_Value_2')
+    flow_rate_lpm = models.Float64Field(db_column='Flow_Rate_lpm')
 
     class Meta:
         managed = False
@@ -517,32 +528,3 @@ class MobilefluxStationstatus(models.ClickhouseModel):
     class Meta:
         managed = False
         db_table = 'mobileflux_StationStatus'
-
-
-class LicorFinseflux(models.ClickhouseModel):
-    timestamp = models.DateTime64Field(db_column='TIMESTAMP', precision=3, primary_key=True)
-    co2 = models.Float64Field(db_column='CO2')
-    co2_dry = models.Float64Field(db_column='CO2_dry')
-    h2o = models.Float64Field(db_column='H2O')
-    h2o_dry = models.Float64Field(db_column='H2O_dry')
-    t_in = models.Float64Field(db_column='T_in')
-    t_out = models.Float64Field(db_column='T_out')
-    ptotal = models.Float64Field(db_column='Ptotal')
-    u_ana = models.Float64Field(db_column='U_ana')
-    v_ana = models.Float64Field(db_column='V_ana')
-    w_ana = models.Float64Field(db_column='W_ana')
-    sos_ana = models.Float64Field(db_column='SOS_ana')
-    agc = models.Float64Field(db_column='AGC')
-
-    co2_signal_strength = models.Float64Field(db_column='CO2_Signal_Strength')
-    h2o_signal_strength = models.Float64Field(db_column='H2O_Signal_Strength')
-    cell_temperature_c = models.Float64Field(db_column='Cell_Temperature_C')
-    chk = models.Float64Field(db_column='CHK')
-    delta_signal_strength = models.Float64Field(db_column='Delta_Signal_Strength')
-    diagnostic_value = models.Float64Field(db_column='Diagnostic_Value')
-    diagnostic_value_2 = models.Float64Field(db_column='Diagnostic_Value_2')
-    flow_rate_lpm = models.Float64Field(db_column='Flow_Rate_lpm')
-
-    class Meta:
-        managed = False
-        db_table = 'licor_finseflux'

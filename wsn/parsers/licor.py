@@ -216,7 +216,11 @@ class LicorParser(BaseParser):
     @cached_property
     def _biomet_data(self):
         data = DataFile(self)
-        data.open(f'{self.filename_root}-biomet.data')
+        try:
+            data.open(f'{self.filename_root}-biomet.data')
+        except KeyError:
+            return None
+
         return data
 
     def _load(self):
@@ -238,7 +242,8 @@ class LicorParser(BaseParser):
 
     def _close(self):
         self._data.close()
-        self._biomet_data.close()
+        if self._biomet_data is not None:
+            self._biomet_data.close()
         self.zipfile.close()
 
     def check_filepath(self, filepath):
