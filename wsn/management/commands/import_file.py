@@ -3,6 +3,7 @@ import os
 import pathlib
 import time
 import traceback
+import zipfile
 
 try:
     import tomllib as toml
@@ -72,6 +73,10 @@ class Command(BaseCommand):
             # Sometimes Sommer files have garbage
             self.stderr.write(f'{filepath} WARNING file is not UTF-8')
             os.rename(filepath, f'{filepath}.badutf8')
+            return
+        except zipfile.BadZipFile:
+            self.stderr.write(f'{filepath} WARNING bad zip file')
+            os.rename(filepath, f'{filepath}.badzip')
             return
         except Exception:
             self.stderr.write(f"{filepath} ERROR")
