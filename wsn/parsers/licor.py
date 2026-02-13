@@ -15,7 +15,6 @@ from django.utils.functional import cached_property
 
 # Project
 from .base import BaseParser
-from .utils import clean_column_name
 
 
 def zip_to_tar_xz(zip_path, tar_xz_path):
@@ -98,14 +97,16 @@ class DataFile:
                 seen_cleaned = {}  # maps cleaned_name → first raw_name that produced it
 
                 for raw_name in self.raw_fields:
-                    field = schema.get_field(raw_name)
+                    # Map source name to output name
+                    output_name = schema.get_output_name(raw_name)
+
+                    # Check if this field exists in schema
+                    field = schema.get_field(output_name)
                     if field is None:
                         continue
 
-                    if field.name == raw_name:
-                        cleaned = clean_column_name(raw_name)
-                    else:
-                        cleaned = field.name
+                    # Use output_name as the cleaned name
+                    cleaned = output_name
 
                     if cleaned in seen_cleaned:
                         # Conflict! Two different raw names map to same cleaned name
@@ -161,7 +162,9 @@ class DataFile:
                 if raw_name == 'DATAH':
                     assert value == 'DATA'
 
-                field = schema.get_field(raw_name)
+                # Map source name to output name
+                output_name = schema.get_output_name(raw_name)
+                field = schema.get_field(output_name)
                 if field is None:
                     continue
 

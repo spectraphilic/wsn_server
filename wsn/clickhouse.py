@@ -10,12 +10,15 @@ from wsn.parsers.cr6 import parse_datetime
 
 def get_column(name, schema=None):
     field = schema.get_field(name)
+    if field is None:
+        raise ValueError(f"Field '{name}' not found in schema")
     return f'"{name}" {field.type}'
 
 
 def get_value(schema, name, value):
     field = schema.get_field(name)
-    assert field is not None, f'Unexpected {name} is None'
+    if field is None:
+        return None  # Skip unknown fields in strict mode
 
     datatype = field.type
     if datatype is None:
@@ -27,7 +30,6 @@ def get_value(schema, name, value):
         return value.replace(tzinfo=datetime.timezone.utc)
 
     return value
-
 
 class ClickHouse:
 
@@ -76,14 +78,19 @@ class ClickHouse:
 
         rows2 = []
         for time, data in rows:
-            data = {
-                key: get_value(schema, key, value) for key, value in data.items()
-            }
+            processed_data = {}
+            for key, value in data.items():
+                processed_value = get_value(schema, key, value)
+                if processed_value is not None:
+                    processed_data[key] = processed_value
+            data = processed_data
 
             # Time
             key = 'TIMESTAMP'
             value = time
             field = schema.get_field(key)
+            if field is None:
+                raise ValueError("TIMESTAMP field not found in schema")
             if field.type == 'UInt32':
                 value = int(time.timestamp())
             data[key] = value
