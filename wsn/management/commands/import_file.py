@@ -42,7 +42,7 @@ class Command(BaseCommand):
             help='Skip files older than the given minutes (default 5)',
         )
 
-    def handle_file(self, filepath, stat, database, table_name, schema):
+    def handle_file(self, filepath, stat, database, table_name, schema, strict):
         Parser = PARSERS.get(filepath.suffix)
         if Parser is None:
             return
@@ -55,7 +55,7 @@ class Command(BaseCommand):
             return
 
         if type(schema) is str:
-            schema = Schema(schema)
+            schema = Schema(schema, strict)
 
         # Parse file
         try:
@@ -129,6 +129,7 @@ class Command(BaseCommand):
             database = values.get('database', 'clickhouse')
             table_name = values.get('table', table_name)
             schema = values.get('schema', 'default')
+            strict = values.get('schema-strict', False)
 
             for entry in os.scandir(path):
                 if not entry.is_file():
@@ -136,6 +137,6 @@ class Command(BaseCommand):
 
                 path = pathlib.Path(entry.path)
                 if fnmatch.fnmatch(path.name, pattern):
-                    self.handle_file(path, entry.stat(), database, table_name, schema)
+                    self.handle_file(path, entry.stat(), database, table_name, schema, strict)
 
         return 0

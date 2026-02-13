@@ -58,6 +58,26 @@ SCHEMAS = {
         'Temperature Out (C)': Field(name='T_out'),
         'Total Pressure (kPa)': Field(name='Ptotal'),
     },
+    'licor_mobileflux': {
+        'TIMESTAMP': Field(type="DateTime64(3, 'UTC')"),
+        'SOS (m/s)': Field(name='SOS'),
+        'U (m/s)': Field(name='Ux'),
+        'V (m/s)': Field(name='Uy'),
+        'W (m/s)': Field(name='Uz'),
+        'H2O (mmol/mol)': Field(name='H2O'),
+        'H2O dry(mmol/mol)': Field(name='H2O_dry'),
+        'CO2 (mmol/m^3)': Field(name='CO2'),
+        'CO2 dry(umol/mol)': Field(name='CO2_dry'),
+        'Temperature In (C)': Field(name='T_in'),
+        'Temperature Out (C)': Field(name='T_out'),
+        'Total Pressure (kPa)': Field(name='Ptotal'),
+        'Average Signal Strength': Field(name='AGC'),
+        'CH4 (mmol/m^3)': Field(name='CH4_mmol_m3'),
+        'CH4 (umol/mol)': Field(name='CH4_umol_mol'),
+        'CH4 Temperature': Field(name='CH4_Temperature'),
+        'CH4 Pressure': Field(name='CH4_Pressure'),
+        'CH4 Signal Strength': Field(name='CH4_Signal_Strength'),
+    },
     'default': {
         'TIMESTAMP': Field(type='UInt32'),
         'RECORD': Field(type='UInt32'),
@@ -66,11 +86,14 @@ SCHEMAS = {
 
 class Schema:
 
-    def __init__(self, name):
+    def __init__(self, name, strict: bool = False):
         self.schema_data = SCHEMAS[name]
+        self.strict = strict
 
     def get_field(self, name):
         if name not in self.schema_data:
+            if self.strict:
+                return None
             return Field(name=name)
 
         return self.schema_data[name]

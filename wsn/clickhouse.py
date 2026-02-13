@@ -15,6 +15,7 @@ def get_column(name, schema=None):
 
 def get_value(schema, name, value):
     field = schema.get_field(name)
+    assert field is not None, f'Unexpected {name} is None'
 
     datatype = field.type
     if datatype is None:
