@@ -78,6 +78,19 @@ class FinsefluxHfdataAdmin(ReadOnlyModelAdmin):
         return obj.timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
 
 
+@admin.register(models_unmanaged.MobilefluxHfdata)
+class MobilefluxHfdataAdmin(ReadOnlyModelAdmin):
+    list_display = get_fields(models_unmanaged.MobilefluxHfdata, replace={'timestamp': 'formatted_timestamp'})
+    list_filter = [
+        ('timestamp', DateTimeRangeFilter),
+    ]
+
+    @admin.display(description='Timestamp', ordering='timestamp')
+    def formatted_timestamp(self, obj):
+        # Format the timestamp with milliseconds
+        return obj.timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+
+
 @admin.register(models.FinsefluxPostproc)
 class FinsefluxPostproc(ReadOnlyModelAdmin):
     list_display = get_fields(models.FinsefluxPostproc)

@@ -1,13 +1,12 @@
-# Standard Library
 import datetime
-from pathlib import Path
 import shutil
 import socket
 import time
+from pathlib import Path
 
 # Requirements
-from clickhouse_driver import Client
 import pytest
+from clickhouse_driver import Client
 
 # Django
 from django.conf import settings

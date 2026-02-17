@@ -528,3 +528,28 @@ class MobilefluxStationstatus(models.ClickhouseModel):
     class Meta:
         managed = False
         db_table = 'mobileflux_StationStatus'
+
+
+class MobilefluxHfdata(models.ClickhouseModel):
+    timestamp = models.DateTime64Field(db_column='TIMESTAMP', precision=3, primary_key=True)  # Field name made lowercase.
+    ch4_umol_mol = models.Float64Field(db_column='CH4_umol_mol')  # Field name made lowercase.
+    t_in = models.Float64Field(db_column='T_in')  # Field name made lowercase.
+    agc = models.Float64Field(db_column='AGC')  # Field name made lowercase.
+    ptotal = models.Float64Field(db_column='Ptotal')  # Field name made lowercase.
+    uz = models.Float64Field(db_column='Uz')  # Field name made lowercase.
+    ux = models.Float64Field(db_column='Ux')  # Field name made lowercase.
+    h2o = models.Float64Field(db_column='H2O')  # Field name made lowercase.
+    uy = models.Float64Field(db_column='Uy')  # Field name made lowercase.
+    ch4_pressure = models.Float64Field(db_column='CH4_Pressure')  # Field name made lowercase.
+    co2_dry = models.Float64Field(db_column='CO2_dry')  # Field name made lowercase.
+    ch4_mmol_m3 = models.Float64Field(db_column='CH4_mmol_m3')  # Field name made lowercase.
+    ch4_signal_strength = models.Float64Field(db_column='CH4_Signal_Strength')  # Field name made lowercase.
+    t_out = models.Float64Field(db_column='T_out')  # Field name made lowercase.
+    ch4_temperature = models.Float64Field(db_column='CH4_Temperature')  # Field name made lowercase.
+    h2o_dry = models.Float64Field(db_column='H2O_dry')  # Field name made lowercase.
+    co2 = models.Float64Field(db_column='CO2')  # Field name made lowercase.
+    sos = models.Float64Field(db_column='SOS')  # Field name made lowercase.
+
+    class Meta:
+        managed = False
+        db_table = 'mobileflux_HFData'
