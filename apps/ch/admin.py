@@ -94,3 +94,8 @@ class MobilefluxHfdataAdmin(ReadOnlyModelAdmin):
 @admin.register(models.FinsefluxPostproc)
 class FinsefluxPostproc(ReadOnlyModelAdmin):
     list_display = get_fields(models.FinsefluxPostproc)
+
+
+@admin.register(models.MobilefluxPostproc)
+class MobilefluxPostproc(ReadOnlyModelAdmin):
+    list_display = get_fields(models.MobilefluxPostproc)
