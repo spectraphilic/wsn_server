@@ -65,30 +65,39 @@ for model in models_to_register:
     admin.site.register(model, make_readonly_admin_with_formatted_timestamp(model))
 
 
-@admin.register(models_unmanaged.FinsefluxHfdata)
-class FinsefluxHfdataAdmin(ReadOnlyModelAdmin):
-    list_display = get_fields(models_unmanaged.FinsefluxHfdata, replace={'timestamp': 'formatted_timestamp'})
+class BaseHfdataAdmin(ReadOnlyModelAdmin):
+    """
+    Base admin class for High-Frequency Data models.
+    Handles common list filters and timestamp formatting.
+    """
     list_filter = [
         ('timestamp', DateTimeRangeFilter),
     ]
+
+    def get_list_display(self, request):
+        # Dynamically get fields for the current model (self.model)
+        # replacing 'timestamp' with the formatted version.
+        return get_fields(self.model, replace={'timestamp': 'formatted_timestamp'})
 
     @admin.display(description='Timestamp', ordering='timestamp')
     def formatted_timestamp(self, obj):
         # Format the timestamp with milliseconds
         return obj.timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+
+
+@admin.register(models_unmanaged.FinsefluxHfdata)
+class FinsefluxHfdataAdmin(BaseHfdataAdmin):
+    pass
 
 
 @admin.register(models_unmanaged.MobilefluxHfdata)
-class MobilefluxHfdataAdmin(ReadOnlyModelAdmin):
-    list_display = get_fields(models_unmanaged.MobilefluxHfdata, replace={'timestamp': 'formatted_timestamp'})
-    list_filter = [
-        ('timestamp', DateTimeRangeFilter),
-    ]
+class MobilefluxHfdataAdmin(BaseHfdataAdmin):
+    pass
 
-    @admin.display(description='Timestamp', ordering='timestamp')
-    def formatted_timestamp(self, obj):
-        # Format the timestamp with milliseconds
-        return obj.timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+
+@admin.register(models_unmanaged.Myr1Hfdata)
+class Myr1HfdataAdmin(BaseHfdataAdmin):
+    pass
 
 
 @admin.register(models.FinsefluxPostproc)
