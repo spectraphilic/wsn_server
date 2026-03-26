@@ -65,6 +65,9 @@ for model in models_to_register:
     admin.site.register(model, make_readonly_admin_with_formatted_timestamp(model))
 
 
+#
+# HFdata
+#
 class BaseHfdataAdmin(ReadOnlyModelAdmin):
     """
     Base admin class for High-Frequency Data models.
@@ -89,21 +92,26 @@ class BaseHfdataAdmin(ReadOnlyModelAdmin):
 class FinsefluxHfdataAdmin(BaseHfdataAdmin):
     pass
 
-
 @admin.register(models_unmanaged.MobilefluxHfdata)
 class MobilefluxHfdataAdmin(BaseHfdataAdmin):
     pass
-
 
 @admin.register(models_unmanaged.Myr1Hfdata)
 class Myr1HfdataAdmin(BaseHfdataAdmin):
     pass
 
+@admin.register(models_unmanaged.Myr2Hfdata)
+class Myr2HfdataAdmin(BaseHfdataAdmin):
+    pass
+
+
+#
+# Postproc
+#
 
 @admin.register(models.FinsefluxPostproc)
 class FinsefluxPostproc(ReadOnlyModelAdmin):
     list_display = get_fields(models.FinsefluxPostproc)
-
 
 @admin.register(models.MobilefluxPostproc)
 class MobilefluxPostproc(ReadOnlyModelAdmin):
