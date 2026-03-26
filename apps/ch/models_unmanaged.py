@@ -602,4 +602,4 @@ class Myr2Hfdata(models.ClickhouseModel):
 
     class Meta:
         managed = False
-        db_table = 'myr1_HFData'
+        db_table = 'myr2_HFData'
