@@ -116,3 +116,11 @@ class FinsefluxPostproc(ReadOnlyModelAdmin):
 @admin.register(models.MobilefluxPostproc)
 class MobilefluxPostproc(ReadOnlyModelAdmin):
     list_display = get_fields(models.MobilefluxPostproc)
+
+@admin.register(models.Myr1Postproc)
+class Myr1Postproc(ReadOnlyModelAdmin):
+    list_display = get_fields(models.Myr1Postproc)
+
+@admin.register(models.Myr2Postproc)
+class Myr2Postproc(ReadOnlyModelAdmin):
+    list_display = get_fields(models.Myr2Postproc)
