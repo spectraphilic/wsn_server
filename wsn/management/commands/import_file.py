@@ -110,7 +110,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, config, name, root, skip, *args, **kwargs):
-        config = toml.load(config)
+        with open(config, 'rb') as f:
+            config = toml.load(f)
         config = config['import']
         root = pathlib.Path(root or config['root'])
 
