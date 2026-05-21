@@ -88,6 +88,10 @@ class BaseHfdataAdmin(ReadOnlyModelAdmin):
         return obj.timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
 
 
+@admin.register(models_unmanaged.FinsefeteneHfdata)
+class FinsefeteneHfdataAdmin(BaseHfdataAdmin):
+    pass
+
 @admin.register(models_unmanaged.FinsefluxHfdata)
 class FinsefluxHfdataAdmin(BaseHfdataAdmin):
     pass

@@ -7,39 +7,25 @@
 from clickhouse_backend import models
 
 
-class FinseSommer(models.ClickhouseModel):
-    timestamp = models.UInt32Field(db_column='TIMESTAMP', primary_key=True)  # Field name made lowercase.
-    supply_voltage = models.Float64Field(db_column='Supply voltage')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    cube_dir_value = models.Float64Field(db_column='Cube, Dir.value')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    exception_code = models.Float64Field(db_column='Exception code')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    relay_b = models.Float64Field(db_column='Relay B')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    heating_current = models.Float64Field(db_column='Heating current')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    rod_temperature = models.Float64Field(db_column='Rod, Temperature')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    rod_ice = models.Float64Field(db_column='Rod, Ice')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    relais_a_counte = models.Float64Field(db_column='Relais A, counte')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    humidity = models.Float64Field(db_column='Humidity')  # Field name made lowercase.
-    cube_temperatur = models.Float64Field(db_column='Cube, Temperatur')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    temperature = models.Float64Field(db_column='Temperature')  # Field name made lowercase.
-    cube_ice = models.Float64Field(db_column='Cube, Ice')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    relay_function = models.Float64Field(db_column='Relay function')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    rod_water = models.Float64Field(db_column='Rod, Water')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    relais_b_counte = models.Float64Field(db_column='Relais B, counte')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    cube_ice_rate = models.Float64Field(db_column='Cube, Ice rate')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    cube_direction = models.Float64Field(db_column='Cube, Direction')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    relais_b_time = models.Float64Field(db_column='Relais B, time')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    cube_water = models.Float64Field(db_column='Cube, Water')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    relay_a = models.Float64Field(db_column='Relay A')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    dew_point = models.Float64Field(db_column='Dew point')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    relais_a_time = models.Float64Field(db_column='Relais A, time')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    rod_direction = models.Float64Field(db_column='Rod, Direction')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    rod_ice_rate = models.Float64Field(db_column='Rod, Ice rate')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    rod_dir_value = models.Float64Field(db_column='Rod, Dir.value')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    mrl_7_supply = models.Float64Field(db_column='MRL-7 Supply')  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    modem_csq = models.Float64Field(db_column='Modem CSQ')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+class FinsefeteneHfdata(models.ClickhouseModel):
+    timestamp = models.DateTime64Field(db_column='TIMESTAMP', precision=3, primary_key=True)  # Field name made lowercase.
+
+    agc = models.Float64Field(db_column='AGC')  # Field name made lowercase.
+    co2 = models.Float64Field(db_column='CO2')  # Field name made lowercase.
+    co2_dry = models.Float64Field(db_column='CO2_dry')  # Field name made lowercase.
+    h2o = models.Float64Field(db_column='H2O')  # Field name made lowercase.
+    h2o_dry = models.Float64Field(db_column='H2O_dry')  # Field name made lowercase.
+    ptotal = models.Float64Field(db_column='Ptotal')  # Field name made lowercase.
+    sos = models.Float64Field(db_column='SOS')  # Field name made lowercase.
+    t_in = models.Float64Field(db_column='T_in')  # Field name made lowercase.
+    t_out = models.Float64Field(db_column='T_out')  # Field name made lowercase.
+    ux = models.Float64Field(db_column='Ux')  # Field name made lowercase.
+    uy = models.Float64Field(db_column='Uy')  # Field name made lowercase.
+    uz = models.Float64Field(db_column='Uz')  # Field name made lowercase.
 
     class Meta:
         managed = False
-        db_table = 'finse_sommer'
+        db_table = 'finsefetene_HFData'
 
 
 class FinsefluxBiomet(models.ClickhouseModel):
@@ -207,6 +193,41 @@ class FinsefluxStationstatus(models.ClickhouseModel):
     class Meta:
         managed = False
         db_table = 'finseflux_StationStatus'
+
+
+class FinseSommer(models.ClickhouseModel):
+    timestamp = models.UInt32Field(db_column='TIMESTAMP', primary_key=True)  # Field name made lowercase.
+    supply_voltage = models.Float64Field(db_column='Supply voltage')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    cube_dir_value = models.Float64Field(db_column='Cube, Dir.value')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    exception_code = models.Float64Field(db_column='Exception code')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    relay_b = models.Float64Field(db_column='Relay B')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    heating_current = models.Float64Field(db_column='Heating current')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    rod_temperature = models.Float64Field(db_column='Rod, Temperature')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    rod_ice = models.Float64Field(db_column='Rod, Ice')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    relais_a_counte = models.Float64Field(db_column='Relais A, counte')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    humidity = models.Float64Field(db_column='Humidity')  # Field name made lowercase.
+    cube_temperatur = models.Float64Field(db_column='Cube, Temperatur')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    temperature = models.Float64Field(db_column='Temperature')  # Field name made lowercase.
+    cube_ice = models.Float64Field(db_column='Cube, Ice')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    relay_function = models.Float64Field(db_column='Relay function')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    rod_water = models.Float64Field(db_column='Rod, Water')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    relais_b_counte = models.Float64Field(db_column='Relais B, counte')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    cube_ice_rate = models.Float64Field(db_column='Cube, Ice rate')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    cube_direction = models.Float64Field(db_column='Cube, Direction')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    relais_b_time = models.Float64Field(db_column='Relais B, time')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    cube_water = models.Float64Field(db_column='Cube, Water')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    relay_a = models.Float64Field(db_column='Relay A')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    dew_point = models.Float64Field(db_column='Dew point')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    relais_a_time = models.Float64Field(db_column='Relais A, time')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    rod_direction = models.Float64Field(db_column='Rod, Direction')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    rod_ice_rate = models.Float64Field(db_column='Rod, Ice rate')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    rod_dir_value = models.Float64Field(db_column='Rod, Dir.value')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    mrl_7_supply = models.Float64Field(db_column='MRL-7 Supply')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    modem_csq = models.Float64Field(db_column='Modem CSQ')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+
+    class Meta:
+        managed = False
+        db_table = 'finse_sommer'
 
 
 class GruvebadetData(models.ClickhouseModel):
@@ -469,6 +490,31 @@ class MobilefluxBiomet(models.ClickhouseModel):
         db_table = 'mobileflux_Biomet'
 
 
+class MobilefluxHfdata(models.ClickhouseModel):
+    timestamp = models.DateTime64Field(db_column='TIMESTAMP', precision=3, primary_key=True)  # Field name made lowercase.
+    sos = models.Float64Field(db_column='SOS')  # Field name made lowercase.
+    ux = models.Float64Field(db_column='Ux')  # Field name made lowercase.
+    uy = models.Float64Field(db_column='Uy')  # Field name made lowercase.
+    uz = models.Float64Field(db_column='Uz')  # Field name made lowercase.
+    h2o = models.Float64Field(db_column='H2O')  # Field name made lowercase.
+    h2o_dry = models.Float64Field(db_column='H2O_dry')  # Field name made lowercase.
+    co2 = models.Float64Field(db_column='CO2')  # Field name made lowercase.
+    co2_dry = models.Float64Field(db_column='CO2_dry')  # Field name made lowercase.
+    t_in = models.Float64Field(db_column='T_in')  # Field name made lowercase.
+    t_out = models.Float64Field(db_column='T_out')  # Field name made lowercase.
+    ptotal = models.Float64Field(db_column='Ptotal')  # Field name made lowercase.
+    agc = models.Float64Field(db_column='AGC')  # Field name made lowercase.
+    ch4_mmol_m3 = models.Float64Field(db_column='CH4_mmol_m3')  # Field name made lowercase.
+    ch4_umol_mol = models.Float64Field(db_column='CH4_umol_mol')  # Field name made lowercase.
+    ch4_temperature = models.Float64Field(db_column='CH4_Temperature')  # Field name made lowercase.
+    ch4_pressure = models.Float64Field(db_column='CH4_Pressure')  # Field name made lowercase.
+    ch4_signal_strength = models.Float64Field(db_column='CH4_Signal_Strength')  # Field name made lowercase.
+
+    class Meta:
+        managed = False
+        db_table = 'mobileflux_HFData'
+
+
 class MobilefluxStationstatus(models.ClickhouseModel):
     timestamp = models.UInt32Field(db_column='TIMESTAMP', primary_key=True)  # Field name made lowercase.
     pulse_cnr4_tot = models.Float64Field(db_column='pulse_CNR4_Tot')  # Field name made lowercase.
@@ -528,31 +574,6 @@ class MobilefluxStationstatus(models.ClickhouseModel):
     class Meta:
         managed = False
         db_table = 'mobileflux_StationStatus'
-
-
-class MobilefluxHfdata(models.ClickhouseModel):
-    timestamp = models.DateTime64Field(db_column='TIMESTAMP', precision=3, primary_key=True)  # Field name made lowercase.
-    sos = models.Float64Field(db_column='SOS')  # Field name made lowercase.
-    ux = models.Float64Field(db_column='Ux')  # Field name made lowercase.
-    uy = models.Float64Field(db_column='Uy')  # Field name made lowercase.
-    uz = models.Float64Field(db_column='Uz')  # Field name made lowercase.
-    h2o = models.Float64Field(db_column='H2O')  # Field name made lowercase.
-    h2o_dry = models.Float64Field(db_column='H2O_dry')  # Field name made lowercase.
-    co2 = models.Float64Field(db_column='CO2')  # Field name made lowercase.
-    co2_dry = models.Float64Field(db_column='CO2_dry')  # Field name made lowercase.
-    t_in = models.Float64Field(db_column='T_in')  # Field name made lowercase.
-    t_out = models.Float64Field(db_column='T_out')  # Field name made lowercase.
-    ptotal = models.Float64Field(db_column='Ptotal')  # Field name made lowercase.
-    agc = models.Float64Field(db_column='AGC')  # Field name made lowercase.
-    ch4_mmol_m3 = models.Float64Field(db_column='CH4_mmol_m3')  # Field name made lowercase.
-    ch4_umol_mol = models.Float64Field(db_column='CH4_umol_mol')  # Field name made lowercase.
-    ch4_temperature = models.Float64Field(db_column='CH4_Temperature')  # Field name made lowercase.
-    ch4_pressure = models.Float64Field(db_column='CH4_Pressure')  # Field name made lowercase.
-    ch4_signal_strength = models.Float64Field(db_column='CH4_Signal_Strength')  # Field name made lowercase.
-
-    class Meta:
-        managed = False
-        db_table = 'mobileflux_HFData'
 
 
 class Myr1Hfdata(models.ClickhouseModel):

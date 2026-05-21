@@ -35,6 +35,21 @@ SCHEMAS = {
         'TIMESTAMP': Field(type="DateTime64(3, 'UTC')"),
         'RECORD': Field(type='UInt32'),
     },
+    'licor_finsefetene': {
+        'TIMESTAMP': Field(type="DateTime64(3, 'UTC')"),
+        'AGC': Field(source='Average Signal Strength'),
+        'CO2': Field(source='CO2 (mmol/m^3)'),
+        'CO2_dry': Field(source='CO2 dry(umol/mol)'),
+        'H2O': Field(source='H2O (mmol/m^3)'),
+        'H2O_dry': Field(source='H2O dry(mmol/mol)'),
+        'Ptotal': Field(source='Total Pressure (kPa)'),
+        'SOS': Field(source='SOS (m/s)'),
+        'T_in': Field(source='Temperature In (C)'),
+        'T_out': Field(source='Temperature Out (C)'),
+        'Ux': Field(source='U (m/s)'),
+        'Uy': Field(source='V (m/s)'),
+        'Uz': Field(source='W (m/s)'),
+    },
     'licor_finseflux': {
         'TIMESTAMP': Field(type="DateTime64(3, 'UTC')"),
         # Renamed - output name is key, source is original name
