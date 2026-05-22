@@ -113,6 +113,10 @@ class Myr2HfdataAdmin(BaseHfdataAdmin):
 # Postproc
 #
 
+@admin.register(models.FinsefetenePostproc)
+class FinsefetenePostproc(ReadOnlyModelAdmin):
+    list_display = get_fields(models.FinsefetenePostproc)
+
 @admin.register(models.FinsefluxPostproc)
 class FinsefluxPostproc(ReadOnlyModelAdmin):
     list_display = get_fields(models.FinsefluxPostproc)
