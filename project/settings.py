@@ -136,6 +136,12 @@ DATABASES = {
         "PASSWORD": os.environ.get('WSN_CLICKHOUSE_PASSWORD', ''),
     },
 }
+
+# GitHub Actions uses service containers, which require TCP connections
+if os.environ.get('CI'):
+    DATABASES['default']['HOST'] = 'localhost'
+    DATABASES['default']['PORT'] = '5432'
+    DATABASES['clickhouse']['HOST'] = 'localhost'
 DATABASE_ROUTERS = ["project.dbrouters.ClickHouseRouter"]
 
 # If not defined the producer will hang forever when the broker is not

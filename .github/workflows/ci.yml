@@ -51,6 +51,9 @@ jobs:
           pip install ansible
 
       - name: Install project
+        env:
+          WSN_POSTGRESQL_PASSWORD: wsn
+          WSN_CLICKHOUSE_PASSWORD: ''
         run: make local
 
       - name: Run tests
