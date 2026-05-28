@@ -2,7 +2,7 @@
 URL configuration for project project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/4.2/topics/http/urls/
+    https://docs.djangoproject.com/en/6.0/topics/http/urls/
 Examples:
 Function views
     1. Add an import:  from my_app import views
@@ -16,24 +16,20 @@ Including another URLconf
 """
 from django.conf import settings
 from django.conf.urls.static import static
-from django.contrib import admin
-from django.http import HttpResponse
+from django.contrib.staticfiles.views import serve
 from django.urls import include, path
-from django.views.generic import RedirectView
 
+from .urls_ansible import urlpatterns
 
-def ping(request):
-    return HttpResponse('pong', content_type='text/plain')
-
-
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('favicon.ico', RedirectView.as_view(url='/static/img/favicon.ico')),
-    path('ping', ping), # Do not remove
-    # Login URLs for the browsable API
+urlpatterns += [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('', include('api.urls')),
 ]
 
 if settings.DEBUG:
+    # Serving statics is needed when using uvicorn, but not with runserver
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += [
+        path('favicon.ico', serve, {'path': 'img/favicon.ico'}),
+    ]

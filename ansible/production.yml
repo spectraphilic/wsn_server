@@ -13,22 +13,30 @@
 
     django_name       : "wsn"
 
-    database:
-      engine          : "postgres"
-      name            : "wsn"
-      user            : "wsn"
-      password        : "wsn"
-
     django            :
       debug           : false
-      workers         : 6
+      workers         : 4
 
-    django_cert:
-      email           : "jdavid@geo.uio.no"
+    mods:
+    - "mods/admin"
+    - "mods/compress"
+    - "mods/dotenv"
+    - "mods/memcached"
+    - "mods/ping"
+    - "mods/postgres"
+    - "mods/uvicorn"
 
     celery:
       queues          : celery_wsn
       workers         : 1
+
+    postgres:
+      name            : "wsn"
+      user            : "wsn"
+      password        : "wsn"
+
+    django_cert:
+      email           : "jdavid.ibp@gmail.com"
 
     domains           :
     - "wsn.latice.eu"

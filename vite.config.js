@@ -1,35 +1,42 @@
+import { resolve } from 'path'
 import { defineConfig } from 'vite'
-import { svelte } from '@sveltejs/vite-plugin-svelte'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
-    let entry = 'src/main.js';
+    const admin = resolve(__dirname, 'src/admin.js')
+    const front = resolve(__dirname, 'src/front.js')
+
     let config = {
         base: '/static/',
         build: {
-            manifest: true,
+            cssCodeSplit: true,
+            manifest: 'manifest.json',
             outDir: 'var/build',
             rollupOptions: {
             }
         },
         plugins: [
-            svelte({}),
         ]
     }
 
     if (command === 'serve') {
         config.build.rollupOptions = {
-            input: {
-                main: entry,
-            }
+            input: {admin}
         }
-    } else { // build
+    }
+    else { // build
         config.build.lib = {
-            entry,
+            entry: {admin},
             formats: ['es'],
-            fileName: (format) => 'main.js',
+            fileName: (format, entryName) => `${entryName}.js`,
+        }
+        // In lib mode filenames don't include a hash by default, add one here
+        config.build.rollupOptions.output = {
+            entryFileNames: '[name]-[hash].js',
+            assetFileNames: '[name]-[hash][extname]',
         }
     }
 
+    //console.log('CONFIG', config);
     return config;
 })

@@ -1,0 +1,2 @@
+uvicorn~=0.44.0
+websockets~=16.0

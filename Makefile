@@ -6,12 +6,18 @@ help:
 	@echo "  make install-server     -- Installs or updates server environment"
 	@echo "  make deploy-production  -- Remotely updates server environment"
 	@echo ""
-	@echo "  make start              -- Start the program by runnint Supervisor"
+	@echo "  make run                -- Like runserver, but with uvicorn"
+	@echo ""
+	@echo "  make start              -- Start the program by running Supervisor"
 	@echo "  make stop               -- Stop Supervisor"
 	@echo "  make reload             -- Reload all programs in Supervisor"
 	@echo "  make ctl                -- Run supervisorctl to manage all programs"
 	@echo ""
 
+
+#
+# Install and deployment related
+#
 submodules:
 	git submodule init
 	git submodule update
@@ -28,10 +34,17 @@ install-production: submodules
 deploy-production:
 	ansible-playbook -i ansible/hosts-production ansible/production.yml
 
-#
-# Start, stop
-#
 
+#
+# Local (development)
+#
+run:
+	python -m uvicorn project.asgi:application --reload
+
+
+#
+# Supervisor related
+#
 start:
 	supervisord -c etc/supervisor.conf
 

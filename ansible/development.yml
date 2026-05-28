@@ -11,19 +11,23 @@
     django_pull       : false
     django_with_monit : false
 
-    database          :
-      engine          : "postgres"
-      name            : "wsn"
-      user            : "wsn"
-      password        : "wsn"
-
     django            :
       debug           : true
       port            : 8000
 
+    mods:
+    - "mods/admin"
+    - "mods/dotenv"
+    - "mods/postgres"
+
     celery:
       queues          : celery_wsn
       workers         : 1
+
+    postgres:
+      name            : "wsn"
+      user            : "wsn"
+      password        : "wsn"
 
     supervisor:
       daemon          : false

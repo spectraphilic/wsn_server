@@ -1,10 +1,11 @@
+/.envrc
 /ansible/*.retry
 /db.sqlite3
 /etc/
 /local/
 /manage.py
 /node_modules/
-/project/settings_ansible.py
+/project/*_ansible.py
 /project/settings_local.py
 /project/static/build/
 /var/
