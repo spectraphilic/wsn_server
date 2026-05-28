@@ -1,4 +1,4 @@
-from project.settings_custom import *
+from project.settings import *  # noqa: F403
 
 
 CELERY_TASK_MAX_RETRIES = 0

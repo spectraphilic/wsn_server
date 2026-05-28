@@ -60,7 +60,7 @@ def archive(entry_name, envelop):
     assert 'received' in envelop
 
     # File path where the file will be saved
-    dt = datetime.datetime.utcfromtimestamp(envelop['received'])
+    dt = datetime.datetime.fromtimestamp(envelop['received'], datetime.timezone.utc)
     filepath = os.path.join(
         settings.WSN_DATA_DIR,
         entry_name,

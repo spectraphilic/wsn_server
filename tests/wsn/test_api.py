@@ -1,5 +1,5 @@
 # Standard Library
-from datetime import datetime
+from datetime import datetime, timezone
 import time
 
 # Project
@@ -20,7 +20,7 @@ def test_create_time_required(api_user, db):
 
 
 def test_create_time_badtype(api_user, db):
-    ts = datetime.utcnow()
+    ts = datetime.now(timezone.utc)
     response = api_user.create({
         'tags': {'serial': 42},
         'frames':
