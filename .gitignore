@@ -12,5 +12,6 @@
 /venv*/
 
 .*.swp
+*.bak
 *.pyc
 *~
