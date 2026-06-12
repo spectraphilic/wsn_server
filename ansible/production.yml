@@ -15,7 +15,11 @@
 
     django            :
       debug           : false
+
+    gunicorn          :
       workers         : 4
+#     max_requests    : 10000
+#     max_requests_jitter : 50
 
     mods:
     - "mods/admin"
