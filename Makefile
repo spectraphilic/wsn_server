@@ -55,4 +55,6 @@ ctl:
 	supervisorctl -c etc/supervisor.conf
 
 reload:
+	-./ansible/rotate-logs.sh
 	kill -HUP `cat var/run/supervisord.pid`
+	-./ansible/rotate-logs.sh --compress
