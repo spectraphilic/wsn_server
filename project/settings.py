@@ -10,7 +10,6 @@
 # 4. settings_local.py   : Local settings (do not commit)
 #
 
-import importlib
 import socket
 
 # Project
@@ -71,7 +70,7 @@ LOGGING = {
     },
 }
 
-if importlib.util.find_spec('uvicorn'):
+if 'LOGGING_UVICORN' in locals():
     for key, value in LOGGING_UVICORN.items():
         LOGGING[key] = value
 
