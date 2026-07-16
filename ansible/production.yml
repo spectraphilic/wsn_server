@@ -15,7 +15,9 @@
 
     django            :
       debug           : false
-      workers         : 4
+
+    gunicorn          :
+      workers         : 3
 
     mods:
     - "mods/admin"

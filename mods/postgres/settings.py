@@ -6,5 +6,6 @@ DATABASES = {
         'PASSWORD': '{{ postgres.password }}',
         'HOST': '{{ postgres.host|default() }}',
         'PORT': '',
+        'OPTIONS': {},
     }
 }

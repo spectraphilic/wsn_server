@@ -1,5 +1,6 @@
 /.envrc
 /ansible/*.retry
+/ansible/jdavid.django_dev
 /db.sqlite3
 /etc/
 /local/
@@ -12,6 +13,7 @@
 /venv*/
 
 .*.swp
+*.bak
 *.pyc
 *~
 
