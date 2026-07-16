@@ -168,8 +168,8 @@ CELERY_TASK_MAX_RETRIES = None # Retry forever
 
 # ClickHouse
 CLICKHOUSE_HOST = 'localhost'
-CLICKHOUSE_USER = 'default'
-CLICKHOUSE_PASSWORD = ''
+CLICKHOUSE_USER = os.environ.get('WSN_CLICKHOUSE_USER', 'default')
+CLICKHOUSE_PASSWORD = os.environ.get('WSN_CLICKHOUSE_PASSWORD', '')
 CLICKHOUSE_NAME = 'wsn'
 
 REST_FRAMEWORK = {
