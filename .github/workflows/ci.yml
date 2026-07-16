@@ -28,11 +28,11 @@ jobs:
         image: clickhouse/clickhouse-server:latest
         env:
           CLICKHOUSE_USER: default
-          CLICKHOUSE_PASSWORD: ''
+          CLICKHOUSE_PASSWORD: clickhouse
         ports:
           - 9000:9000
         options: >-
-          --health-cmd "clickhouse-client --query 'SELECT 1'"
+          --health-cmd "clickhouse-client --user default --password clickhouse --query 'SELECT 1'"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -66,12 +66,12 @@ jobs:
       - name: Install project
         env:
           WSN_POSTGRESQL_PASSWORD: wsn
-          WSN_CLICKHOUSE_PASSWORD: ''
+          WSN_CLICKHOUSE_PASSWORD: clickhouse
         run: make local
 
       - name: Run tests
         env:
           WSN_POSTGRESQL_PASSWORD: wsn
-          WSN_CLICKHOUSE_PASSWORD: ''
+          WSN_CLICKHOUSE_PASSWORD: clickhouse
           CI: true
         run: venv313/bin/pytest
