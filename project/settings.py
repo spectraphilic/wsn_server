@@ -19,6 +19,7 @@ from project.settings_ansible import *
 
 # Applications
 INSTALLED_APPS += [
+    'django.contrib.postgres',  # Required to use GinIndex
     # Requirements
     'clickhouse_backend',
     'drf_spectacular',
