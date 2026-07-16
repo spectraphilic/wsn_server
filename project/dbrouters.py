@@ -19,4 +19,4 @@ class ClickHouseRouter:
         if app_label == 'ch':
             return db == 'clickhouse'
 
-        return False
+        return db == 'default'
