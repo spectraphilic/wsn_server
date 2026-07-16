@@ -1,5 +1,6 @@
 import csv
 import datetime
+import logging
 import math
 import os
 import sys
@@ -7,6 +8,9 @@ import sys
 # Project
 from wsn.parsers.base import CSVParser
 from wsn.parsers.base import EmptyError, TruncatedError
+
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -48,9 +52,27 @@ class CR6Parser(CSVParser):
         assert len(self.env) == 8
         assert self.env[0] == 'TOA5'
 
-        self.fields = self.reader.__next__()
+        self.raw_fields = self.reader.__next__()
         self.units = self.reader.__next__()
         self.reader.__next__() # abbreviations
+
+        # Map raw Campbell names to schema output names
+        self.field_map = []  # (raw_index, output_name)
+        self.fields = []     # output names, for upload
+        seen = {}
+        for i, raw_name in enumerate(self.raw_fields):
+            output_name = self.schema.get_output_name(raw_name)
+            if output_name is None:
+                continue
+            if output_name in seen:
+                first_raw = seen[output_name]
+                raise ValueError(
+                    f"Column name collision after cleaning: "
+                    f"'{first_raw}' and '{raw_name}' both normalize to '{output_name}'."
+                )
+            seen[output_name] = raw_name
+            self.field_map.append((i, output_name))
+            self.fields.append(output_name)
 
         env = self.env
         try:
@@ -66,6 +88,26 @@ class CR6Parser(CSVParser):
             'prog_signature': int(env[6]), # 55208
             'table_name': env[7],          # Biomet
         }
+
+    def _parse_row(self, row):
+        data = {}
+        for i, output_name in self.field_map:
+            unit = self.units[i]
+            try:
+                value = row[i]
+            except IndexError:
+                value = ''
+            try:
+                value = self._parse_value(output_name, unit, value)
+            except Exception:
+                lineno = self.reader.line_num
+                logger.exception(
+                    f'error in file {self.filepath} at row {lineno} column {i}'
+                )
+                raise
+            data[output_name] = value
+
+        return data
 
     def _parse_value(self, name, unit, value):
         if unit == 'TS':

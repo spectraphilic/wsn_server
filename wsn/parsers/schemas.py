@@ -116,6 +116,13 @@ SCHEMAS = {
         'CH4_Pressure': Field(source='CH4 Pressure'),
         'CH4_Signal_Strength': Field(source='CH4 Signal Strength'),
     },
+    'cr6_myr1_sonic': {
+        'TIMESTAMP': Field(type="DateTime64(3, 'UTC')", source='TIMESTAMP'),
+        'Ux': Field(source='WC1'),
+        'Uy': Field(source='WC2'),
+        'Uz': Field(source='WC3'),
+        'Ts': Field(source='C'),
+    },
     'default': {
         'TIMESTAMP': Field(type='UInt32'),
         'RECORD': Field(type='UInt32'),

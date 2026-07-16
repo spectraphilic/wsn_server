@@ -100,8 +100,8 @@ class FinsefluxHfdataAdmin(BaseHfdataAdmin):
 class MobilefluxHfdataAdmin(BaseHfdataAdmin):
     pass
 
-@admin.register(models_unmanaged.Myr1Hfdata)
-class Myr1HfdataAdmin(BaseHfdataAdmin):
+@admin.register(models_unmanaged.Myr1HfdataMerged)
+class Myr1HfdataMergedAdmin(BaseHfdataAdmin):
     pass
 
 @admin.register(models_unmanaged.Myr2Hfdata)
