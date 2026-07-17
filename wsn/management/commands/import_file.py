@@ -62,20 +62,20 @@ class Command(BaseCommand):
             parser = Parser(filepath, stat=stat, schema=schema)
             metadata, fields, rows = parser.parse()
         except EmptyError:
-            self.stderr.write(f'{filepath} WARNING file is empty')
+            self.stdout.write(f'{filepath} WARNING file is empty')
             os.rename(filepath, f'{filepath}.empty')
             return
         except TruncatedError:
-            self.stderr.write(f'{filepath} WARNING file is truncated')
+            self.stdout.write(f'{filepath} WARNING file is truncated')
             os.rename(filepath, f'{filepath}.truncated')
             return
         except UnicodeDecodeError:
             # Sometimes Sommer files have garbage
-            self.stderr.write(f'{filepath} WARNING file is not UTF-8')
+            self.stdout.write(f'{filepath} WARNING file is not UTF-8')
             os.rename(filepath, f'{filepath}.badutf8')
             return
         except zipfile.BadZipFile:
-            self.stderr.write(f'{filepath} WARNING bad zip file')
+            self.stdout.write(f'{filepath} WARNING bad zip file')
             os.rename(filepath, f'{filepath}.badzip')
             return
         except Exception:
