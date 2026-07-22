@@ -1,3 +1,4 @@
+import fcntl
 import fnmatch
 import os
 import pathlib
@@ -12,7 +13,8 @@ except ImportError:
     import toml
 
 # Django
-from django.core.management.base import BaseCommand
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
 from django.template.defaultfilters import filesizeformat
 
 # Project
@@ -110,6 +112,18 @@ class Command(BaseCommand):
         )
 
     def handle(self, config, name, root, skip, *args, **kwargs):
+        # Prevent overlapping runs (e.g. a slow cron run overlapping with
+        # the next one). The lock is held by this process and released by
+        # the OS when it exits, so there are no stale locks. A second run
+        # fails loudly instead of silently skipping.
+        lockpath = settings.BASE_DIR / 'var' / 'run' / 'import_file.lock'
+        lockpath.parent.mkdir(parents=True, exist_ok=True)
+        lockfile = open(lockpath, 'w')
+        try:
+            fcntl.flock(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise CommandError('another import_file run is in progress')
+
         with open(config, 'rb') as f:
             config = toml.load(f)
         config = config['import']

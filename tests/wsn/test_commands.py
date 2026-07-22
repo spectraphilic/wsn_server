@@ -1,4 +1,5 @@
 import datetime
+import fcntl
 import shutil
 import socket
 import time
@@ -11,6 +12,7 @@ from clickhouse_driver import Client
 # Django
 from django.conf import settings
 from django.core.management import call_command
+from django.core.management.base import CommandError
 
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -64,6 +66,19 @@ def test_import_eton2(api_user, db, datadir):
     for path in files:
         assert not path.exists()
         assert Path(f'{path}.xz').exists()
+
+
+def test_import_lock(datadir):
+    # A second import_file run must fail loudly while another one holds
+    # the lock (e.g. overlapping cron jobs).
+    lockpath = settings.BASE_DIR / 'var' / 'run' / 'import_file.lock'
+    lockpath.parent.mkdir(parents=True, exist_ok=True)
+    config = datadir / 'config.toml'
+
+    with open(lockpath, 'w') as lockfile:
+        fcntl.flock(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with pytest.raises(CommandError, match='another import_file run'):
+            call_command('import_file', config, name='eton2', root=datadir, skip=0)
 
 
 @requires_clickhouse
