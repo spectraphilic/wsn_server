@@ -23,7 +23,6 @@
     - "mods/admin"
     - "mods/compress"
     - "mods/dotenv"
-    - "mods/memcached"
     - "mods/ping"
     - "mods/postgres"
     - "mods/uvicorn"
