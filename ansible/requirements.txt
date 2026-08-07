@@ -1,2 +1,2 @@
-Django~=6.0.3
+Django==6.1
 supervisor~=4.3.0
