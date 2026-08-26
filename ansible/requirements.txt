@@ -4,16 +4,16 @@ supervisor~=4.3.0
 # Project
 celery[pytest]~=5.6.3
 celery-singleton~=0.3.1
-clickhouse-driver[lz4]~=0.2.10
-django-admin-rangefilter~=0.13.5
-django-clickhouse-backend==1.6
+clickhouse-driver[lz4]~=0.2.11
+django-admin-rangefilter~=0.14.0
+django-clickhouse-backend==2.0
 django-filter~=26.1
-djangorestframework~=3.17.1
+djangorestframework~=3.18.0
 djangorestframework-api-key~=3.1.0
 drf-spectacular~=0.30.0
 pycryptodome~=3.23.0
 tabulate~=0.10.0
-tqdm~=4.68.4
+tqdm~=4.70.0
 
 # Tests
-pytest-django~=4.12.0
+pytest-django~=4.14.0
