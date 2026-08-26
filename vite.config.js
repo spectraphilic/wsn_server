@@ -3,8 +3,8 @@ import { defineConfig } from 'vite'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
-    const admin = resolve(__dirname, 'src/admin.js')
-    const front = resolve(__dirname, 'src/front.js')
+    const admin = resolve(import.meta.dirname, 'src/admin.js')
+    const front = resolve(import.meta.dirname, 'src/front.js')
 
     let config = {
         base: '/static/',
