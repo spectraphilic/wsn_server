@@ -30,7 +30,7 @@ class Command(BaseCommand):
         #
         err = False
         if len(fields) == 0:
-            self.stderr.write(f'field missing, pass at least one')
+            self.stderr.write('field missing, pass at least one')
             err = True
 
         available = set(Frame.get_data_fields())

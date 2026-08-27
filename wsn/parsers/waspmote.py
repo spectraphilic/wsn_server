@@ -27,8 +27,12 @@ def post_noop(name, value):
     return value
 
 def post_acc(name, value):
-    if (value > 1000): value = 1000
-    if (value < -1000): value = -1000
+    if (value > 1000):
+        value = 1000
+
+    if (value < -1000):
+        value = -1000
+
     return (180/math.pi) * math.asin(value/1000)
 
 def post_ds1820(name, value):

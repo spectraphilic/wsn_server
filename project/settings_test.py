@@ -1,4 +1,3 @@
-import os
 
 from project.settings import *  # noqa: F403
 

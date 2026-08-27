@@ -91,9 +91,9 @@ class Command(BaseCommand):
                     if ref is metadata:
                         del metadata.tags[key]
                         metadata.save()
-                        self.stdout.write(f'metadata SAVED')
+                        self.stdout.write('metadata SAVED')
                     else:
                         metadata.delete()
-                        self.stdout.write(f'metadata DELETED')
+                        self.stdout.write('metadata DELETED')
 
             self.stdout.write('')
