@@ -7,7 +7,6 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
 from .views_qc import QCUploadView, QCDownloadView
 from .views_wsn import CreateView, IridiumView, MeshliumView
 from .views_wsn import QueryPostgreSQL, QueryClickHouse
-from .views_wsn import UploadEddyproView
 
 
 app_name = 'api'
@@ -15,7 +14,6 @@ app_name = 'api'
 urlpatterns = [
     # wsn: import data
     path('api/create/', CreateView.as_view()),
-    path('api/upload/eddypro/', UploadEddyproView.as_view()),
     path('api/iridium/', IridiumView.as_view()),
     path('getpost_frame_parser.php', MeshliumView.as_view()),
     # wsn: query

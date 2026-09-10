@@ -8,7 +8,6 @@ import pytest
 # Project
 from wsn.parsers.base import EmptyError, TruncatedError
 from wsn.parsers.cr6 import CR6Parser
-from wsn.parsers.eddypro import EddyproParser
 from wsn.parsers.licor import LicorParser
 from wsn.parsers.schemas import Schema
 from wsn.parsers.sommer import SommerParser
@@ -122,25 +121,6 @@ def test_licor():
 
     fields = set(fields)
     fields.remove('TIMESTAMP')
-    for time, data in rows:
-        assert type(time) is datetime and time.tzinfo == timezone.utc
-        assert type(data) is dict
-        assert fields == set(data)
-
-
-def test_eddypro():
-    filename = 'tests/data/eddypro/eddypro_0_full_output_2019-08-26T155701_adv.csv'
-
-    parser = EddyproParser(filename)
-    metadata, fields, rows = parser.parse()
-    assert type(metadata) is dict
-    assert type(fields) is list
-    assert type(rows) is list
-    assert len(rows) == 3
-
-    fields = set(fields)
-    fields.remove('date')
-    fields.remove('time')
     for time, data in rows:
         assert type(time) is datetime and time.tzinfo == timezone.utc
         assert type(data) is dict

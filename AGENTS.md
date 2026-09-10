@@ -8,7 +8,7 @@ This file provides essential information for AI coding agents working on the `ws
 
 ### Key Features
 
-- **Multi-source data ingestion**: Supports Waspmote motes (4G, Iridium satellite), Campbell CR6 data loggers, LI-COR gas analyzers, EddyPro processed files, and Sommer sensors
+- **Multi-source data ingestion**: Supports Waspmote motes (4G, Iridium satellite), Campbell CR6 data loggers, LI-COR gas analyzers, and Sommer sensors
 - **Dual database architecture**: PostgreSQL for operational data, ClickHouse for time-series analytics
 - **Asynchronous processing**: Celery workers for handling incoming data streams
 - **RESTful API**: For data upload, querying, and quality control workflows
@@ -66,7 +66,6 @@ wsn_server/
 │   │   ├── base.py       # Base parser classes
 │   │   ├── waspmote.py   # Waspmote binary frame parser
 │   │   ├── cr6.py        # Campbell CR6 CSV parser
-│   │   ├── eddypro.py    # EddyPro output parser
 │   │   ├── licor.py      # LI-COR .ghg file parser
 │   │   ├── sommer.py     # Sommer sensor CSV parser
 │   │   └── schemas.py    # Field type schemas for ClickHouse
@@ -382,7 +381,7 @@ Routing via `ClickHouseRouter` in `project/dbrouters.py`.
 2. `IridiumView` processes RockBLOCK payload
 3. Similar Celery workflow with additional Iridium metadata (IMEI, MOMSN, location)
 
-### Campbell CR6 / LI-COR / EddyPro / Sommer
+### Campbell CR6 / LI-COR / Sommer
 
 1. Manual or scripted import using `import_file` management command
 2. File parsed using appropriate parser class

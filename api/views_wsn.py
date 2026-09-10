@@ -1,6 +1,3 @@
-# Standard Library
-import io
-import json
 import time
 
 # Django
@@ -20,14 +17,10 @@ from rest_framework import generics, views
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
-from rest_framework.views import APIView
-
 # Project
 from wsn.clickhouse import ClickHouse
 from wsn.models import Frame, Metadata
-from wsn.parsers.eddypro import EddyproParser
 from wsn import tasks
-from wsn import upload
 from . import permissions, serializers
 
 
@@ -99,40 +92,6 @@ class IridiumView(View):
 
         # Ok
         return HttpResponse(status=200)
-
-
-#
-# Eddypro
-#
-
-@method_decorator(csrf_exempt, name='dispatch')
-class UploadEddyproView(APIView):
-    permission_classes = [permissions.IsUserAPI]
-
-    def post(self, request, *args, **kw):
-        # Read metadata
-        metadata = json.loads(request.data['metadata'].read())
-        assert metadata.get('name')
-
-        # Read data file
-        data = request.data['data']
-        filename = data.name
-        data = data.read()
-
-        parser = EddyproParser(
-            io.StringIO(data.decode('utf-8')),
-            metadata=metadata,
-        )
-        metadata, fields, rows = parser.parse()
-
-        # Import to database
-        metadata = upload.upload2pg(None, metadata, fields, rows)
-
-        # Archive, keep a copy of the source file in the filesystem
-        upload.archive(metadata.name, filename, data)
-
-        # Ok
-        return Response(status=201)
 
 
 #
