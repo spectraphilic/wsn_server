@@ -1,6 +1,8 @@
+import datetime
 import logging
 import lzma
 import os
+import re
 from pathlib import Path
 
 # Django
@@ -13,12 +15,26 @@ from wsn.parsers.schemas import Schema
 logger = logging.getLogger(__name__)
 
 
-
 class EmptyError(Exception):
     pass
 
 class TruncatedError(Exception):
     pass
+
+
+DATE_RE = re.compile(r'(?<![\d-])(\d{4})[-_](\d{2})[-_](\d{2})(?!\d)')
+
+
+def parse_filename_date(name):
+    """
+    Extract the date from a data filename, e.g.
+    'HFData_2026-07-01_01-00-00_639.dat' -> datetime.date(2026, 7, 1).
+    Raises ValueError if the filename contains no valid date.
+    """
+    match = DATE_RE.search(name)
+    if match is None:
+        raise ValueError(f'no date found in filename: {name}')
+    return datetime.date(int(match[1]), int(match[2]), int(match[3]))
 
 
 class BaseParser:

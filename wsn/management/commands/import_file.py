@@ -6,11 +6,7 @@ import time
 import traceback
 import zipfile
 
-try:
-    import tomllib as toml
-except ImportError:
-    # TODO Remove once we upgrde to Python 3.11
-    import toml
+import tomllib
 
 # Django
 from django.conf import settings
@@ -124,7 +120,7 @@ class Command(BaseCommand):
             raise CommandError('another import_file run is in progress')
 
         with open(config, 'rb') as f:
-            config = toml.load(f)
+            config = tomllib.load(f)
         config = config['import']
 
         self.upto = time.time() - (skip * 60)

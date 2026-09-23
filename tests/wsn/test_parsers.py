@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from zipfile import BadZipFile
 
@@ -6,7 +6,7 @@ from zipfile import BadZipFile
 import pytest
 
 # Project
-from wsn.parsers.base import EmptyError, TruncatedError
+from wsn.parsers.base import EmptyError, TruncatedError, parse_filename_date
 from wsn.parsers.cr6 import CR6Parser
 from wsn.parsers.licor import LicorParser
 from wsn.parsers.schemas import Schema
@@ -16,6 +16,26 @@ from wsn.parsers.sommer import SommerParser
 @pytest.fixture(scope='module')
 def datadir():
     return Path('tests/data')
+
+
+def test_parse_filename_date():
+    assert parse_filename_date('HFData_2026-07-01_01-00-00_639.dat') == date(2026, 7, 1)
+    assert parse_filename_date('uio_data_cr1000_2016_11_25_0000.dat') == date(2016, 11, 25)
+    assert parse_filename_date('2018-05-07T160000_LATICE-Flux_Finse.ghg') == date(2018, 5, 7)
+    assert parse_filename_date('Biomet_2019-08-23_19-05-00_8362.dat.xz') == date(2019, 8, 23)
+
+    # Sommer filenames have a 2-digit year, no 4-digit date
+    with pytest.raises(ValueError):
+        parse_filename_date('17170060_19-12-11T12-01-49.csv')
+
+    # Invalid dates are rejected
+    with pytest.raises(ValueError):
+        parse_filename_date('HFData_2026-13-01_01-00-00_639.dat')
+    with pytest.raises(ValueError):
+        parse_filename_date('HFData_2026-02-30_01-00-00_639.dat')
+
+    with pytest.raises(ValueError):
+        parse_filename_date('no_date_here.dat')
 
 
 def test_cr6_empty(datadir):
