@@ -21,6 +21,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
 requires_clickhouse = pytest.mark.skipif(not has_clickhouse, reason='Requires ClickHouse running at port 9000')
 
 
+def is_archived(path):
+    """The file has been archived under <dir>/archive/<YYYY>/<MM>/"""
+    archive = path.parent / 'archive'
+    return archive.is_dir() and len(list(archive.rglob(path.name + '.xz'))) == 1
+
+
 @pytest.fixture(scope='function')
 def datadir(tmp_path):
     datadir = shutil.copytree('tests/data', tmp_path / 'data')
@@ -75,7 +81,7 @@ def test_import_eton2(api_user, db, datadir):
     # Verify the files have been archived
     for path in files:
         assert not path.exists()
-        assert Path(f'{path}.xz').exists()
+        assert is_archived(path)
 
 
 def test_import_lock(datadir):
@@ -173,7 +179,7 @@ def test_import_finseflux(api_user, clickhouse, datadir):
         if path.name.startswith(prefix):
             assert not path.exists()
             assert (
-                Path(f'{path}.xz').exists() or
+                is_archived(path) or
                 Path(f'{path}.empty').exists() or
                 Path(f'{path}.truncated').exists()
             )
@@ -207,7 +213,7 @@ def test_import_hfdata(api_user, clickhouse, datadir):
         if path.name.startswith(prefix):
             assert not path.exists()
             assert (
-                Path(f'{path}.xz').exists() or
+                is_archived(path) or
                 Path(f'{path}.empty').exists() or
                 Path(f'{path}.truncated').exists()
             )
@@ -239,7 +245,7 @@ def test_import_sommer(api_user, clickhouse, datadir):
     for path in files:
         assert not path.exists()
         assert (
-            Path(f'{path}.xz').exists() or
+            is_archived(path) or
             Path(f'{path}.empty').exists() or
             Path(f'{path}.truncated').exists()
         )
@@ -263,6 +269,9 @@ def test_archive_migrate(tmp_path):
     # No date in the filename, must be reported and skipped
     undated = directory / 'UIO_Constants_Eton2_1.dat.xz'
     undated.touch()
+    # Sommer filename with a 2-digit year, handled by SommerParser
+    sommer_file = directory / '17170060_19-12-11T12-01-49.csv.xz'
+    sommer_file.touch()
     # Not an archived file, must be ignored
     quarantined = directory / 'Biomet_2026-09-23_10-15-00_5.dat.empty'
     quarantined.touch()
@@ -282,6 +291,7 @@ pattern = "Biomet_*.dat"
     call_command('archive_migrate', config)
     assert root_file.exists()
     assert year_file.exists()
+    assert sommer_file.exists()
 
     call_command('archive_migrate', config, apply=True)
 
@@ -292,6 +302,10 @@ pattern = "Biomet_*.dat"
     assert (directory / 'archive' / '2018' / '03' / year_file.name).exists()
     # The emptied year directory has been removed
     assert not (directory / '2018').exists()
+
+    # The Sommer file is dated via SommerParser.get_archive_date()
+    assert not sommer_file.exists()
+    assert (directory / 'archive' / '2019' / '12' / sommer_file.name).exists()
 
     assert done_file.exists()
     assert undated.exists()

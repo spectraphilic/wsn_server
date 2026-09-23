@@ -147,6 +147,15 @@ def test_licor():
         assert fields == set(data)
 
 
+def test_sommer_archive_date():
+    # Filenames use a 2-digit year, e.g. 17170060_19-12-11T12-01-49.csv
+    assert SommerParser.get_archive_date('17170060_19-12-11T12-01-49.csv') == date(2019, 12, 11)
+    # A non-Sommer .csv file still uses the strict 4-digit date
+    assert SommerParser.get_archive_date('Diagnostic_2023-09-14_00-05-00_0.csv') == date(2023, 9, 14)
+    with pytest.raises(ValueError):
+        SommerParser.get_archive_date('no_date_here.csv')
+
+
 def test_sommer():
     filename = 'tests/data/sommer/17170060_19-12-11T12-01-49.csv'
 

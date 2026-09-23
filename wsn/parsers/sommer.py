@@ -4,13 +4,16 @@ import datetime
 import logging
 import math
 import os
+import re
 
 # Project
 from wsn.parsers.base import CSVParser
-from wsn.parsers.base import EmptyError, TruncatedError
+from wsn.parsers.base import EmptyError, TruncatedError, parse_filename_date
 
 
 logger = logging.getLogger(__name__)
+
+DATE_RE = re.compile(r'(?<![\d-])(\d{2})-(\d{2})-(\d{2})T')
 
 class SommerParser(CSVParser):
     """
@@ -18,6 +21,19 @@ class SommerParser(CSVParser):
     """
 
     OPEN_KWARGS = {'newline': '', 'encoding': 'utf-8-sig'}
+
+    @staticmethod
+    def get_archive_date(name):
+        # Sommer filenames use a 2-digit year, e.g. 17170060_19-12-11T12-01-49.csv,
+        # but the file may not come from a Sommer sensor at all (the mapping is
+        # by suffix), so try the strict default first
+        try:
+            return parse_filename_date(name)
+        except ValueError:
+            match = DATE_RE.search(name)
+            if match is None:
+                raise ValueError(f'no date found in filename: {name}')
+            return datetime.date(2000 + int(match[1]), int(match[2]), int(match[3]))
 
     def _open(self):
         if self.size == 0:

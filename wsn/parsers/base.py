@@ -3,6 +3,7 @@ import logging
 import lzma
 import os
 import re
+import shutil
 from pathlib import Path
 
 # Django
@@ -46,6 +47,19 @@ def get_archive_root(filepath, import_dir):
     if 'raw' in parts:
         return Path(*parts[:parts.index('raw')])
     return import_dir
+
+
+def get_archive_dir_path(filepath, import_dir=None):
+    """
+    Return the directory a file is archived to: <root>/archive/<YYYY>/<MM>/,
+    where the date comes from the filename (strict: raises ValueError if the
+    filename contains no valid date).
+    """
+    if import_dir is None:
+        import_dir = filepath.parent
+    root = get_archive_root(filepath, import_dir)
+    date = parse_filename_date(filepath.name)
+    return root / 'archive' / str(date.year) / f'{date.month:02d}'
 
 
 class BaseParser:
@@ -133,12 +147,23 @@ class BaseParser:
     def check_filepath(self, filepath):
         pass
 
+    @staticmethod
+    def get_archive_date(name):
+        """
+        Date used for the archive/<YYYY>/<MM>/ directory. By default it comes
+        from the filename (strict); parsers may override it.
+        """
+        return parse_filename_date(name)
+
     def archive(self):
         src = self.filepath
-        dst = f'{src}.xz'
-        data = open(src, 'rb').read()
-        with lzma.open(dst, 'w') as f:
-            f.write(data)
+        date = self.get_archive_date(src.name)
+        root = get_archive_root(src, src.parent)
+        dirpath = root / 'archive' / str(date.year) / f'{date.month:02d}'
+        dirpath.mkdir(parents=True, exist_ok=True)
+        dst = dirpath / f'{src.name}.xz'
+        with open(src, 'rb') as fsrc, lzma.open(dst, 'w') as fdst:
+            shutil.copyfileobj(fsrc, fdst)
         os.remove(src)
         return dst
 

@@ -63,6 +63,7 @@ wsn_server/
 │   ├── upload.py         # Data upload utilities
 │   ├── utils.py          # Shared utilities
 │   ├── parsers/          # File parsers
+│   │   ├── __init__.py   # Parser registry (PARSERS) and parse_archived_date()
 │   │   ├── base.py       # Base parser classes
 │   │   ├── waspmote.py   # Waspmote binary frame parser
 │   │   ├── cr6.py        # Campbell CR6 CSV parser

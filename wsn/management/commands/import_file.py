@@ -14,19 +14,10 @@ from django.core.management.base import BaseCommand, CommandError
 from django.template.defaultfilters import filesizeformat
 
 # Project
+from wsn.parsers import PARSERS
 from wsn.parsers.base import EmptyError, TruncatedError
-from wsn.parsers.cr6 import CR6Parser
-from wsn.parsers.licor import LicorParser
 from wsn.parsers.schemas import Schema
-from wsn.parsers.sommer import SommerParser
 from wsn.upload import upload2pg, upload2ch
-
-
-PARSERS = {
-    '.csv': SommerParser, # Sommer MRL-7
-    '.dat': CR6Parser,
-    '.ghg': LicorParser,
-}
 
 
 class Command(BaseCommand):
@@ -95,7 +86,14 @@ class Command(BaseCommand):
         # Archive file
         original_size = os.path.getsize(filepath)
         self.stdout.write(f"{filepath} file uploaded")
-        dst = parser.archive()
+        try:
+            dst = parser.archive()
+        except Exception:
+            # The data has been uploaded; the file is left in place and will
+            # be retried on the next run (upload is idempotent)
+            self.stderr.write(f"{filepath} ERROR archiving, file left in place")
+            traceback.print_exc(file=self.stderr)
+            return
         self.stdout.write(f"{filepath} file archived to {dst}")
         # Print statistics
         compressed_size = os.path.getsize(dst)

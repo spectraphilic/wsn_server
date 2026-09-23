@@ -7,7 +7,8 @@ import tomllib
 from django.core.management.base import BaseCommand, CommandError
 
 # Project
-from wsn.parsers.base import get_archive_root, parse_filename_date
+from wsn.parsers import parse_archived_date
+from wsn.parsers.base import get_archive_root
 
 
 class Command(BaseCommand):
@@ -76,7 +77,7 @@ class Command(BaseCommand):
                     continue
 
                 try:
-                    date = parse_filename_date(name_)
+                    date = parse_archived_date(name_)
                 except ValueError as e:
                     errors.append(str(e))
                     continue
