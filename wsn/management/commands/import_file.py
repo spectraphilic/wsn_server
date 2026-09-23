@@ -39,7 +39,6 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('config', help="Path to the TOML configuration file")
         parser.add_argument('--name', help="Import only the given name from the config file")
-        parser.add_argument('--root', help="Root path to search for data files")
         parser.add_argument('--skip', default=5, type=int,
             help='Skip files older than the given minutes (default 5)',
         )
@@ -111,7 +110,7 @@ class Command(BaseCommand):
             f"({ratio:.0f} % of the original)"
         )
 
-    def handle(self, config, name, root, skip, *args, **kwargs):
+    def handle(self, config, name, skip, *args, **kwargs):
         # Prevent overlapping runs (e.g. a slow cron run overlapping with
         # the next one). The lock is held by this process and released by
         # the OS when it exits, so there are no stale locks. A second run
@@ -127,7 +126,6 @@ class Command(BaseCommand):
         with open(config, 'rb') as f:
             config = toml.load(f)
         config = config['import']
-        root = pathlib.Path(root or config['root'])
 
         self.upto = time.time() - (skip * 60)
 
@@ -139,19 +137,21 @@ class Command(BaseCommand):
                 continue
 
             # Proceed
-            path = root / values['path']
+            directory = pathlib.Path(values['path'])
+            if not directory.is_absolute():
+                raise CommandError(f'{table_name}: path must be absolute: {directory}')
             pattern = values['pattern']
             database = values.get('database', 'clickhouse')
             table_name = values.get('table', table_name)
             schema = values.get('schema', 'default')
             strict = values.get('schema-strict', False)
 
-            for entry in os.scandir(path):
+            for entry in os.scandir(directory):
                 if not entry.is_file():
                     continue
 
-                path = pathlib.Path(entry.path)
-                if fnmatch.fnmatch(path.name, pattern):
-                    self.handle_file(path, entry.stat(), database, table_name, schema, strict)
+                filepath = pathlib.Path(entry.path)
+                if fnmatch.fnmatch(filepath.name, pattern):
+                    self.handle_file(filepath, entry.stat(), database, table_name, schema, strict)
 
         return 0

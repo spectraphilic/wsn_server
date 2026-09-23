@@ -23,7 +23,17 @@ requires_clickhouse = pytest.mark.skipif(not has_clickhouse, reason='Requires Cl
 
 @pytest.fixture(scope='function')
 def datadir(tmp_path):
-    return shutil.copytree('tests/data', tmp_path / 'data')
+    datadir = shutil.copytree('tests/data', tmp_path / 'data')
+    # Rewrite the import config with absolute paths into the copied data dir
+    config = datadir / 'config.toml'
+    lines = []
+    for line in config.read_text().splitlines():
+        if line.startswith('path = "'):
+            path = line.removeprefix('path = "').removesuffix('"')
+            line = f'path = "{datadir / path}"'
+        lines.append(line)
+    config.write_text('\n'.join(lines) + '\n')
+    return datadir
 
 
 @pytest.fixture(scope='function')
@@ -47,7 +57,7 @@ def test_import_eton2(api_user, db, datadir):
 
     # Test skipping files
     skip = int(time.time() - datetime.datetime(2018, 1, 1).timestamp()) // 60
-    assert call_command('import_file', config, name=name, root=datadir, skip=skip) == 0
+    assert call_command('import_file', config, name=name, skip=skip) == 0
     # Verify no data has been imported
     response = api_user.query_pg()
     assert response.status_code == 200
@@ -55,7 +65,7 @@ def test_import_eton2(api_user, db, datadir):
     assert len(json['rows']) == 0
 
     # Test importing data
-    assert call_command('import_file', config, name=name, root=datadir, skip=0) == 0
+    assert call_command('import_file', config, name=name, skip=0) == 0
     # Verify the data has been imported
     response = api_user.query_pg()
     assert response.status_code == 200
@@ -78,7 +88,7 @@ def test_import_lock(datadir):
     with open(lockpath, 'w') as lockfile:
         fcntl.flock(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
         with pytest.raises(CommandError, match='another import_file run'):
-            call_command('import_file', config, name='eton2', root=datadir, skip=0)
+            call_command('import_file', config, name='eton2', skip=0)
 
 
 @requires_clickhouse
@@ -91,10 +101,10 @@ def test_import_finseflux(api_user, clickhouse, datadir):
 
     # Test skipping files
     skip = int(time.time() - datetime.datetime(2018, 1, 1).timestamp()) // 60
-    assert call_command('import_file', config, name=name, root=datadir, skip=skip) == 0
+    assert call_command('import_file', config, name=name, skip=skip) == 0
 
     # Test importing data
-    assert call_command('import_file', config, name=name, root=datadir, skip=0) == 0
+    assert call_command('import_file', config, name=name, skip=0) == 0
 
     # Verify the data has been imported
     response = api_user.query_ch(name)
@@ -181,10 +191,10 @@ def test_import_hfdata(api_user, clickhouse, datadir):
 
     # Test skipping files
     skip = int(time.time() - datetime.datetime(2018, 1, 1).timestamp()) // 60
-    assert call_command('import_file', config, name=name, root=datadir, skip=skip) == 0
+    assert call_command('import_file', config, name=name, skip=skip) == 0
 
     # Test importing data
-    assert call_command('import_file', config, name=name, root=datadir, skip=0) == 0
+    assert call_command('import_file', config, name=name, skip=0) == 0
     # Verify the data has been imported
     response = api_user.query_ch(name)
     assert response.status_code == 200
@@ -215,10 +225,10 @@ def test_import_sommer(api_user, clickhouse, datadir):
 
     # Test skipping files
     skip = int(time.time() - datetime.datetime(2018, 1, 1).timestamp()) // 60
-    assert call_command('import_file', config, root=datadir, name=name, skip=skip) == 0
+    assert call_command('import_file', config, name=name, skip=skip) == 0
 
     # Test importing data
-    assert call_command('import_file', config, root=datadir, name=name, skip=0) == 0
+    assert call_command('import_file', config, name=name, skip=0) == 0
     # Verify the data has been imported
     response = api_user.query_ch(name)
     assert response.status_code == 200

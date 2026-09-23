@@ -1,5 +1,4 @@
 [import]
-root = "/home/jdavid/sandboxes/UiO/wsn_server/tests/data"
 
 [import.eton2]
 path = "cr6/eton2"
