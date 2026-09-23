@@ -9,21 +9,10 @@ import tomllib
 from django.core.management.base import BaseCommand, CommandError
 
 # Project
-from wsn.parsers.base import parse_filename_date
+from wsn.parsers.base import get_archive_root, parse_filename_date
 
 
 QUARANTINE_SUFFIXES = ('.empty', '.truncated', '.badutf8', '.badzip')
-
-
-def get_archive_root(filepath, import_dir):
-    """
-    Return the root directory under which the archive/ directory lives:
-    the parent of 'raw' if present, else the import directory itself.
-    """
-    parts = list(filepath.parts)
-    if 'raw' in parts:
-        return pathlib.Path(*parts[:parts.index('raw')])
-    return import_dir
 
 
 class Command(BaseCommand):

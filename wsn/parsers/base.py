@@ -37,6 +37,17 @@ def parse_filename_date(name):
     return datetime.date(int(match[1]), int(match[2]), int(match[3]))
 
 
+def get_archive_root(filepath, import_dir):
+    """
+    Return the root directory under which the archive/ directory lives:
+    the parent of 'raw' if present, else the import directory itself.
+    """
+    parts = list(filepath.parts)
+    if 'raw' in parts:
+        return Path(*parts[:parts.index('raw')])
+    return import_dir
+
+
 class BaseParser:
 
     OPEN_KWARGS = {}

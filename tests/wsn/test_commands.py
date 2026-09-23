@@ -243,3 +243,57 @@ def test_import_sommer(api_user, clickhouse, datadir):
             Path(f'{path}.empty').exists() or
             Path(f'{path}.truncated').exists()
         )
+
+
+def test_archive_migrate(tmp_path):
+    directory = tmp_path / 'cr6' / 'finseflux'
+    directory.mkdir(parents=True)
+    (directory / '2018').mkdir()
+    (directory / 'archive' / '2019' / '01').mkdir(parents=True)
+
+    # A flat archived file at the root
+    root_file = directory / 'Biomet_2018-02-09_12-35-00_0.dat.xz'
+    root_file.touch()
+    # An archived file in a manually created year directory
+    year_file = directory / '2018' / 'Biomet_2018-03-01_10-00-00_1.dat.xz'
+    year_file.touch()
+    # Already migrated, must be left alone
+    done_file = directory / 'archive' / '2019' / '01' / 'Biomet_2019-01-05_01-00-00_2.dat.xz'
+    done_file.touch()
+    # No date in the filename, must be reported and skipped
+    undated = directory / 'UIO_Constants_Eton2_1.dat.xz'
+    undated.touch()
+    # Not an archived file, must be ignored
+    quarantined = directory / 'Biomet_2026-09-23_10-15-00_5.dat.empty'
+    quarantined.touch()
+    input_file = directory / 'Biomet_2026-09-24_10-15-00_6.dat'
+    input_file.touch()
+
+    config = tmp_path / 'config.toml'
+    config.write_text(f'''
+[import]
+
+[import.finseflux_Biomet]
+path = "{directory}"
+pattern = "Biomet_*.dat"
+''')
+
+    # Dry run: nothing moves
+    call_command('archive_migrate', config)
+    assert root_file.exists()
+    assert year_file.exists()
+
+    call_command('archive_migrate', config, apply=True)
+
+    assert not root_file.exists()
+    assert (directory / 'archive' / '2018' / '02' / root_file.name).exists()
+
+    assert not year_file.exists()
+    assert (directory / 'archive' / '2018' / '03' / year_file.name).exists()
+    # The emptied year directory has been removed
+    assert not (directory / '2018').exists()
+
+    assert done_file.exists()
+    assert undated.exists()
+    assert quarantined.exists()
+    assert input_file.exists()
