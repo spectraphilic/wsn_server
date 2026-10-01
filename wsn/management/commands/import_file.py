@@ -17,7 +17,7 @@ from django.template.defaultfilters import filesizeformat
 from wsn.parsers import PARSERS
 from wsn.parsers.base import EmptyError, TruncatedError
 from wsn.parsers.schemas import Schema
-from wsn.upload import upload2pg, upload2ch
+from wsn.upload import upload2ch, upload2pg
 
 
 class Command(BaseCommand):
@@ -26,8 +26,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('config', help="Path to the TOML configuration file")
         parser.add_argument('--name', help="Import only the given name from the config file")
-        parser.add_argument('--skip', default=5, type=int,
-            help='Skip files older than the given minutes (default 5)',
+        parser.add_argument('--skip', default=10, type=int,
+            help='Skip files modified within the last given minutes (default 10)',
         )
 
     def handle_file(self, filepath, stat, database, table_name, schema, strict):
@@ -50,8 +50,8 @@ class Command(BaseCommand):
             parser = Parser(filepath, stat=stat, schema=schema)
             metadata, fields, rows = parser.parse()
         except EmptyError:
-            self.stdout.write(f'{filepath} WARNING file is empty')
-            os.rename(filepath, f'{filepath}.empty')
+            self.stdout.write(f'{filepath} WARNING file is empty, removed')
+            os.remove(filepath)
             return
         except TruncatedError:
             self.stdout.write(f'{filepath} WARNING file is truncated')
@@ -66,7 +66,9 @@ class Command(BaseCommand):
             self.stdout.write(f'{filepath} WARNING bad zip file')
             os.rename(filepath, f'{filepath}.badzip')
             return
-        except Exception:
+        # Catch-all: a single bad file must not abort the whole run; it is
+        # logged and left in place to be retried on the next run
+        except Exception:  # noqa: BLE001
             self.stderr.write(f"{filepath} ERROR")
             traceback.print_exc(file=self.stderr)
             return
@@ -78,7 +80,7 @@ class Command(BaseCommand):
                 upload2pg(table_name, metadata, fields, rows)
             else:
                 upload2ch(table_name, metadata, fields, rows, schema)
-        except Exception:
+        except Exception:  # noqa: BLE001
             self.stderr.write(f"{filepath} ERROR")
             traceback.print_exc(file=self.stderr)
             return
@@ -88,7 +90,7 @@ class Command(BaseCommand):
         self.stdout.write(f"{filepath} file uploaded")
         try:
             dst = parser.archive()
-        except Exception:
+        except Exception:  # noqa: BLE001
             # The data has been uploaded; the file is left in place and will
             # be retried on the next run (upload is idempotent)
             self.stderr.write(f"{filepath} ERROR archiving, file left in place")
@@ -106,46 +108,46 @@ class Command(BaseCommand):
 
     def handle(self, config, name, skip, *args, **kwargs):
         # Prevent overlapping runs (e.g. a slow cron run overlapping with
-        # the next one). The lock is held by this process and released by
-        # the OS when it exits, so there are no stale locks. A second run
-        # fails loudly instead of silently skipping.
+        # the next one). The lock is held until this command finishes, so
+        # there are no stale locks. A second run fails loudly instead of
+        # silently skipping.
         lockpath = settings.BASE_DIR / 'var' / 'run' / 'import_file.lock'
         lockpath.parent.mkdir(parents=True, exist_ok=True)
-        lockfile = open(lockpath, 'w')
-        try:
-            fcntl.flock(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            raise CommandError('another import_file run is in progress')
+        with open(lockpath, 'w') as lockfile:
+            try:
+                fcntl.flock(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                raise CommandError('another import_file run is in progress')
 
-        with open(config, 'rb') as f:
-            config = tomllib.load(f)
-        config = config['import']
+            with open(config, 'rb') as f:
+                config = tomllib.load(f)
+            config = config['import']
 
-        self.upto = time.time() - (skip * 60)
+            self.upto = time.time() - (skip * 60)
 
-        for table_name, values in config.items():
-            if not isinstance(values, dict):
-                continue
-
-            if name and table_name != name:
-                continue
-
-            # Proceed
-            directory = pathlib.Path(values['path'])
-            if not directory.is_absolute():
-                raise CommandError(f'{table_name}: path must be absolute: {directory}')
-            pattern = values['pattern']
-            database = values.get('database', 'clickhouse')
-            table_name = values.get('table', table_name)
-            schema = values.get('schema', 'default')
-            strict = values.get('schema-strict', False)
-
-            for entry in os.scandir(directory):
-                if not entry.is_file():
+            for table_name, values in config.items():
+                if not isinstance(values, dict):
                     continue
 
-                filepath = pathlib.Path(entry.path)
-                if fnmatch.fnmatch(filepath.name, pattern):
-                    self.handle_file(filepath, entry.stat(), database, table_name, schema, strict)
+                if name and table_name != name:
+                    continue
+
+                # Proceed
+                directory = pathlib.Path(values['path'])
+                if not directory.is_absolute():
+                    raise CommandError(f'{table_name}: path must be absolute: {directory}')
+                pattern = values['pattern']
+                database = values.get('database', 'clickhouse')
+                table_name = values.get('table', table_name)
+                schema = values.get('schema', 'default')
+                strict = values.get('schema-strict', False)
+
+                for entry in os.scandir(directory):
+                    if not entry.is_file():
+                        continue
+
+                    filepath = pathlib.Path(entry.path)
+                    if fnmatch.fnmatch(filepath.name, pattern):
+                        self.handle_file(filepath, entry.stat(), database, table_name, schema, strict)
 
         return 0

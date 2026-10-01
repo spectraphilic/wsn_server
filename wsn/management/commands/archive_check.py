@@ -13,6 +13,8 @@ from wsn.parsers import parse_archived_date
 from wsn.parsers.base import get_archive_root
 
 
+# Files quarantined by import_file. Empty files are deleted instead of
+# quarantined, but keep .empty for files quarantined in the past.
 QUARANTINE_SUFFIXES = ('.empty', '.truncated', '.badutf8', '.badzip')
 
 

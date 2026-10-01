@@ -97,6 +97,28 @@ def test_import_lock(datadir):
             call_command('import_file', config, name='eton2', skip=0)
 
 
+def test_import_empty_file(tmp_path):
+    # Empty files are deleted, not renamed to .empty
+    directory = tmp_path / 'cr6' / 'eton2'
+    directory.mkdir(parents=True)
+    empty_file = directory / 'Eton2_2018-01-01_00-00-00_0.dat'
+    empty_file.touch()
+
+    config = tmp_path / 'config.toml'
+    config.write_text(f'''
+[import]
+
+[import.eton2]
+path = "{directory}"
+pattern = "*.dat"
+database = "postgres"
+''')
+
+    assert call_command('import_file', config, name='eton2', skip=0) == 0
+    assert not empty_file.exists()
+    assert not Path(f'{empty_file}.empty').exists()
+
+
 @requires_clickhouse
 def test_import_finseflux(api_user, clickhouse, datadir):
     path = datadir / 'cr6' / 'finseflux'
@@ -173,14 +195,15 @@ def test_import_finseflux(api_user, clickhouse, datadir):
         "FC2WSmax_16_99_1_1_1": 3.929722,
     }
 
-    # Verify the files have been archived
+    # Verify the files have been archived (empty files are deleted)
     prefix = 'Biomet_'
     for path in files:
         if path.name.startswith(prefix):
             assert not path.exists()
+            if path.name.endswith('_empty.dat'):
+                continue
             assert (
                 is_archived(path) or
-                Path(f'{path}.empty').exists() or
                 Path(f'{path}.truncated').exists()
             )
         else:
@@ -214,7 +237,6 @@ def test_import_hfdata(api_user, clickhouse, datadir):
             assert not path.exists()
             assert (
                 is_archived(path) or
-                Path(f'{path}.empty').exists() or
                 Path(f'{path}.truncated').exists()
             )
         else:
@@ -246,7 +268,6 @@ def test_import_sommer(api_user, clickhouse, datadir):
         assert not path.exists()
         assert (
             is_archived(path) or
-            Path(f'{path}.empty').exists() or
             Path(f'{path}.truncated').exists()
         )
 
@@ -272,9 +293,12 @@ def test_archive_migrate(tmp_path):
     # Sommer filename with a 2-digit year, handled by SommerParser
     sommer_file = directory / '17170060_19-12-11T12-01-49.csv.xz'
     sommer_file.touch()
-    # Not an archived file, must be ignored
+    # 0-byte .empty leftover, must be removed
     quarantined = directory / 'Biomet_2026-09-23_10-15-00_5.dat.empty'
     quarantined.touch()
+    # Non-empty .empty file, must be kept
+    not_empty = directory / 'Biomet_2026-09-23_10-15-00_6.dat.empty'
+    not_empty.write_text('oops')
     input_file = directory / 'Biomet_2026-09-24_10-15-00_6.dat'
     input_file.touch()
 
@@ -292,6 +316,7 @@ pattern = "Biomet_*.dat"
     assert root_file.exists()
     assert year_file.exists()
     assert sommer_file.exists()
+    assert quarantined.exists()
 
     call_command('archive_migrate', config, apply=True)
 
@@ -309,5 +334,6 @@ pattern = "Biomet_*.dat"
 
     assert done_file.exists()
     assert undated.exists()
-    assert quarantined.exists()
+    assert not quarantined.exists()
+    assert not_empty.exists()
     assert input_file.exists()

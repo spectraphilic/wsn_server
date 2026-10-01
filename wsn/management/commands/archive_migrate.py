@@ -16,8 +16,9 @@ class Command(BaseCommand):
     Move already-archived (*.xz) files into the archive/<YYYY>/<MM>/ layout,
     by the date in the filename. Recurses into subdirectories (e.g. manually
     created year directories) but never touches files already under archive/.
-    Files with no parseable date are reported and skipped. Dry run by default,
-    use --apply to actually move the files.
+    Files with no parseable date are reported and skipped. Also removes 0-byte
+    *.empty files, leftovers from when import_file quarantined empty files.
+    Dry run by default, use --apply to actually move the files.
     """
 
     help = 'Move archived (*.xz) files into the archive/<YYYY>/<MM>/ layout'
@@ -59,21 +60,35 @@ class Command(BaseCommand):
             self.handle_directory(directory, apply)
 
     def handle_directory(self, directory, apply):
-        moved = skipped = 0
+        moved = skipped = removed_empty = 0
         errors = []
 
         for dirpath, _, filenames in os.walk(directory):
             for name_ in sorted(filenames):
                 filepath = pathlib.Path(dirpath) / name_
 
-                if not name_.endswith('.xz'):
-                    continue
-
                 root = get_archive_root(filepath, directory)
                 archive_dir = root / 'archive'
 
-                # Already in the right place
+                # Never touch files already under archive/
                 if filepath.is_relative_to(archive_dir):
+                    continue
+
+                # 0-byte *.empty files: leftovers from when import_file
+                # renamed empty files instead of deleting them
+                if name_.endswith('.empty'):
+                    if filepath.stat().st_size == 0:
+                        if apply:
+                            filepath.unlink()
+                            removed_empty += 1
+                        else:
+                            self.stdout.write(f'WOULD REMOVE {filepath}')
+                    else:
+                        self.stdout.write(f'SKIP {filepath} (not empty)')
+                        skipped += 1
+                    continue
+
+                if not name_.endswith('.xz'):
                     continue
 
                 try:
@@ -105,6 +120,6 @@ class Command(BaseCommand):
                 if not dirnames and not filenames:
                     os.rmdir(dirpath)
 
-        self.stdout.write(f'{directory}: moved={moved}, skipped={skipped}')
+        self.stdout.write(f'{directory}: moved={moved}, skipped={skipped}, removed_empty={removed_empty}')
         for error in errors:
             self.stdout.write(f'FAIL {error}')
