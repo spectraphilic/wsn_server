@@ -24,3 +24,12 @@ def parse_archived_date(name):
     if Parser is None:
         return parse_filename_date(name)
     return Parser.get_archive_date(inner)
+
+
+def get_parser(name):
+    """
+    Return the parser for an archived filename, e.g. 'name.dat.xz' or
+    'name.ghg.tar.xz'. Returns None if no parser matches.
+    """
+    inner = name.removesuffix('.xz').removesuffix('.tar')
+    return PARSERS.get(pathlib.Path(inner).suffix)

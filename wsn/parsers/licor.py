@@ -8,12 +8,13 @@ import sys
 import tarfile
 import time
 import zipfile
+from pathlib import Path
 
 # Django
 from django.utils.functional import cached_property
 
 # Project
-from .base import BaseParser, get_archive_dir_path
+from .base import BaseParser, get_archive_dir_path, get_archive_root
 
 
 def zip_to_tar_xz(zip_path, tar_xz_path):
@@ -230,11 +231,18 @@ class LicorParser(BaseParser):
         assert filepath.suffix == '.ghg'
         get_archive_dir_path(filepath)
 
+    @classmethod
+    def get_archive_relpath(cls, filepath):
+        filepath = Path(filepath)
+        date = cls.get_archive_date(filepath.name)
+        return Path(str(date.year)) / f'{date.month:02d}' / filepath.with_suffix('.tar.xz').name
+
     def archive(self):
         src = self.filepath
-        dirpath = get_archive_dir_path(src)
+        relpath = self.get_archive_relpath(src)
+        dirpath = get_archive_root(src, src.parent) / 'archive' / relpath.parent
         dirpath.mkdir(parents=True, exist_ok=True)
-        dst = dirpath / src.with_suffix(".tar.xz").name
+        dst = dirpath / relpath.name
         zip_to_tar_xz(src, dst)
         os.remove(src)
         return dst

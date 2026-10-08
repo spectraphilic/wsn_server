@@ -5,19 +5,22 @@ import time
 
 # Django
 from django.contrib.postgres.indexes import GinIndex
-from django.db import models
-from django.db import transaction
-from django.db.models import ForeignKey, PROTECT
-from django.db.models import CharField
-from django.db.models import FloatField # 8 bytes
-from django.db.models import IntegerField # 4 bytes (signed)
-from django.db.models import SmallIntegerField # 2 bytes (signed)
+from django.db import models, transaction
+from django.db.models import (
+    PROTECT,
+    CharField,
+    CompositePrimaryKey,
+    FloatField,  # 8 bytes
+    ForeignKey,
+    IntegerField,  # 4 bytes (signed)
+    Q,
+    SmallIntegerField,  # 2 bytes (signed)
+)
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 # Project
 from .utils import TimeModelMixin
-
 
 logger = logging.getLogger(__name__)
 
@@ -349,17 +352,57 @@ class Frame(TimeModelMixin, FlexModel):
         return ('%016X' % value) if value else None
 
 
+class ImportFile(models.Model):
+    """
+    A file archived by the import pipeline.
+
+    The primary key is the natural key: name is the entry name in the import
+    configuration, path is the archive path relative to the entry's archive
+    directory, e.g. '2026/10/Status_2026-10-08_14-30-00_70999.dat.xz'.
+    """
+
+    class Status(models.TextChoices):
+        PENDING = 'pending'
+        DONE = 'done'
+        ERROR = 'error'
+
+    pk = CompositePrimaryKey('name', 'path')
+
+    name = CharField(max_length=255, editable=False)
+    path = CharField(max_length=255, editable=False)
+
+    status = CharField(max_length=8, choices=Status, default=Status.PENDING,
+                       editable=False)
+    error = models.TextField(editable=False)
+
+    created_at = models.DateTimeField(auto_now_add=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True, editable=False)
+
+    class Meta:
+        ordering = ['name', 'path']
+        indexes = [
+            models.Index(
+                fields=['status'],
+                condition=Q(status='pending'),
+                name='importfile_status_pending',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.name}:{self.path}'
+
+
 def frame_to_database(validated_data, update=False, merge=True):
     tags = validated_data['tags']
     frames = validated_data['frames']
-    metadata, created = Metadata.get_or_create(tags)
+    metadata, _ = Metadata.get_or_create(tags)
 
     objs = []
     for frame in frames:
         time = frame['time']
         data = frame['data']
         seq = data.pop('frame', None)
-        obj, created = Frame.create(metadata, time, seq, data, update=update, merge=merge)
+        obj, _ = Frame.create(metadata, time, seq, data, update=update, merge=merge)
         if obj is not None:
             objs.append(obj)
 

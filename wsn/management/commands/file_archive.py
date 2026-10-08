@@ -14,23 +14,28 @@ from django.core.management.base import BaseCommand, CommandError
 from django.template.defaultfilters import filesizeformat
 
 # Project
+from wsn.models import ImportFile
 from wsn.parsers import PARSERS
 from wsn.parsers.base import EmptyError, TruncatedError
 from wsn.parsers.schemas import Schema
-from wsn.upload import upload2ch, upload2pg
 
 
 class Command(BaseCommand):
-    """Django management command for importing data files into the database."""
+    """
+    Archive data files and register them in the wsn_importfile table.
+
+    The data itself is not imported here; that is done later by the
+    file_import command, which marks the rows as done.
+    """
 
     def add_arguments(self, parser):
         parser.add_argument('config', help="Path to the TOML configuration file")
-        parser.add_argument('--name', help="Import only the given name from the config file")
+        parser.add_argument('--name', help="Archive only the given name from the config file")
         parser.add_argument('--skip', default=10, type=int,
             help='Skip files modified within the last given minutes (default 10)',
         )
 
-    def handle_file(self, filepath, stat, database, table_name, schema, strict):
+    def handle_file(self, filepath, stat, name, schema, strict):
         Parser = PARSERS.get(filepath.suffix)
         if Parser is None:
             return
@@ -40,6 +45,21 @@ class Command(BaseCommand):
         # completely uploaded.
         if stat.st_mtime > self.upto:
             self.stdout.write(f"{filepath} skip for now, will handle later")
+            return
+
+        # The archive path is fully determined by the filename, so we can
+        # check whether the file was already archived before parsing it.
+        # This happens when a file with the same name is re-uploaded within
+        # the same month.
+        try:
+            relpath = Parser.get_archive_relpath(filepath)
+        except ValueError:
+            self.stderr.write(f"{filepath} WARNING cannot archive, no date in filename")
+            return
+
+        path = str(relpath)
+        if ImportFile.objects.filter(name=name, path=path).exists():
+            self.stdout.write(f"{filepath} already archived, skipped")
             return
 
         if type(schema) is str:
@@ -73,30 +93,22 @@ class Command(BaseCommand):
             traceback.print_exc(file=self.stderr)
             return
 
-        # Upload
-        try:
-            if database == 'postgres':
-                # TODO Remove postgres: we only have 1 data source using this, move to ClickHouse
-                upload2pg(table_name, metadata, fields, rows)
-            else:
-                upload2ch(table_name, metadata, fields, rows, schema)
-        except Exception:  # noqa: BLE001
-            self.stderr.write(f"{filepath} ERROR")
-            traceback.print_exc(file=self.stderr)
-            return
-
         # Archive file
         original_size = os.path.getsize(filepath)
-        self.stdout.write(f"{filepath} file uploaded")
+        self.stdout.write(f"{filepath} file parsed")
         try:
             dst = parser.archive()
         except Exception:  # noqa: BLE001
-            # The data has been uploaded; the file is left in place and will
-            # be retried on the next run (upload is idempotent)
             self.stderr.write(f"{filepath} ERROR archiving, file left in place")
             traceback.print_exc(file=self.stderr)
             return
         self.stdout.write(f"{filepath} file archived to {dst}")
+
+        # Register the file; it will be imported by the file_import command
+        _, created = ImportFile.objects.get_or_create(name=name, path=path)
+        if not created:
+            self.stderr.write(f"{filepath} WARNING already registered by another run")
+
         # Print statistics
         compressed_size = os.path.getsize(dst)
         ratio = compressed_size / original_size if original_size > 0 else 0
@@ -111,13 +123,13 @@ class Command(BaseCommand):
         # the next one). The lock is held until this command finishes, so
         # there are no stale locks. A second run fails loudly instead of
         # silently skipping.
-        lockpath = settings.BASE_DIR / 'var' / 'run' / 'import_file.lock'
+        lockpath = settings.BASE_DIR / 'var' / 'run' / 'file_archive.lock'
         lockpath.parent.mkdir(parents=True, exist_ok=True)
         with open(lockpath, 'w') as lockfile:
             try:
                 fcntl.flock(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except BlockingIOError:
-                raise CommandError('another import_file run is in progress')
+                raise CommandError('another file_archive run is in progress')
 
             with open(config, 'rb') as f:
                 config = tomllib.load(f)
@@ -125,24 +137,22 @@ class Command(BaseCommand):
 
             self.upto = time.time() - (skip * 60)
 
-            for table_name, values in config.items():
+            for entry_name, values in config.items():
                 if not isinstance(values, dict):
                     continue
 
-                if name and table_name != name:
+                # Only entries of the new pipeline
+                if values.get('pipeline') != 'archive':
                     continue
 
-                # Entries handled by the file_archive command
-                if values.get('pipeline') == 'archive':
+                if name and entry_name != name:
                     continue
 
                 # Proceed
                 directory = pathlib.Path(values['path'])
                 if not directory.is_absolute():
-                    raise CommandError(f'{table_name}: path must be absolute: {directory}')
+                    raise CommandError(f'{entry_name}: path must be absolute: {directory}')
                 pattern = values['pattern']
-                database = values.get('database', 'clickhouse')
-                table_name = values.get('table', table_name)
                 schema = values.get('schema', 'default')
                 strict = values.get('schema-strict', False)
 
@@ -152,6 +162,6 @@ class Command(BaseCommand):
 
                     filepath = pathlib.Path(entry.path)
                     if fnmatch.fnmatch(filepath.name, pattern):
-                        self.handle_file(filepath, entry.stat(), database, table_name, schema, strict)
+                        self.handle_file(filepath, entry.stat(), entry_name, schema, strict)
 
         return 0

@@ -4,6 +4,8 @@ import lzma
 import os
 import re
 import shutil
+import tarfile
+import zipfile
 from pathlib import Path
 
 # Django
@@ -60,6 +62,29 @@ def get_archive_dir_path(filepath, import_dir=None):
     root = get_archive_root(filepath, import_dir)
     date = parse_filename_date(filepath.name)
     return root / 'archive' / str(date.year) / f'{date.month:02d}'
+
+
+def unarchive(src, dirpath):
+    """
+    Extract an archived file into dirpath (which must exist), restoring its
+    original form: 'name.dat.xz' -> 'name.dat', 'name.ghg.tar.xz' ->
+    'name.ghg' (the zip is rebuilt from the tar members, see
+    LicorParser.archive()). Returns the path of the extracted file.
+    """
+    src = Path(src)
+    name = src.name.removesuffix('.xz')
+    if name.endswith('.tar'):
+        dst = Path(dirpath) / name.removesuffix('.tar')
+        with tarfile.open(src, 'r:xz') as tar, zipfile.ZipFile(dst, 'w') as zf:
+            for member in tar.getmembers():
+                if member.isfile():
+                    zf.writestr(member.name, tar.extractfile(member).read())
+        return dst
+
+    dst = Path(dirpath) / name
+    with lzma.open(src) as fsrc, open(dst, 'wb') as fdst:
+        shutil.copyfileobj(fsrc, fdst)
+    return dst
 
 
 class BaseParser:
@@ -155,13 +180,23 @@ class BaseParser:
         """
         return parse_filename_date(name)
 
+    @classmethod
+    def get_archive_relpath(cls, filepath):
+        """
+        Return the path of the archived file relative to the entry's
+        archive/ directory, e.g. Path('2026/10/name.dat.xz'). Raises
+        ValueError if no date can be extracted from the filename.
+        """
+        filepath = Path(filepath)
+        date = cls.get_archive_date(filepath.name)
+        return Path(str(date.year)) / f'{date.month:02d}' / f'{filepath.name}.xz'
+
     def archive(self):
         src = self.filepath
-        date = self.get_archive_date(src.name)
-        root = get_archive_root(src, src.parent)
-        dirpath = root / 'archive' / str(date.year) / f'{date.month:02d}'
+        relpath = self.get_archive_relpath(src)
+        dirpath = get_archive_root(src, src.parent) / 'archive' / relpath.parent
         dirpath.mkdir(parents=True, exist_ok=True)
-        dst = dirpath / f'{src.name}.xz'
+        dst = dirpath / relpath.name
         with open(src, 'rb') as fsrc, lzma.open(dst, 'w') as fdst:
             shutil.copyfileobj(fsrc, fdst)
         os.remove(src)

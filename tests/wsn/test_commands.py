@@ -3,6 +3,7 @@ import fcntl
 import shutil
 import socket
 import time
+import tomllib
 from pathlib import Path
 
 # Requirements
@@ -13,6 +14,9 @@ from clickhouse_driver import Client
 from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import CommandError
+
+# Project
+from wsn.models import ImportFile
 
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -117,6 +121,312 @@ database = "postgres"
     assert call_command('import_file', config, name='eton2', skip=0) == 0
     assert not empty_file.exists()
     assert not Path(f'{empty_file}.empty').exists()
+
+
+DATA = Path('tests/data/cr6/finseflux')
+
+def test_file_archive(db, tmp_path):
+    directory = tmp_path / 'finseflux'
+    directory.mkdir(parents=True)
+
+    good = directory / 'HFData_2025-06-10_15-10-00_2894.dat'
+    shutil.copy(DATA / good.name, good)
+    truncated = directory / 'Biomet_2019-08-23_19-05-00_8362_truncated.dat'
+    shutil.copy(DATA / truncated.name, truncated)
+    empty = directory / 'Biomet_2019-08-23_19-05-00_8362_empty.dat'
+    shutil.copy(DATA / empty.name, empty)
+    # No date in the filename, cannot be archived
+    undated = directory / 'UIO_Constants_Eton2_1.dat'
+    undated.touch()
+    # Does not match the pattern
+    notes = directory / 'notes.txt'
+    notes.touch()
+
+    config = tmp_path / 'config.toml'
+    config.write_text(f'''
+[import]
+
+[import.test]
+path = "{directory}"
+pattern = "*.dat"
+pipeline = "archive"
+''')
+
+    # Test skipping files
+    skip = int(time.time() - datetime.datetime(2018, 1, 1).timestamp()) // 60
+    assert call_command('file_archive', config, name='test', skip=skip) == 0
+    assert good.exists()
+    assert ImportFile.objects.count() == 0
+
+    # Test archiving files
+    assert call_command('file_archive', config, name='test', skip=0) == 0
+
+    # The good file has been archived and registered
+    assert not good.exists()
+    assert is_archived(good)
+    obj = ImportFile.objects.get()
+    assert obj.name == 'test'
+    assert obj.path == '2025/06/HFData_2025-06-10_15-10-00_2894.dat.xz'
+    assert obj.status == ImportFile.Status.PENDING
+    assert obj.error == ''
+    assert obj.created_at is not None and obj.updated_at is not None
+
+    # Quarantined files get no row
+    assert not truncated.exists()
+    assert Path(f'{truncated}.truncated').exists()
+    assert not empty.exists()
+    assert not Path(f'{empty}.empty').exists()
+
+    # Undated and non-matching files are left in place, get no row
+    assert undated.exists()
+    assert notes.exists()
+    assert ImportFile.objects.count() == 1
+
+
+def test_file_archive_duplicate(db, tmp_path):
+    directory = tmp_path / 'finseflux'
+    directory.mkdir(parents=True)
+    good = directory / 'HFData_2025-06-10_15-10-00_2894.dat'
+    shutil.copy(DATA / good.name, good)
+
+    config = tmp_path / 'config.toml'
+    config.write_text(f'''
+[import]
+
+[import.test_a]
+path = "{directory}"
+pattern = "*.dat"
+pipeline = "archive"
+
+[import.test_b]
+path = "{directory}"
+pattern = "*.dat"
+pipeline = "archive"
+''')
+
+    # Archive under the first entry
+    assert call_command('file_archive', config, name='test_a', skip=0) == 0
+    assert not good.exists()
+    assert ImportFile.objects.filter(name='test_a').count() == 1
+
+    # The same file re-uploaded is skipped: not archived again, no new row
+    shutil.copy(DATA / good.name, good)
+    assert call_command('file_archive', config, name='test_a', skip=0) == 0
+    assert good.exists()
+    assert ImportFile.objects.count() == 1
+
+    # The same filename under another entry is a different row
+    assert call_command('file_archive', config, name='test_b', skip=0) == 0
+    assert not good.exists()
+    assert is_archived(good)
+    assert ImportFile.objects.count() == 2
+    assert ImportFile.objects.filter(name='test_b').count() == 1
+
+
+def test_file_archive_pipeline(db, tmp_path):
+    # Entries with pipeline="archive" are handled by file_archive only,
+    # entries without it are handled by import_file only.
+    directory = tmp_path / 'data'
+    directory.mkdir(parents=True)
+
+    old_file = directory / 'old_Eton2_2018-01-01_00-00-00_1.dat'
+    old_file.touch()
+    new_file = directory / 'new_HFData_2025-06-10_15-10-00_2894.dat'
+    shutil.copy(DATA / 'HFData_2025-06-10_15-10-00_2894.dat', new_file)
+
+    config = tmp_path / 'config.toml'
+    config.write_text(f'''
+[import]
+
+[import.old_entry]
+path = "{directory}"
+pattern = "old_*.dat"
+
+[import.new_entry]
+path = "{directory}"
+pattern = "new_*.dat"
+pipeline = "archive"
+''')
+
+    # file_archive processes only pipeline="archive" entries
+    assert call_command('file_archive', config, skip=0) == 0
+    assert old_file.exists()
+    assert not new_file.exists()
+    assert is_archived(new_file)
+    assert ImportFile.objects.count() == 1
+
+    # import_file skips pipeline="archive" entries
+    assert call_command('import_file', config, skip=0) == 0
+    assert not old_file.exists() # Deleted, it is empty
+    assert is_archived(new_file)
+    assert ImportFile.objects.count() == 1
+
+
+def test_file_archive_lock(tmp_path):
+    # A second file_archive run must fail loudly while another one holds
+    # the lock (e.g. overlapping cron jobs).
+    lockpath = settings.BASE_DIR / 'var' / 'run' / 'file_archive.lock'
+    lockpath.parent.mkdir(parents=True, exist_ok=True)
+    config = tmp_path / 'config.toml'
+    config.write_text('[import]\n')
+
+    with open(lockpath, 'w') as lockfile:
+        fcntl.flock(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with pytest.raises(CommandError, match='another file_archive run'):
+            call_command('file_archive', config)
+
+
+ETON2 = Path('tests/data/cr6/eton2')
+
+def archived_path(config, obj):
+    """The path of the archived file a row refers to."""
+    with open(config, 'rb') as f:
+        values = tomllib.load(f)['import'][obj.name]
+    return Path(values['path']) / 'archive' / obj.path
+
+
+@pytest.fixture
+def archived(tmp_path):
+    """
+    Archive the eton2 data files and return the config path.
+    """
+    directory = tmp_path / 'eton2'
+    directory.mkdir(parents=True)
+    for path in ETON2.iterdir():
+        shutil.copy(path, directory / path.name)
+
+    config = tmp_path / 'config.toml'
+    config.write_text(f'''
+[import]
+
+[import.eton2]
+path = "{directory}"
+pattern = "*.dat"
+database = "postgres"
+pipeline = "archive"
+''')
+    assert call_command('file_archive', config, skip=0) == 0
+    return config
+
+
+def test_file_import(api_user, db, archived):
+    config = archived
+
+    # Nothing has been imported yet
+    response = api_user.query_pg()
+    assert response.status_code == 200
+    assert len(response.json()['rows']) == 0
+    assert ImportFile.objects.get().status == ImportFile.Status.PENDING
+
+    # Import the archived file
+    assert call_command('file_import', config) == 0
+    response = api_user.query_pg()
+    assert len(response.json()['rows']) == 168
+    obj = ImportFile.objects.get()
+    assert obj.status == ImportFile.Status.DONE
+    assert obj.error == ''
+    assert obj.updated_at >= obj.created_at
+
+    # A second run has nothing pending
+    assert call_command('file_import', config) == 0
+    response = api_user.query_pg()
+    assert len(response.json()['rows']) == 168
+    assert ImportFile.objects.filter(status=ImportFile.Status.DONE).count() == 1
+
+
+def test_file_import_name(db, archived):
+    # Rows of other entries are left pending
+    assert call_command('file_import', archived, name='other') == 0
+    assert ImportFile.objects.get().status == ImportFile.Status.PENDING
+
+    assert call_command('file_import', archived, name='eton2') == 0
+    assert ImportFile.objects.get().status == ImportFile.Status.DONE
+
+
+def test_file_import_permanent_error(db, archived):
+    # A corrupted archive cannot be parsed: the row is marked as error
+    config = archived
+    obj = ImportFile.objects.get()
+    archived_path(config, obj).write_bytes(b'this is not an xz file')
+
+    assert call_command('file_import', config) == 0
+    obj.refresh_from_db()
+    assert obj.status == ImportFile.Status.ERROR
+    assert obj.error != ''
+
+
+def test_file_import_transient(db, tmp_path, archived, monkeypatch):
+    config = archived
+    obj = ImportFile.objects.get()
+
+    # An entry missing from the config leaves the row pending
+    other = tmp_path / 'other.toml'
+    other.write_text('[import]\n')
+    assert call_command('file_import', other) == 0
+    obj.refresh_from_db()
+    assert obj.status == ImportFile.Status.PENDING
+
+    # An upload failure leaves the row pending
+    with monkeypatch.context() as m:
+        def fail(*args, **kwargs):
+            raise ConnectionError('database is down')
+        m.setattr('wsn.management.commands.file_import.upload2pg', fail)
+        assert call_command('file_import', config) == 0
+    obj.refresh_from_db()
+    assert obj.status == ImportFile.Status.PENDING
+
+    # A missing archived file leaves the row pending
+    archived_path(config, obj).unlink()
+    assert call_command('file_import', config) == 0
+    obj.refresh_from_db()
+    assert obj.status == ImportFile.Status.PENDING
+
+
+def test_file_import_lock(tmp_path):
+    # A second file_import run must fail loudly while another one holds
+    # the lock (e.g. overlapping cron jobs).
+    lockpath = settings.BASE_DIR / 'var' / 'run' / 'file_import.lock'
+    lockpath.parent.mkdir(parents=True, exist_ok=True)
+    config = tmp_path / 'config.toml'
+    config.write_text('[import]\n')
+
+    with open(lockpath, 'w') as lockfile:
+        fcntl.flock(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with pytest.raises(CommandError, match='another file_import run'):
+            call_command('file_import', config)
+
+
+@requires_clickhouse
+def test_file_import_clickhouse(api_user, clickhouse, db, tmp_path):
+    directory = tmp_path / 'finseflux'
+    directory.mkdir(parents=True)
+    shutil.copy(
+        DATA / 'Biomet_2019-08-23_19-05-00_8362.dat',
+        directory / 'Biomet_2019-08-23_19-05-00_8362.dat',
+    )
+
+    config = tmp_path / 'config.toml'
+    config.write_text(f'''
+[import]
+
+[import.finseflux_Biomet]
+path = "{directory}"
+pattern = "Biomet_*.dat"
+pipeline = "archive"
+''')
+
+    assert call_command('file_archive', config, skip=0) == 0
+    obj = ImportFile.objects.get()
+    assert obj.status == ImportFile.Status.PENDING
+
+    # Import the archived file into ClickHouse
+    assert call_command('file_import', config) == 0
+    obj.refresh_from_db()
+    assert obj.status == ImportFile.Status.DONE
+
+    response = api_user.query_ch('finseflux_Biomet')
+    assert response.status_code == 200
+    assert len(response.json()['rows']) == 288
 
 
 @requires_clickhouse
