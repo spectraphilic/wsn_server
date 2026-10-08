@@ -11,7 +11,7 @@ django-filter~=26.1
 djangorestframework~=3.18.0
 djangorestframework-api-key~=3.1.0
 drf-spectacular~=0.30.0
-pycryptodome~=3.23.0
+pycryptodome~=3.24.0
 tabulate~=0.10.0
 tqdm~=4.70.0
 
