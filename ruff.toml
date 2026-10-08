@@ -2,3 +2,37 @@ extend-exclude = [
     "mods/*/settings.py",
     "ansible/*/templates/*"
 ]
+
+[lint]
+# Existing code does not follow these rules, do not report them.
+ignore = [
+    "B018",
+    "B020",
+    "BLE001",
+    "C401",
+    "C403",
+    "C408",
+    "DTZ001",
+    "DTZ004",
+    "DTZ006",
+    "DTZ007",
+    "EXE001",
+    "I001",
+    "ISC004",
+    "PIE790",
+    "PLR1704",
+    "PLR1730",
+    "PLW0120",
+    "PLW0177",
+    "RUF012",
+    "RUF046",
+    "RUF059",
+    "RUF100",
+    "SIM102",
+    "SIM114",
+    "SIM115",
+    "SIM117",
+    "UP031",
+    "UP045",
+    "W605",
+]
