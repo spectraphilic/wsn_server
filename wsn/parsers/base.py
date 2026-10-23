@@ -14,7 +14,6 @@ from django.utils.functional import cached_property
 # Project
 from wsn.parsers.schemas import Schema
 
-
 logger = logging.getLogger(__name__)
 
 

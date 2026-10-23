@@ -2,10 +2,19 @@ import time
 
 # Django
 from django.conf import settings
+from django.db.models import (
+    Avg,
+    Count,
+    F,
+    FloatField,
+    Max,
+    Min,
+    Q,
+    StdDev,
+    Sum,
+    Variance,
+)
 from django.db.models.fields.json import KeyTextTransform
-from django.db.models import FloatField
-from django.db.models import Q, F
-from django.db.models import Avg, Count, Max, Min, StdDev, Sum, Variance
 from django.db.models.functions import Cast
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
@@ -17,10 +26,13 @@ from rest_framework import generics, views
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
+
+from wsn import tasks
+
 # Project
 from wsn.clickhouse import ClickHouse
 from wsn.models import Frame, Metadata
-from wsn import tasks
+
 from . import permissions, serializers
 
 

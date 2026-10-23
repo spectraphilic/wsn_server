@@ -1,9 +1,9 @@
 # Standard Library
 import contextlib
-from datetime import datetime
 import pathlib
 import re
 import zipfile
+from datetime import datetime
 
 # Requirements
 import tqdm
@@ -11,10 +11,11 @@ import tqdm
 # Django
 from django.core.management.base import BaseCommand
 
+from wsn import utils
+
 # Project
 from wsn.parsers import waspmote
 from wsn.settings import WSN_MIN_DATE
-from wsn import utils
 
 
 class Directory:

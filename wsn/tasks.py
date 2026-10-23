@@ -19,7 +19,6 @@ from django.conf import settings
 from .models import Frame, frame_to_database
 from .parsers import waspmote
 
-
 logger = get_task_logger(__name__)
 
 
@@ -60,7 +59,7 @@ def archive(entry_name, envelop):
     assert 'received' in envelop
 
     # File path where the file will be saved
-    dt = datetime.datetime.fromtimestamp(envelop['received'], datetime.timezone.utc)
+    dt = datetime.datetime.fromtimestamp(envelop['received'], datetime.UTC)
     filepath = os.path.join(
         settings.WSN_DATA_DIR,
         entry_name,

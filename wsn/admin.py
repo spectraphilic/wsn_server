@@ -1,12 +1,9 @@
 # Django
 from django.contrib import admin
-
 from rangefilter.filters import DateRangeFilter
 
 # Project
-from . import models
-from . import utils
-
+from . import models, utils
 
 #
 # Filters

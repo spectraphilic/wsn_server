@@ -3,10 +3,9 @@ import fnmatch
 import os
 import pathlib
 import time
+import tomllib
 import traceback
 import zipfile
-
-import tomllib
 
 # Django
 from django.conf import settings

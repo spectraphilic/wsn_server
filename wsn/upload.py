@@ -6,8 +6,7 @@ from django.conf import settings
 
 # App
 from wsn.clickhouse import ClickHouse
-from wsn.models import Metadata, Frame
-
+from wsn.models import Frame, Metadata
 
 ARCHIVE = os.path.join(settings.BASE_DIR, 'var', 'archive')
 

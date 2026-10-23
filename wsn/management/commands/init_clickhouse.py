@@ -4,9 +4,10 @@ import lzma
 import os
 import traceback
 
+import tqdm
+
 # Requirements
 from django.core.management.base import BaseCommand
-import tqdm
 
 # Project
 from wsn.parsers.base import EmptyError, TruncatedError
@@ -94,8 +95,8 @@ class Command(BaseCommand):
                 upload2ch(dirname, metadata, add_fields, add_rows)
                 add_fields = set()
                 add_rows = []
-        else:
-            upload2ch(dirname, metadata, add_fields, add_rows)
+
+        upload2ch(dirname, metadata, add_fields, add_rows)
 
 
     def handle(self, *args, **kw):

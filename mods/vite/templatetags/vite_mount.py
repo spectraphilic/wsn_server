@@ -4,7 +4,6 @@ from django.template import Library
 # Requirements
 from django_vite.templatetags.django_vite import DjangoViteAssetLoader
 
-
 register = Library()
 
 @register.inclusion_tag('vite/vite_mount.html')

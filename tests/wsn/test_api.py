@@ -1,6 +1,6 @@
 # Standard Library
-from datetime import datetime, timezone
 import time
+from datetime import UTC, datetime
 
 # Project
 from wsn.models import Frame
@@ -20,7 +20,7 @@ def test_create_time_required(api_user, db):
 
 
 def test_create_time_badtype(api_user, db):
-    ts = datetime.now(timezone.utc)
+    ts = datetime.now(UTC)
     response = api_user.create({
         'tags': {'serial': 42},
         'frames':

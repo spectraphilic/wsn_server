@@ -3,7 +3,7 @@ from datetime import datetime
 from time import time
 
 # Django
-from django.db.models import Func, DateField
+from django.db.models import DateField, Func
 
 
 def attrs(**kw):

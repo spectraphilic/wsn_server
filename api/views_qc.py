@@ -1,11 +1,11 @@
 # Rest framework
-from rest_framework import generics, response
 from django_filters import rest_framework as filters
+from rest_framework import generics, response
+
+from qc.models import Data, Node
 
 # Project
-from . import permissions
-from . import serializers
-from qc.models import Node, Data
+from . import permissions, serializers
 
 
 class QCUploadView(generics.GenericAPIView):

@@ -1,6 +1,5 @@
-from tqdm import tqdm
-
 from django.core.management.base import BaseCommand
+from tqdm import tqdm
 
 from wsn.models import Frame
 

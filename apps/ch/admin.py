@@ -3,8 +3,7 @@ import datetime
 from django.contrib import admin
 from rangefilter.filters import DateTimeRangeFilter
 
-from . import models
-from . import models_unmanaged
+from . import models, models_unmanaged
 
 
 def get_fields(model, replace=None):
@@ -41,7 +40,7 @@ def make_readonly_admin_with_formatted_timestamp(model_class, timestamp_field='t
             # Optional: handle milliseconds (remove if all timestamps are in seconds)
             if ts_value > 1e10:
                 ts_value /= 1000
-            dt = datetime.datetime.fromtimestamp(ts_value, tz=datetime.timezone.utc)
+            dt = datetime.datetime.fromtimestamp(ts_value, tz=datetime.UTC)
             return dt.strftime('%Y-%m-%d %H:%M:%S')
 
     DynamicTimestampAdmin.__name__ = f'{model_class.__name__}Admin'

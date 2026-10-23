@@ -5,7 +5,6 @@ from wsn.parsers.cr6 import CR6Parser
 from wsn.parsers.licor import LicorParser
 from wsn.parsers.sommer import SommerParser
 
-
 PARSERS = {
     '.csv': SommerParser, # Sommer MRL-7
     '.dat': CR6Parser,

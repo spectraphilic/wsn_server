@@ -18,7 +18,6 @@ from django.core.management.base import CommandError
 # Project
 from wsn.models import ImportFile
 
-
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
     has_clickhouse = sock.connect_ex(('', 9000)) == 0
 

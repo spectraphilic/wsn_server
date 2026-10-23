@@ -7,11 +7,11 @@ This means it doesn't work with:
 """
 
 from datetime import datetime
-from tabulate import tabulate
 
 from django.core.management.base import BaseCommand
-from wsn.models import Frame
+from tabulate import tabulate
 
+from wsn.models import Frame
 
 NAME = 'sw-002'
 #NAME = 'v15@CS'

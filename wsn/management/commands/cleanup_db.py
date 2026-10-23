@@ -7,7 +7,6 @@ from django.db import transaction
 # Project
 from wsn.models import Frame, Metadata
 
-
 logger = logging.getLogger(__name__)
 
 DELETE = [

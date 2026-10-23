@@ -1,11 +1,9 @@
 import math
 
+from django.core.management.base import BaseCommand
 from tabulate import tabulate
 
-from django.core.management.base import BaseCommand
-
 from wsn.models import Frame
-
 
 MAX = 1500000 # Maximum number of rows to analyse
 MIN = 100000 # Minimum number of occurrences to print

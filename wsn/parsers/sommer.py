@@ -7,9 +7,7 @@ import os
 import re
 
 # Project
-from wsn.parsers.base import CSVParser
-from wsn.parsers.base import EmptyError, TruncatedError, parse_filename_date
-
+from wsn.parsers.base import CSVParser, EmptyError, TruncatedError, parse_filename_date
 
 logger = logging.getLogger(__name__)
 
@@ -109,5 +107,5 @@ class SommerParser(CSVParser):
     def _parse_time(self, data):
         value = data.pop('TIMESTAMP') # 2019-12-11 11:32:00
         time = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-        time = time.replace(tzinfo=datetime.timezone.utc)
+        time = time.replace(tzinfo=datetime.UTC)
         return time, data

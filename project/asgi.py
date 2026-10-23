@@ -17,10 +17,12 @@ application = get_asgi_application()
 
 
 # WebSockets support requires Django channels
-from django.conf import settings # noqa: E402
+from django.conf import settings  # noqa: E402
+
 if 'channels' in settings.INSTALLED_APPS:
     from channels.auth import AuthMiddlewareStack
     from channels.routing import ProtocolTypeRouter, URLRouter
+
     from .urls_ws import urlpatterns
 
     router = URLRouter(urlpatterns)

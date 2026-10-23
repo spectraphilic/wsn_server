@@ -4,10 +4,14 @@ from django.urls import path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
 
 # Project
-from .views_qc import QCUploadView, QCDownloadView
-from .views_wsn import CreateView, IridiumView, MeshliumView
-from .views_wsn import QueryPostgreSQL, QueryClickHouse
-
+from .views_qc import QCDownloadView, QCUploadView
+from .views_wsn import (
+    CreateView,
+    IridiumView,
+    MeshliumView,
+    QueryClickHouse,
+    QueryPostgreSQL,
+)
 
 app_name = 'api'
 

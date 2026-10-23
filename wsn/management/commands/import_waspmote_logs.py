@@ -1,19 +1,19 @@
 # Standard Library
 import collections
-from decimal import Decimal
 import itertools
 import logging
+from decimal import Decimal
 from pathlib import Path
 
 # Django
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from wsn import utils
+
 # Project
 from wsn.models import Frame
 from wsn.parsers import waspmote
-from wsn import utils
-
 
 logger = logging.getLogger(__name__)
 

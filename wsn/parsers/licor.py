@@ -33,7 +33,7 @@ def zip_to_tar_xz(zip_path, tar_xz_path):
             # Assume it's UTC (TODO Parse the UT extra field)
             if hasattr(file_info, 'date_time'):
                 dt_tuple = file_info.date_time
-                dt_utc = datetime.datetime(*dt_tuple, tzinfo=datetime.timezone.utc)
+                dt_utc = datetime.datetime(*dt_tuple, tzinfo=datetime.UTC)
                 tar_info.mtime = int(dt_utc.timestamp())
 
             # Add file to tar
@@ -128,7 +128,7 @@ class DataFile:
             time, ms = row[i_time].rsplit(':', 1)
             dt = datetime.datetime.strptime(date + time, '%Y-%m-%d%H:%M:%S')
             dt = dt.replace(microsecond=int(ms) * 1000)
-            dt = dt.replace(tzinfo=datetime.timezone.utc)
+            dt = dt.replace(tzinfo=datetime.UTC)
             # TODO Assert it matches Seconds/Nanoseconds
             return dt
 

@@ -5,12 +5,11 @@ import datetime
 # Requirements
 import pytest
 from rest_framework.reverse import reverse
-
 from rest_framework.test import APIClient
 from rest_framework_api_key.models import APIKey
 
 # Project
-from qc.models import Site, Node, Data
+from qc.models import Data, Node, Site
 
 
 @pytest.fixture(scope='module')

@@ -16,7 +16,6 @@ import socket
 # Project
 from project.settings_ansible import *
 
-
 # Applications
 INSTALLED_APPS += [
     'django.contrib.postgres',  # Required to use GinIndex

@@ -12,8 +12,6 @@ import struct
 # Requirements
 from Crypto.Cipher import AES
 
-
-
 logger = logging.getLogger(__name__)
 
 class ParseError(ValueError):
@@ -27,11 +25,9 @@ def post_noop(name, value):
     return value
 
 def post_acc(name, value):
-    if (value > 1000):
-        value = 1000
+    value = min(value, 1000)
 
-    if (value < -1000):
-        value = -1000
+    value = max(value, -1000)
 
     return (180/math.pi) * math.asin(value/1000)
 

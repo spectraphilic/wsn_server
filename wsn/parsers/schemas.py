@@ -1,12 +1,11 @@
 import dataclasses
 import math
-from typing import Optional
 
 
 @dataclasses.dataclass
 class Field:
     type: str = 'Float64 DEFAULT NaN'
-    source: Optional[str] = None  # original name in source file
+    source: str | None = None  # original name in source file
 
 
 SCHEMAS = {

@@ -27,7 +27,7 @@ def get_value(schema, name, value):
         return parse_datetime(value)
     elif datatype.startswith('DateTime'):
         value = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-        return value.replace(tzinfo=datetime.timezone.utc)
+        return value.replace(tzinfo=datetime.UTC)
 
     return value
 

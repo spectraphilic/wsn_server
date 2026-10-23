@@ -6,9 +6,7 @@ import os
 import sys
 
 # Project
-from wsn.parsers.base import CSVParser
-from wsn.parsers.base import EmptyError, TruncatedError
-
+from wsn.parsers.base import CSVParser, EmptyError, TruncatedError
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +17,11 @@ def parse_datetime(value):
     for fmt in formats:
         try:
             value = datetime.datetime.strptime(value, fmt)
-            return value.replace(tzinfo=datetime.timezone.utc)
+            return value.replace(tzinfo=datetime.UTC)
         except ValueError:
             pass
-    else:
-        raise ValueError(f'Failed to parse "{value}" timestamp')
+
+    raise ValueError(f'Failed to parse "{value}" timestamp')
 
 
 class CR6Parser(CSVParser):

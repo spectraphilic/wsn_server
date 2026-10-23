@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 from zipfile import BadZipFile
 
@@ -77,7 +77,7 @@ def test_cr6(datadir):
     fields = set(fields)
     fields.remove('TIMESTAMP')
     for time, data in rows:
-        assert type(time) is datetime and time.tzinfo == timezone.utc
+        assert type(time) is datetime and time.tzinfo == UTC
         assert type(data) is dict
         assert fields == set(data)
 
@@ -102,14 +102,14 @@ def test_cr6_myr1_sonic_mapping(tmp_path):
     assert len(rows) == 2
 
     time, data = rows[0]
-    assert time == datetime(2026, 6, 23, 10, 43, 18, 200000, tzinfo=timezone.utc)
+    assert time == datetime(2026, 6, 23, 10, 43, 18, 200000, tzinfo=UTC)
     assert data['Ux'] == 0.96
     assert data['Uy'] == 0.03
     assert data['Uz'] == 0.1
     assert data['Ts'] == 20.28
 
     time, data = rows[1]
-    assert time == datetime(2026, 6, 23, 10, 43, 18, 250000, tzinfo=timezone.utc)
+    assert time == datetime(2026, 6, 23, 10, 43, 18, 250000, tzinfo=UTC)
     assert data['Ux'] == 0.97
     assert data['Uy'] == 0.13
     assert data['Uz'] == 0.06
@@ -142,7 +142,7 @@ def test_licor():
     fields = set(fields)
     fields.remove('TIMESTAMP')
     for time, data in rows:
-        assert type(time) is datetime and time.tzinfo == timezone.utc
+        assert type(time) is datetime and time.tzinfo == UTC
         assert type(data) is dict
         assert fields == set(data)
 
@@ -169,6 +169,6 @@ def test_sommer():
     fields = set(fields)
     fields.remove('TIMESTAMP')
     for time, data in rows:
-        assert type(time) is datetime and time.tzinfo == timezone.utc
+        assert type(time) is datetime and time.tzinfo == UTC
         assert type(data) is dict
         assert fields == set(data)

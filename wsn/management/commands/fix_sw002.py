@@ -7,9 +7,9 @@ This means it doesn't work with:
 """
 
 from django.core.management.base import BaseCommand
-from wsn.models import Frame
 from wsn.api_4g import postfix
 
+from wsn.models import Frame
 
 NAME = 'sw-002'
 #NAME = 'v15@CS'
