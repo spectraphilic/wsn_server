@@ -28,7 +28,10 @@ def parse_archived_date(name):
 def get_parser(name):
     """
     Return the parser for an archived filename, e.g. 'name.dat.xz' or
-    'name.ghg.tar.xz'. Returns None if no parser matches.
+    'name.tar.xz' (only Licor archives as tar.xz). Returns None if no parser
+    matches.
     """
-    inner = name.removesuffix('.xz').removesuffix('.tar')
+    inner = name.removesuffix('.xz')
+    if inner.endswith('.tar'):
+        return LicorParser
     return PARSERS.get(pathlib.Path(inner).suffix)

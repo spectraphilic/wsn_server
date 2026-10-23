@@ -66,14 +66,16 @@ def get_archive_dir_path(filepath, import_dir=None):
 def unarchive(src, dirpath):
     """
     Extract an archived file into dirpath (which must exist), restoring its
-    original form: 'name.dat.xz' -> 'name.dat', 'name.ghg.tar.xz' ->
-    'name.ghg' (the zip is rebuilt from the tar members, see
-    LicorParser.archive()). Returns the path of the extracted file.
+    original form: 'name.dat.xz' -> 'name.dat', 'name.tar.xz' -> 'name.ghg'
+    (the zip is rebuilt from the tar members, see LicorParser.archive()).
+    Returns the path of the extracted file.
     """
     src = Path(src)
     name = src.name.removesuffix('.xz')
     if name.endswith('.tar'):
-        dst = Path(dirpath) / name.removesuffix('.tar')
+        # Only Licor archives as tar.xz; the archived name is <name>.tar.xz,
+        # the original .ghg suffix is not preserved, restore it
+        dst = Path(dirpath) / (name.removesuffix('.tar') + '.ghg')
         with tarfile.open(src, 'r:xz') as tar, zipfile.ZipFile(dst, 'w') as zf:
             for member in tar.getmembers():
                 if member.isfile():

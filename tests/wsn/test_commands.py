@@ -17,6 +17,7 @@ from django.core.management.base import CommandError
 
 # Project
 from wsn.models import ImportFile
+from wsn.parsers.cr6 import CR6Parser
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
     has_clickhouse = sock.connect_ex(('', 9000)) == 0
@@ -426,6 +427,90 @@ pipeline = "archive"
     response = api_user.query_ch('finseflux_Biomet')
     assert response.status_code == 200
     assert len(response.json()['rows']) == 288
+
+
+def test_file_register(db, tmp_path):
+    directory = tmp_path / 'data'
+    (directory / 'archive' / '2019' / '05').mkdir(parents=True)
+    (directory / 'archive' / '2020' / '01').mkdir(parents=True)
+    # A CR6 and a Licor archive
+    (directory / 'archive' / '2019' / '05' / 'Biomet_2019-05-01_00-00-00_1.dat.xz').touch()
+    (directory / 'archive' / '2020' / '01' / '2018-05-07T160000_Flux.tar.xz').touch()
+    # Unknown suffix, gets no row
+    (directory / 'archive' / '2020' / '01' / 'notes.bin.xz').touch()
+
+    config = tmp_path / 'config.toml'
+    config.write_text(f'''
+[import]
+
+[import.test]
+path = "{directory}"
+pattern = "*.dat"
+pipeline = "archive"
+
+[import.old_entry]
+path = "{directory}"
+pattern = "*.dat"
+''')
+
+    assert call_command('file_register', config) == 0
+    assert ImportFile.objects.count() == 2
+    assert ImportFile.objects.filter(name='test').count() == 2
+
+    # Idempotent
+    assert call_command('file_register', config) == 0
+    assert ImportFile.objects.count() == 2
+
+
+def test_file_register_import(api_user, db, tmp_path):
+    # Simulate the migration of a logger from the old pipeline: files have
+    # been archived without rows, file_register completes the ledger and
+    # file_import imports the data.
+    directory = tmp_path / 'eton2'
+    directory.mkdir(parents=True)
+    for path in ETON2.iterdir():
+        shutil.copy(path, directory / path.name)
+
+    config = tmp_path / 'config.toml'
+    config.write_text(f'''
+[import]
+
+[import.eton2]
+path = "{directory}"
+pattern = "*.dat"
+database = "postgres"
+pipeline = "archive"
+''')
+
+    # The old pipeline archives files without registering them
+    for path in directory.iterdir():
+        parser = CR6Parser(path)
+        parser.parse()
+        parser.archive()
+    assert ImportFile.objects.count() == 0
+
+    assert call_command('file_register', config) == 0
+    assert ImportFile.objects.count() == len(list(ETON2.iterdir()))
+    assert ImportFile.objects.filter(status=ImportFile.Status.PENDING).count() == len(list(ETON2.iterdir()))
+
+    assert call_command('file_import', config) == 0
+    response = api_user.query_pg()
+    assert len(response.json()['rows']) == 168
+    assert ImportFile.objects.filter(status=ImportFile.Status.DONE).count() == len(list(ETON2.iterdir()))
+
+
+def test_file_register_lock(tmp_path):
+    # A second file_register run must fail loudly while another one holds
+    # the lock (e.g. overlapping cron jobs).
+    lockpath = settings.BASE_DIR / 'var' / 'run' / 'file_register.lock'
+    lockpath.parent.mkdir(parents=True, exist_ok=True)
+    config = tmp_path / 'config.toml'
+    config.write_text('[import]\n')
+
+    with open(lockpath, 'w') as lockfile:
+        fcntl.flock(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with pytest.raises(CommandError, match='another file_register run'):
+            call_command('file_register', config)
 
 
 @requires_clickhouse

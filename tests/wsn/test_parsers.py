@@ -1,12 +1,14 @@
 from datetime import UTC, date, datetime
 from pathlib import Path
 from zipfile import BadZipFile
+import shutil
 
 # Requirements
 import pytest
 
 # Project
-from wsn.parsers.base import EmptyError, TruncatedError, parse_filename_date
+from wsn.parsers import get_parser
+from wsn.parsers.base import EmptyError, TruncatedError, parse_filename_date, unarchive
 from wsn.parsers.cr6 import CR6Parser
 from wsn.parsers.licor import LicorParser
 from wsn.parsers.schemas import Schema
@@ -145,6 +147,45 @@ def test_licor():
         assert type(time) is datetime and time.tzinfo == UTC
         assert type(data) is dict
         assert fields == set(data)
+
+
+def test_get_parser():
+    assert get_parser('HFData_2025-06-10_15-10-00_2894.dat.xz') is CR6Parser
+    assert get_parser('17170060_19-12-11T12-01-49.csv.xz') is SommerParser
+    # Only Licor archives as tar.xz, and without the .ghg suffix
+    assert get_parser('2018-05-07T160000_LATICE-Flux_Finse.tar.xz') is LicorParser
+    assert get_parser('whatever.bin.xz') is None
+
+
+def test_licor_archive_round_trip(tmp_path):
+    # Archiving a .ghg file converts it to .ghg.tar.xz (LicorParser.archive);
+    # unarchive() must restore a file that parses identically, this is the
+    # path file_import relies on.
+    name = '2018-05-07T160000_LATICE-Flux_Finse.ghg'
+    ghg = tmp_path / name
+    shutil.copy(f'tests/data/licor/raw/{name}', ghg)
+
+    parser = LicorParser(ghg)
+    metadata1, fields1, rows1 = parser.parse()
+
+    # Archive: the source is removed, a .tar.xz is created under archive/,
+    # e.g. 'X.ghg' is archived as 'X.tar.xz'
+    relpath = LicorParser.get_archive_relpath(ghg)
+    assert relpath == Path('2018/05') / f'{name.removesuffix(".ghg")}.tar.xz'
+    dst = parser.archive()
+    assert not ghg.exists()
+    assert dst == tmp_path / 'archive' / relpath
+
+    # Unarchive and parse again: identical result
+    out = tmp_path / 'restored'
+    out.mkdir()
+    ghg2 = unarchive(dst, out)
+    assert ghg2.name == name
+    metadata2, fields2, rows2 = LicorParser(ghg2).parse()
+
+    assert metadata2 == metadata1
+    assert fields2 == fields1
+    assert rows2 == rows1
 
 
 def test_sommer_archive_date():
