@@ -131,8 +131,9 @@ class Command(BaseCommand):
                 if name and table_name != name:
                     continue
 
-                # Entries handled by the file_archive command
-                if values.get('pipeline') == 'archive':
+                # Entries of the new pipeline are handled by the file_archive
+                # command (with file_import); an empty value disables the entry
+                if values.get('pipeline', 'import_first') != 'import_first':
                     continue
 
                 # Proceed

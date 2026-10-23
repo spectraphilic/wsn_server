@@ -149,7 +149,7 @@ def test_file_archive(db, tmp_path):
 [import.test]
 path = "{directory}"
 pattern = "*.dat"
-pipeline = "archive"
+pipeline = "archive_first"
 ''')
 
     # Test skipping files
@@ -196,12 +196,12 @@ def test_file_archive_duplicate(db, tmp_path):
 [import.test_a]
 path = "{directory}"
 pattern = "*.dat"
-pipeline = "archive"
+pipeline = "archive_first"
 
 [import.test_b]
 path = "{directory}"
 pattern = "*.dat"
-pipeline = "archive"
+pipeline = "archive_first"
 ''')
 
     # Archive under the first entry
@@ -223,43 +223,156 @@ pipeline = "archive"
     assert ImportFile.objects.filter(name='test_b').count() == 1
 
 
-def test_file_archive_pipeline(db, tmp_path):
-    # Entries with pipeline="archive" are handled by file_archive only,
-    # entries without it are handled by import_file only.
-    directory = tmp_path / 'data'
-    directory.mkdir(parents=True)
-
-    old_file = directory / 'old_Eton2_2018-01-01_00-00-00_1.dat'
+def test_file_archive_pipeline(db, tmp_path, capsys):
+    # Entries with pipeline="archive_first" are handled by file_archive only,
+    # entries with pipeline="archive_only" are archived but never imported,
+    # entries without a pipeline key or with pipeline="import_first" are
+    # handled by import_file only, and an empty value disables the entry.
+    old_dir = tmp_path / 'old'
+    old_dir.mkdir()
+    old_file = old_dir / 'Eton2_2018-01-01_00-00-00_1.dat'
     old_file.touch()
-    new_file = directory / 'new_HFData_2025-06-10_15-10-00_2894.dat'
+
+    new_dir = tmp_path / 'new'
+    new_dir.mkdir()
+    new_file = new_dir / 'new_HFData_2025-06-10_15-10-00_2894.dat'
     shutil.copy(DATA / 'HFData_2025-06-10_15-10-00_2894.dat', new_file)
+
+    ao_dir = tmp_path / 'archive_only'
+    ao_dir.mkdir()
+    ao_file = ao_dir / 'ao_HFData_2025-06-10_15-10-00_2894.dat'
+    shutil.copy(DATA / 'HFData_2025-06-10_15-10-00_2894.dat', ao_file)
+
+    disabled_dir = tmp_path / 'disabled'
+    disabled_dir.mkdir()
+    disabled_file = disabled_dir / 'disabled_HFData_2025-06-10_15-10-00_2894.dat'
+    shutil.copy(DATA / 'HFData_2025-06-10_15-10-00_2894.dat', disabled_file)
+
+    typo_dir = tmp_path / 'typo'
+    typo_dir.mkdir()
+    typo_file = typo_dir / 'typo_HFData_2025-06-10_15-10-00_2894.dat'
+    shutil.copy(DATA / 'HFData_2025-06-10_15-10-00_2894.dat', typo_file)
 
     config = tmp_path / 'config.toml'
     config.write_text(f'''
 [import]
 
 [import.old_entry]
-path = "{directory}"
-pattern = "old_*.dat"
+path = "{old_dir}"
+pattern = "*.dat"
 
 [import.new_entry]
-path = "{directory}"
-pattern = "new_*.dat"
-pipeline = "archive"
+path = "{new_dir}"
+pattern = "*.dat"
+pipeline = "archive_first"
+
+[import.ao_entry]
+path = "{ao_dir}"
+pattern = "*.dat"
+pipeline = "archive_only"
+
+[import.disabled_entry]
+path = "{disabled_dir}"
+pattern = "*.dat"
+pipeline = ""
+
+[import.typo_entry]
+path = "{typo_dir}"
+pattern = "*.dat"
+pipeline = "archve_first"
 ''')
 
-    # file_archive processes only pipeline="archive" entries
+    # file_archive processes only archive_first and archive_only entries
     assert call_command('file_archive', config, skip=0) == 0
     assert old_file.exists()
     assert not new_file.exists()
     assert is_archived(new_file)
+    assert not ao_file.exists()
+    assert is_archived(ao_file)
+    # The archive_only file is registered nowhere
     assert ImportFile.objects.count() == 1
+    # Disabled and unknown entries are left alone, the typo is reported
+    assert disabled_file.exists()
+    assert typo_file.exists()
+    assert 'unknown pipeline value' in capsys.readouterr().err
 
-    # import_file skips pipeline="archive" entries
+    # import_file skips entries with a pipeline key other than import_first
     assert call_command('import_file', config, skip=0) == 0
     assert not old_file.exists() # Deleted, it is empty
     assert is_archived(new_file)
+    assert disabled_file.exists()
+    assert typo_file.exists()
     assert ImportFile.objects.count() == 1
+
+    # file_register only walks archive_first entries
+    assert call_command('file_register', config) == 0
+    assert ImportFile.objects.count() == 1
+
+
+def test_import_file_pipeline(db, tmp_path):
+    # pipeline = "import_first" selects the old pipeline explicitly, and an
+    # empty value disables the entry; both are different from the key being
+    # absent.
+    directory = tmp_path / 'data'
+    directory.mkdir()
+    first = directory / 'first_Eton2_2018-01-01_00-00-00_1.dat'
+    first.touch()
+    disabled = directory / 'disabled_Eton2_2018-01-01_00-00-00_2.dat'
+    disabled.touch()
+
+    config = tmp_path / 'config.toml'
+    config.write_text(f'''
+[import]
+
+[import.first_entry]
+path = "{directory}"
+pattern = "first_*.dat"
+pipeline = "import_first"
+
+[import.disabled_entry]
+path = "{directory}"
+pattern = "disabled_*.dat"
+pipeline = ""
+''')
+
+    assert call_command('import_file', config, skip=0) == 0
+    assert not first.exists() # Deleted, it is empty
+    assert disabled.exists()
+    assert ImportFile.objects.count() == 0
+
+
+def test_file_archive_only(db, tmp_path):
+    # Entries with pipeline="archive_only" are archived but not registered;
+    # quarantine behavior is the same as for pipeline="archive".
+    directory = tmp_path / 'finseflux'
+    directory.mkdir(parents=True)
+
+    good = directory / 'HFData_2025-06-10_15-10-00_2894.dat'
+    shutil.copy(DATA / good.name, good)
+    truncated = directory / 'Biomet_2019-08-23_19-05-00_8362_truncated.dat'
+    shutil.copy(DATA / truncated.name, truncated)
+
+    config = tmp_path / 'config.toml'
+    config.write_text(f'''
+[import]
+
+[import.test]
+path = "{directory}"
+pattern = "*.dat"
+pipeline = "archive_only"
+''')
+
+    assert call_command('file_archive', config, skip=0) == 0
+
+    # Archived but not registered
+    assert not good.exists()
+    assert is_archived(good)
+    assert ImportFile.objects.count() == 0
+
+    # Quarantine unchanged
+    assert not truncated.exists()
+    assert Path(f'{truncated}.truncated').exists()
+    assert ImportFile.objects.count() == 0
 
 
 def test_file_archive_lock(tmp_path):
@@ -303,7 +416,7 @@ def archived(tmp_path):
 path = "{directory}"
 pattern = "*.dat"
 database = "postgres"
-pipeline = "archive"
+pipeline = "archive_first"
 ''')
     assert call_command('file_archive', config, skip=0) == 0
     return config
@@ -412,7 +525,7 @@ def test_file_import_clickhouse(api_user, clickhouse, db, tmp_path):
 [import.finseflux_Biomet]
 path = "{directory}"
 pattern = "Biomet_*.dat"
-pipeline = "archive"
+pipeline = "archive_first"
 ''')
 
     assert call_command('file_archive', config, skip=0) == 0
@@ -446,7 +559,7 @@ def test_file_register(db, tmp_path):
 [import.test]
 path = "{directory}"
 pattern = "*.dat"
-pipeline = "archive"
+pipeline = "archive_first"
 
 [import.old_entry]
 path = "{directory}"
@@ -479,7 +592,7 @@ def test_file_register_import(api_user, db, tmp_path):
 path = "{directory}"
 pattern = "*.dat"
 database = "postgres"
-pipeline = "archive"
+pipeline = "archive_first"
 ''')
 
     # The old pipeline archives files without registering them

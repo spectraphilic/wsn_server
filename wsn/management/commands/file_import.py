@@ -34,8 +34,12 @@ class Command(BaseCommand):
     def handle_row(self, obj, config):
         name = obj.name
         values = config.get(name)
-        if not isinstance(values, dict) or values.get('pipeline') != 'archive':
+        if not isinstance(values, dict):
             self.stderr.write(f"{name}:{obj.path} ERROR no matching entry in the config file, left pending")
+            return
+
+        if values.get('pipeline', 'import_first') != 'archive_first':
+            self.stderr.write(f"{name}:{obj.path} ERROR entry is not pipeline = \"archive_first\", left pending")
             return
 
         directory = pathlib.Path(values['path'])

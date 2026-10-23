@@ -23,8 +23,10 @@ class Command(BaseCommand):
     """
     Archive data files and register them in the wsn_importfile table.
 
-    The data itself is not imported here; that is done later by the
-    file_import command, which marks the rows as done.
+    Entries with pipeline = "archive_first" are archived and registered; the
+    data itself is imported later by the file_import command, which marks the
+    rows as done. Entries with pipeline = "archive_only" are archived without
+    registering them, their data is never imported.
     """
 
     def add_arguments(self, parser):
@@ -34,7 +36,7 @@ class Command(BaseCommand):
             help='Skip files modified within the last given minutes (default 10)',
         )
 
-    def handle_file(self, filepath, stat, name, schema, strict):
+    def handle_file(self, filepath, stat, name, schema, strict, archive_only=False):
         Parser = PARSERS.get(filepath.suffix)
         if Parser is None:
             return
@@ -49,17 +51,19 @@ class Command(BaseCommand):
         # The archive path is fully determined by the filename, so we can
         # check whether the file was already archived before parsing it.
         # This happens when a file with the same name is re-uploaded within
-        # the same month.
-        try:
-            relpath = Parser.get_archive_relpath(filepath)
-        except ValueError:
-            self.stderr.write(f"{filepath} WARNING cannot archive, no date in filename")
-            return
+        # the same month. Archive-only entries have no rows, so a re-uploaded
+        # file is archived again, as in the old pipeline.
+        if not archive_only:
+            try:
+                relpath = Parser.get_archive_relpath(filepath)
+            except ValueError:
+                self.stderr.write(f"{filepath} WARNING cannot archive, no date in filename")
+                return
 
-        path = str(relpath)
-        if ImportFile.objects.filter(name=name, path=path).exists():
-            self.stdout.write(f"{filepath} already archived, skipped")
-            return
+            path = str(relpath)
+            if ImportFile.objects.filter(name=name, path=path).exists():
+                self.stdout.write(f"{filepath} already archived, skipped")
+                return
 
         if type(schema) is str:
             schema = Schema(schema, strict)
@@ -104,9 +108,12 @@ class Command(BaseCommand):
         self.stdout.write(f"{filepath} file archived to {dst}")
 
         # Register the file; it will be imported by the file_import command
-        _, created = ImportFile.objects.get_or_create(name=name, path=path)
-        if not created:
-            self.stderr.write(f"{filepath} WARNING already registered by another run")
+        if archive_only:
+            self.stdout.write(f"{filepath} archived only, not registered")
+        else:
+            _, created = ImportFile.objects.get_or_create(name=name, path=path)
+            if not created:
+                self.stderr.write(f"{filepath} WARNING already registered by another run")
 
         # Print statistics
         compressed_size = os.path.getsize(dst)
@@ -140,8 +147,15 @@ class Command(BaseCommand):
                 if not isinstance(values, dict):
                     continue
 
-                # Only entries of the new pipeline
-                if values.get('pipeline') != 'archive':
+                # The new pipeline handles "archive_first" and "archive_only"
+                # entries, the old pipeline is selected explicitly with
+                # "import_first" (also the default when the key is absent),
+                # and an empty value disables the entry
+                pipeline = values.get('pipeline', 'import_first')
+                if pipeline not in ('archive_first', 'archive_only'):
+                    if pipeline not in ('import_first', ''):
+                        self.stderr.write(
+                            f"{entry_name}: WARNING unknown pipeline value {pipeline!r}")
                     continue
 
                 if name and entry_name != name:
@@ -161,6 +175,8 @@ class Command(BaseCommand):
 
                     filepath = pathlib.Path(entry.path)
                     if fnmatch.fnmatch(filepath.name, pattern):
-                        self.handle_file(filepath, entry.stat(), entry_name, schema, strict)
+                        self.handle_file(filepath, entry.stat(), entry_name,
+                                         schema, strict,
+                                         archive_only=(pipeline == 'archive_only'))
 
         return 0

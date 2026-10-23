@@ -356,6 +356,8 @@ class ImportFile(models.Model):
     """
     A file archived by the import pipeline.
 
+    Files archived by entries with pipeline = "archive_only" are not tracked.
+
     The primary key is the natural key: name is the entry name in the import
     configuration, path is the archive path relative to the entry's archive
     directory, e.g. '2026/10/Status_2026-10-08_14-30-00_70999.dat.xz'.

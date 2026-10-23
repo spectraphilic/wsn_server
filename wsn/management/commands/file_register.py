@@ -51,7 +51,7 @@ class Command(BaseCommand):
                     continue
 
                 # Only entries of the new pipeline
-                if values.get('pipeline') != 'archive':
+                if values.get('pipeline', 'import_first') != 'archive_first':
                     continue
 
                 if name and entry_name != name:
