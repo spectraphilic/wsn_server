@@ -73,7 +73,8 @@ class ClickHouse:
 
         return n
 
-    def upload(self, table_name, metadata, fields, rows, schema=None):
+    def upload(self, table_name, metadata, fields, rows, schema=None,
+               source_file=None):
         assert schema is not None
 
         rows2 = []
@@ -94,6 +95,13 @@ class ClickHouse:
             if field.type == 'UInt32':
                 value = int(time.timestamp())
             data[key] = value
+
+            # The archive file this row was parsed from, so rows can be
+            # traced back to their source; the same archive-relative path
+            # is used by the wsn_importfile ledger. Not a schema field, the
+            # import pipeline provides it.
+            if source_file is not None:
+                data['source_file'] = source_file
 
             rows2.append(data)
         rows = rows2
@@ -119,10 +127,18 @@ class ClickHouse:
 
         # Add new columns
         fields = set(fields)
+        if source_file is not None:
+            fields.add('source_file')
         new = fields - cols
         if new:
-            actions = ', '.join(f'ADD COLUMN {get_column(name, schema)}' for name in new)
-            self.execute(f'ALTER TABLE {table_name} {actions};')
+            actions = []
+            for name in new:
+                if name == 'source_file':
+                    # Pipeline-provided, not a schema field
+                    actions.append('ADD COLUMN source_file LowCardinality(String)')
+                else:
+                    actions.append(f'ADD COLUMN {get_column(name, schema)}')
+            self.execute(f"ALTER TABLE {table_name} {', '.join(actions)};")
 
         self.insert_rows(table_name, fields, rows)
 

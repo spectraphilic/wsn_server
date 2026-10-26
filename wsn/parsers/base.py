@@ -87,8 +87,8 @@ def validate_rows(rows, filename):
     Split (time, data) rows into good rows and bad rows based on the date in
     the filename: a row is bad if its timestamp is before the start of the
     project or more than FUTURE_WINDOW_DAYS after it. Bad rows carry a human
-    readable reason; they are dropped for now, later they may go to a
-    quarantine table.
+    readable reason; they are dropped and reported, the archive keeps them
+    recoverable.
 
     Raises ValueError if the filename contains no date.
     """

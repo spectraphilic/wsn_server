@@ -84,8 +84,7 @@ class Command(BaseCommand):
             # the project, or implausibly after the date in the filename
             # (logger clock issues). Files with no date in their name,
             # archived by the old pipeline, are imported without validation.
-            # Bad rows are reported here, later they may go to a quarantine
-            # table.
+            # Bad rows are reported here, the archive keeps them recoverable.
             try:
                 rows, bad_rows = validate_rows(rows, archived.name)
             except ValueError:
@@ -101,7 +100,8 @@ class Command(BaseCommand):
                 if database == 'postgres':
                     upload2pg(table_name, metadata, fields, rows)
                 else:
-                    upload2ch(table_name, metadata, fields, rows, schema)
+                    upload2ch(table_name, metadata, fields, rows, schema,
+                              source_file=obj.path)
             except Exception:
                 self.stderr.write(f"{archived} ERROR upload failed, left pending")
                 traceback.print_exc(file=self.stderr)

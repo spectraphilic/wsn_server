@@ -39,10 +39,11 @@ def upload2pg(table_name, metadata, fields, rows):
     return metadata
 
 
-def upload2ch(table_name, metadata, fields, rows, schema):
+def upload2ch(table_name, metadata, fields, rows, schema, source_file=None):
     if len(rows) > 0:
         with ClickHouse() as clickhouse:
-            clickhouse.upload(table_name, metadata, fields, rows, schema=schema)
+            clickhouse.upload(table_name, metadata, fields, rows, schema=schema,
+                              source_file=source_file)
 
 
 def archive(name, filename, data):

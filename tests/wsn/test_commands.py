@@ -688,7 +688,12 @@ pipeline = "archive_first"
 
     response = api_user.query_ch('finseflux_Biomet')
     assert response.status_code == 200
-    assert len(response.json()['rows']) == 288
+    json = response.json()
+    assert len(json['rows']) == 288
+    # Every row carries the archive path of its source file, the same
+    # archive-relative path used by the wsn_importfile ledger
+    index = json['columns'].index('source_file')
+    assert all(row[index] == obj.path for row in json['rows'])
 
 
 def test_file_register(db, tmp_path):
