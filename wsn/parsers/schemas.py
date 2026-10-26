@@ -94,6 +94,13 @@ SCHEMAS = {
         'Delta_Signal_Strength': Field(source='Delta Signal Strength'),
         'Flow_Rate_lpm': Field(source='Flow Rate (lpm)'),
         'CHK': Field(),
+        # A methane analyzer will be installed at Finse; until its files
+        # arrive these mappings are inert, old files have no CH4 columns
+        'CH4_mmol_m3': Field(source='CH4 (mmol/m^3)'),
+        'CH4_umol_mol': Field(source='CH4 (umol/mol)'),
+        'CH4_Temperature': Field(source='CH4 Temperature'),
+        'CH4_Pressure': Field(source='CH4 Pressure'),
+        'CH4_Signal_Strength': Field(source='CH4 Signal Strength'),
     },
     'licor_mobileflux': {
         'TIMESTAMP': Field(type="DateTime64(3, 'UTC')"),

@@ -1,6 +1,6 @@
 from datetime import UTC, date, datetime
 from pathlib import Path
-from zipfile import BadZipFile
+from zipfile import BadZipFile, ZipFile
 import shutil
 
 # Requirements
@@ -208,6 +208,50 @@ def test_licor():
         assert type(time) is datetime and time.tzinfo == UTC
         assert type(data) is dict
         assert fields == set(data)
+
+
+def test_licor_ch4(tmp_path):
+    # A methane analyzer will be installed at Finse; its .ghg files carry
+    # CH4 columns, which the licor_finseflux schema must map. The sample
+    # file predates the analyzer, so copy it and add the columns
+    src = Path('tests/data/licor/raw/2018-05-07T160000_LATICE-Flux_Finse.ghg')
+    dst = tmp_path / src.name
+
+    ch4_fields = ['CH4 (mmol/m^3)', 'CH4 (umol/mol)', 'CH4 Temperature',
+                  'CH4 Pressure', 'CH4 Signal Strength']
+    ch4_values = ['1.9', '1900.5', '25.1', '99.2', '62.0']
+    with ZipFile(src) as zin, ZipFile(dst, 'w') as zout:
+        for name in zin.namelist():
+            data = zin.read(name)
+            if name.endswith('.data') and not name.endswith('-biomet.data'):
+                lines = data.decode().splitlines(keepends=True)
+                for i, line in enumerate(lines):
+                    if line.startswith('DATAH\t'):
+                        lines[i] = line.rstrip('\r\n') + '\t' + '\t'.join(ch4_fields) + '\n'
+                    elif line.startswith('DATA\t'):
+                        lines[i] = line.rstrip('\r\n') + '\t' + '\t'.join(ch4_values) + '\n'
+                data = ''.join(lines).encode()
+            zout.writestr(name, data)
+
+    schema = Schema('licor_finseflux', strict=True)
+    parser = LicorParser(str(dst), schema=schema)
+    metadata, fields, rows = parser.parse()
+
+    for name in ['CH4_mmol_m3', 'CH4_umol_mol', 'CH4_Temperature',
+                 'CH4_Pressure', 'CH4_Signal_Strength']:
+        assert name in fields
+    time, data = rows[0]
+    assert data['CH4_mmol_m3'] == 1.9
+    assert data['CH4_umol_mol'] == 1900.5
+    assert data['CH4_Temperature'] == 25.1
+    assert data['CH4_Pressure'] == 99.2
+    assert data['CH4_Signal_Strength'] == 62.0
+
+    # Old files have no CH4 columns and still parse as before
+    schema = Schema('licor_finseflux', strict=True)
+    parser = LicorParser(str(src), schema=schema)
+    metadata, fields, rows = parser.parse()
+    assert not any(name.startswith('CH4') for name in fields)
 
 
 def test_get_parser():
