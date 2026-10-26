@@ -110,10 +110,16 @@ class ClickHouse:
         # The Replacing engine allows to avoid duplicates. Deduplication is
         # done in the background, so there may be duplicates until the parts
         # are merged.
+        # Partitioned by month, hardcoded: time-range queries skip whole
+        # months, and a month can be dropped and re-imported cheaply
+        # (DROP PARTITION instead of a heavy DELETE mutation). toDateTime
+        # because TIMESTAMP may be UInt32 (epoch) instead of a date type.
         column = get_column('TIMESTAMP', schema)
         self.execute(
             f"CREATE TABLE IF NOT EXISTS {table_name} ({column}) "
-            f"ENGINE = ReplacingMergeTree() ORDER BY TIMESTAMP",
+            f"ENGINE = ReplacingMergeTree() "
+            f"PARTITION BY toYYYYMM(toDateTime(TIMESTAMP)) "
+            f"ORDER BY TIMESTAMP",
             #echo=True,
         )
 

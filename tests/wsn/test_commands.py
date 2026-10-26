@@ -17,6 +17,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 
 # Project
+from wsn.clickhouse import ClickHouse
 from wsn.models import ImportFile
 from wsn.parsers.cr6 import CR6Parser
 
@@ -694,6 +695,14 @@ pipeline = "archive_first"
     # archive-relative path used by the wsn_importfile ledger
     index = json['columns'].index('source_file')
     assert all(row[index] == obj.path for row in json['rows'])
+
+    # The table is partitioned by month
+    with ClickHouse() as clickhouse:
+        partition_key = clickhouse.execute(
+            "SELECT partition_key FROM system.tables "
+            f"WHERE database = '{settings.CLICKHOUSE_NAME}' "
+            "AND name = 'finseflux_Biomet'")
+    assert partition_key == [('toYYYYMM(toDateTime(TIMESTAMP))',)]
 
 
 def test_file_register(db, tmp_path):
