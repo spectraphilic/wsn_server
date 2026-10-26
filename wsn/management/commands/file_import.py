@@ -11,7 +11,7 @@ from django.core.management.base import BaseCommand, CommandError
 # Project
 from wsn.models import ImportFile
 from wsn.parsers import get_parser
-from wsn.parsers.base import get_archive_root, unarchive
+from wsn.parsers.base import get_archive_root, unarchive, validate_rows
 from wsn.parsers.schemas import Schema
 from wsn.upload import upload2ch, upload2pg
 
@@ -79,6 +79,22 @@ class Command(BaseCommand):
                 obj.error = str(exc) or exc.__class__.__name__
                 obj.save(update_fields=['status', 'error', 'updated_at'])
                 return
+
+            # Skip rows whose timestamp cannot be right: before the start of
+            # the project, or implausibly after the date in the filename
+            # (logger clock issues). Files with no date in their name,
+            # archived by the old pipeline, are imported without validation.
+            # Bad rows are reported here, later they may go to a quarantine
+            # table.
+            try:
+                rows, bad_rows = validate_rows(rows, archived.name)
+            except ValueError:
+                bad_rows = []
+            if bad_rows:
+                self.stderr.write(
+                    f"{archived} WARNING {len(bad_rows)} row(s) skipped, "
+                    f"bad timestamp: {bad_rows[0][2]}"
+                )
 
             # Upload; a failure here is transient, the row is left pending
             try:

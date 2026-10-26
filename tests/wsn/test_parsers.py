@@ -8,7 +8,14 @@ import pytest
 
 # Project
 from wsn.parsers import get_parser
-from wsn.parsers.base import EmptyError, TruncatedError, parse_filename_date, unarchive
+from wsn.parsers.base import (
+    EmptyError,
+    TruncatedError,
+    check_row_time,
+    parse_filename_date,
+    unarchive,
+    validate_rows,
+)
 from wsn.parsers.cr6 import CR6Parser
 from wsn.parsers.licor import LicorParser
 from wsn.parsers.schemas import Schema
@@ -38,6 +45,60 @@ def test_parse_filename_date():
 
     with pytest.raises(ValueError):
         parse_filename_date('no_date_here.dat')
+
+
+def test_check_row_time():
+    filename_date = date(2019, 5, 20)
+
+    # Real rows: from the start of the project until a little after the
+    # filename date (a file accumulates rows until the logger rotates it)
+    assert check_row_time(datetime(2015, 1, 1, tzinfo=UTC), filename_date) is None
+    assert check_row_time(datetime(2019, 5, 20, 13, tzinfo=UTC), filename_date) is None
+    assert check_row_time(datetime(2019, 7, 19, tzinfo=UTC), filename_date) is None
+
+    # More than 60 days after the filename date means the clock is wrong
+    assert check_row_time(datetime(2019, 7, 20, tzinfo=UTC), filename_date) is not None
+    assert check_row_time(datetime(2028, 1, 1, tzinfo=UTC), filename_date) is not None
+
+    # Before the start of the project means the clock is wrong
+    assert check_row_time(datetime(2014, 12, 31, 23, 59, 59, tzinfo=UTC), filename_date) is not None
+    assert check_row_time(datetime(1999, 1, 1, tzinfo=UTC), filename_date) is not None
+    assert check_row_time(datetime(2001, 1, 1, tzinfo=UTC), filename_date) is not None
+
+    # Epoch is accepted
+    epoch = int(datetime(2019, 5, 20, 13, tzinfo=UTC).timestamp())
+    assert check_row_time(epoch, filename_date) is None
+
+    # Broken timestamps
+    assert check_row_time(None, filename_date) is not None
+    assert check_row_time(datetime(2019, 5, 20), filename_date) is not None
+    assert check_row_time('2019-05-20', filename_date) is not None
+
+
+def test_validate_rows():
+    rows = [
+        (datetime(2019, 5, 20, 13, tzinfo=UTC), {'a': 1}),
+        (datetime(2019, 7, 19, tzinfo=UTC), {'a': 4}),  # 60 days after
+        (datetime(2001, 1, 1, tzinfo=UTC), {'a': 2}),
+        (datetime(2028, 1, 1, tzinfo=UTC), {'a': 5}),
+        (None, {'a': 3}),
+    ]
+    good, bad = validate_rows(rows, 'uio_data_cr6_2019_05_20_1300.dat')
+
+    assert good == rows[:2]
+    assert bad[0][2] == 'timestamp 2001-01-01 00:00:00+00:00 is before 2015-01-01'
+    assert bad[1][2] == ('timestamp 2028-01-01 is more than 60 days '
+                         'after the filename date 2019-05-20')
+    assert bad[2][2] == 'no timestamp'
+
+    # Archived licor files keep a .tar.xz suffix
+    good, bad = validate_rows(rows, '2019-05-20T130000_X.tar.xz')
+    assert good == rows[:2]
+    assert len(bad) == 3
+
+    # No date in the filename
+    with pytest.raises(ValueError):
+        validate_rows(rows, 'uio_data_cr6.dat.xz')
 
 
 def test_cr6_empty(datadir):

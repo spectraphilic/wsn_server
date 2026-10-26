@@ -1,5 +1,6 @@
 import datetime
 import fcntl
+import lzma
 import shutil
 import socket
 import time
@@ -375,6 +376,60 @@ pipeline = "archive_only"
     assert ImportFile.objects.count() == 0
 
 
+def test_file_archive_future_date(db, tmp_path, capsys):
+    # A file with a filename date more than 2 days in the future means the
+    # logger's clock is wrong: it is renamed aside, like truncated files,
+    # on both archive_first and archive_only entries
+    directory = tmp_path / 'eton2'
+    directory.mkdir(parents=True)
+    only = tmp_path / 'only'
+    only.mkdir()
+    data = (ETON2 / 'uio_data_cr6_2019_05_20_1300.dat').read_bytes()
+
+    far = datetime.date.today() + datetime.timedelta(days=10)
+    near = datetime.date.today() + datetime.timedelta(days=1)
+    far_name = f'HFData_{far:%Y-%m-%d}_01-00-00_1.dat'
+    near_name = f'HFData_{near:%Y-%m-%d}_01-00-00_1.dat'
+    only_name = f'HFData_{far:%Y-%m-%d}_02-00-00_2.dat'
+    (directory / far_name).write_bytes(data)
+    (directory / near_name).write_bytes(data)
+    (only / only_name).write_bytes(data)
+
+    config = tmp_path / 'config.toml'
+    config.write_text(f'''
+[import]
+
+[import.eton2]
+path = "{directory}"
+pattern = "*.dat"
+database = "postgres"
+pipeline = "archive_first"
+
+[import.test_only]
+path = "{only}"
+pattern = "*.dat"
+pipeline = "archive_only"
+''')
+
+    assert call_command('file_archive', config, skip=0) == 0
+    captured = capsys.readouterr()
+
+    # The future-dated file is renamed aside and not registered
+    assert not (directory / far_name).exists()
+    assert (directory / f'{far_name}.future').exists()
+    assert 'WARNING' in captured.err
+    assert 'future' in captured.err
+
+    # A file within the window is archived and registered normally
+    assert not (directory / near_name).exists()
+    assert ImportFile.objects.filter(name='eton2').count() == 1
+
+    # Same on archive_only entries: renamed aside, not archived
+    assert not (only / only_name).exists()
+    assert (only / f'{only_name}.future').exists()
+    assert not is_archived(only / only_name)
+
+
 def test_file_archive_lock(tmp_path):
     # A second file_archive run must fail loudly while another one holds
     # the lock (e.g. overlapping cron jobs).
@@ -493,6 +548,100 @@ def test_file_import_transient(db, tmp_path, archived, monkeypatch):
     assert call_command('file_import', config) == 0
     obj.refresh_from_db()
     assert obj.status == ImportFile.Status.PENDING
+
+
+def test_file_import_bad_timestamp(db, api_user, tmp_path, capsys):
+    # A row with a timestamp too far from the filename date is skipped
+    directory = tmp_path / 'eton2'
+    directory.mkdir(parents=True)
+    src = ETON2 / 'uio_data_cr6_2019_05_20_1300.dat'
+    dst = directory / src.name
+    data = src.read_bytes()
+    assert data.count(b'"2019-05-20 13:00:00"') == 1
+    dst.write_bytes(data.replace(b'"2019-05-20 13:00:00"', b'"2001-01-01 00:00:00"'))
+
+    config = tmp_path / 'config.toml'
+    config.write_text(f'''
+[import]
+
+[import.eton2]
+path = "{directory}"
+pattern = "*.dat"
+database = "postgres"
+pipeline = "archive_first"
+''')
+
+    assert call_command('file_archive', config, skip=0) == 0
+    assert call_command('file_import', config) == 0
+    captured = capsys.readouterr()
+    assert 'WARNING 1 row(s) skipped' in captured.err
+    assert '2001-01-01' in captured.err
+
+    response = api_user.query_pg()
+    assert len(response.json()['rows']) == 167
+    obj = ImportFile.objects.get()
+    assert obj.status == ImportFile.Status.DONE
+    assert obj.error == ''
+
+
+def test_file_import_future_timestamp(db, api_user, tmp_path, capsys):
+    # A row with a timestamp far in the future, like the ones found in
+    # mobileflux files, is skipped
+    directory = tmp_path / 'eton2'
+    directory.mkdir(parents=True)
+    src = ETON2 / 'uio_data_cr6_2019_05_20_1300.dat'
+    dst = directory / src.name
+    data = src.read_bytes()
+    assert data.count(b'"2019-05-23 12:00:00"') == 1
+    dst.write_bytes(data.replace(b'"2019-05-23 12:00:00"', b'"2028-01-01 00:00:00"'))
+
+    config = tmp_path / 'config.toml'
+    config.write_text(f'''
+[import]
+
+[import.eton2]
+path = "{directory}"
+pattern = "*.dat"
+database = "postgres"
+pipeline = "archive_first"
+''')
+
+    assert call_command('file_archive', config, skip=0) == 0
+    assert call_command('file_import', config) == 0
+    captured = capsys.readouterr()
+    assert 'WARNING 1 row(s) skipped' in captured.err
+    assert '2028-01-01' in captured.err
+
+    response = api_user.query_pg()
+    assert len(response.json()['rows']) == 167
+
+
+def test_file_import_no_filename_date(db, api_user, tmp_path):
+    # Archives with no date in their name, from the old pipeline and
+    # registered by file_register, import fine: validation does not use
+    # the filename
+    directory = tmp_path / 'data'
+    archive = directory / 'archive' / '2019' / '05'
+    archive.mkdir(parents=True)
+    data = (ETON2 / 'uio_data_cr6_2019_05_20_1300.dat').read_bytes()
+    with lzma.open(archive / 'uio_data_cr6.dat.xz', 'wb') as f:
+        f.write(data)
+
+    config = tmp_path / 'config.toml'
+    config.write_text(f'''
+[import]
+
+[import.eton2]
+path = "{directory}"
+pattern = "*.dat"
+database = "postgres"
+pipeline = "archive_first"
+''')
+
+    assert call_command('file_register', config) == 0
+    assert call_command('file_import', config) == 0
+    response = api_user.query_pg()
+    assert len(response.json()['rows']) == 168
 
 
 def test_file_import_lock(tmp_path):

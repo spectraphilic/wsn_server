@@ -39,6 +39,71 @@ def parse_filename_date(name):
     return datetime.date(int(match[1]), int(match[2]), int(match[3]))
 
 
+# The earliest timestamp accepted on import: the project started in 2015,
+# nothing before that is real data (e.g. loggers with a dead battery clock
+# reset to 1970 or 1999).
+MIN_TIMESTAMP = datetime.datetime(2015, 1, 1, tzinfo=datetime.UTC)
+
+# Rows are rejected if their timestamp is more than this many days after
+# the date in the filename. A file accumulates rows from its creation (the
+# filename date) until the logger rotates the file; the longest rotation in
+# the fleet is weekly (eton2), so this is ~8x headroom, and it also covers
+# rotation schedules deployed in the future. The bound is relative to the
+# filename date, not to today, so importing the same archive always yields
+# the same result.
+FUTURE_WINDOW_DAYS = 60
+
+
+def check_row_time(time, filename_date):
+    """
+    Return a reason string if the row's timestamp cannot be right, else
+    None: before the start of the project, or implausibly after the date in
+    the filename (logger clock issues).
+    """
+    if time is None:
+        return 'no timestamp'
+
+    if isinstance(time, (int, float)):  # epoch
+        time = datetime.datetime.fromtimestamp(time, tz=datetime.UTC)
+
+    if not isinstance(time, datetime.datetime):
+        return f'unexpected timestamp type: {type(time).__name__}'
+
+    if time.tzinfo is None:
+        return 'naive timestamp, expected UTC'
+
+    if time < MIN_TIMESTAMP:
+        return f'timestamp {time} is before {MIN_TIMESTAMP.date()}'
+
+    if time.date() > filename_date + datetime.timedelta(days=FUTURE_WINDOW_DAYS):
+        return (f'timestamp {time.date()} is more than {FUTURE_WINDOW_DAYS} '
+                f'days after the filename date {filename_date}')
+
+    return None
+
+
+def validate_rows(rows, filename):
+    """
+    Split (time, data) rows into good rows and bad rows based on the date in
+    the filename: a row is bad if its timestamp is before the start of the
+    project or more than FUTURE_WINDOW_DAYS after it. Bad rows carry a human
+    readable reason; they are dropped for now, later they may go to a
+    quarantine table.
+
+    Raises ValueError if the filename contains no date.
+    """
+    filename_date = parse_filename_date(filename)
+    good, bad = [], []
+    for time, data in rows:
+        reason = check_row_time(time, filename_date)
+        if reason is None:
+            good.append((time, data))
+        else:
+            bad.append((time, data, reason))
+
+    return good, bad
+
+
 def get_archive_root(filepath, import_dir):
     """
     Return the root directory under which the archive/ directory lives:

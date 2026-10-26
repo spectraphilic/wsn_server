@@ -1,3 +1,4 @@
+import datetime
 import fcntl
 import fnmatch
 import os
@@ -17,6 +18,14 @@ from wsn.models import ImportFile
 from wsn.parsers import PARSERS
 from wsn.parsers.base import EmptyError, TruncatedError
 from wsn.parsers.schemas import Schema
+
+
+# A file's date comes from the logger's clock at file creation, so it
+# cannot be in the future: a file dated further ahead means the clock is
+# wrong and both the filename and the rows inside are untrustworthy. Such
+# files are renamed aside for a human to inspect, like truncated files;
+# the rename also takes them out of the entry's pattern.
+FUTURE_FILE_DAYS = 2
 
 
 class Command(BaseCommand):
@@ -46,6 +55,22 @@ class Command(BaseCommand):
         # completely uploaded.
         if stat.st_mtime > self.upto:
             self.stdout.write(f"{filepath} skip for now, will handle later")
+            return
+
+        # The date in the filename comes from the logger's clock at file
+        # creation, it cannot be in the future: a future-dated file means
+        # the clock is wrong. Rename it aside for a human to inspect.
+        try:
+            file_date = Parser.get_archive_date(filepath.name)
+        except ValueError:
+            file_date = None
+        limit = datetime.date.today() + datetime.timedelta(days=FUTURE_FILE_DAYS)
+        if file_date is not None and file_date > limit:
+            self.stderr.write(
+                f"{filepath} WARNING filename date {file_date} is more than "
+                f"{FUTURE_FILE_DAYS} days in the future, renamed"
+            )
+            os.rename(filepath, f'{filepath}.future')
             return
 
         # The archive path is fully determined by the filename, so we can
