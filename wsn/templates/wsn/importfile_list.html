@@ -1,0 +1,47 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumbs">
+<li><a href="{% url 'admin:index' %}">{% translate 'Home' %}</a></li>
+<li aria-current="page">{% translate 'Import files' %}</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <table>
+        <thead>
+            <tr>
+                <th>{% translate 'Name' %}</th>
+                <th>{% translate 'Path' %}</th>
+                <th>{% translate 'Status' %}</th>
+                <th>{% translate 'Error' %}</th>
+                <th>{% translate 'Created' %}</th>
+                <th>{% translate 'Updated' %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for file in page %}
+            <tr>
+                <td>{{ file.name }}</td>
+                <td>{{ file.path }}</td>
+                <td>{{ file.status }}</td>
+                <td>{{ file.error }}</td>
+                <td>{{ file.created_at }}</td>
+                <td>{{ file.updated_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p>
+        {% blocktranslate with count=page.paginator.count %}{{ count }} files{% endblocktranslate %}
+        {% if page.paginator.num_pages > 1 %}
+            &mdash;
+            {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">&lsaquo; {% translate 'Previous' %}</a>{% endif %}
+            {% translate 'Page' %} {{ page.number }} / {{ page.paginator.num_pages }}
+            {% if page.has_next %}<a href="?page={{ page.next_page_number }}">{% translate 'Next' %} &rsaquo;</a>{% endif %}
+        {% endif %}
+    </p>
+</div>
+{% endblock %}

@@ -20,9 +20,14 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.contrib.staticfiles.views import serve
 from django.urls import include, path
 
+from wsn.views import importfile_list
+
 from .urls_ansible import urlpatterns
 
-urlpatterns += [
+urlpatterns = [
+    # /admin/importfile/ must be before /admin/
+    path('admin/importfile/', importfile_list, name='admin_importfile_list'),
+] + urlpatterns + [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('', include('api.urls')),
 ]

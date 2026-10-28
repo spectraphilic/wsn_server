@@ -45,7 +45,8 @@ wsn_server/
 │   ├── asgi.py           # ASGI application (with optional Channels)
 │   ├── wsgi.py           # WSGI application
 │   ├── celery.py         # Celery configuration
-│   └── dbrouters.py      # Database routing (PostgreSQL vs ClickHouse)
+│   ├── dbrouters.py      # Database routing (PostgreSQL vs ClickHouse)
+│   └── templates/        # Admin template overrides (base_site.html: Import files link)
 │
 ├── api/                  # REST API application
 │   ├── urls.py           # API endpoint definitions
@@ -58,6 +59,7 @@ wsn_server/
 ├── wsn/                  # Core WSN application
 │   ├── models.py         # Frame, Metadata models (PostgreSQL)
 │   ├── admin.py          # Django admin configuration
+│   ├── views.py          # ImportFile list view (composite PK, no ModelAdmin)
 │   ├── tasks.py          # Celery tasks (async processing)
 │   ├── clickhouse.py     # ClickHouse client wrapper
 │   ├── upload.py         # Data upload utilities
@@ -94,6 +96,7 @@ wsn_server/
 │   ├── conftest.py       # pytest fixtures and configuration
 │   ├── test_qc.py        # Quality control API tests
 │   └── wsn/              # WSN tests
+│       ├── test_admin.py # Admin index link + ImportFile view tests
 │       ├── test_api.py   # API endpoint tests
 │       ├── test_commands.py # Management command tests
 │       └── test_parsers.py # Parser unit tests
