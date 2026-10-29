@@ -1,12 +1,17 @@
 import tomllib
 
 # Django
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Count
 
 # Project
 from wsn.clickhouse import ClickHouse
 from wsn.models import ImportFile
+
+
+# What ClickHouse.upload() creates (wsn/clickhouse.py)
+EXPECTED_PARTITION_KEY = 'toYYYYMM(toDateTime(TIMESTAMP))'
 
 
 NUMERIC_PREFIXES = ('Int', 'UInt', 'Float', 'Decimal')
@@ -42,11 +47,12 @@ class Command(BaseCommand):
     Verify a migrated table against its predecessor, before the swap.
 
     Runs against entries that still have table = "xxx_new" in the config.
-    Compares the ledger status, the row counts (with FINAL, so
-    ReplacingMergeTree duplicates are accounted for), the TIMESTAMP range
-    and per-column min/max/sum/count over the shared numeric columns.
-    Columns that exist on only one side (e.g. source_file, Pressure_kPa,
-    the inert CH4 columns) are reported as skipped, not compared.
+    Compares the ledger status, the partition keys, the row counts (with
+    FINAL, so ReplacingMergeTree duplicates are accounted for), the
+    TIMESTAMP range and per-column min/max/sum/count over the shared
+    numeric columns. Columns that exist on only one side (e.g.
+    source_file, Pressure_kPa, the inert CH4 columns) are reported as
+    skipped, not compared.
 
     Diffs are reported, not failed: some are expected by design, e.g.
     rows with bad timestamps that the old pipeline imported and the new
@@ -107,6 +113,24 @@ class Command(BaseCommand):
             )
             if type_diffs:
                 self.stdout.write(f'Types differ: {", ".join(type_diffs)}')
+
+            # Partitioning: monthly partitioning is a goal of the migration,
+            # so the new table must carry the expected partition key (the
+            # old one is displayed for the record; a few old tables like
+            # myr1_HFData_sonic are already partitioned)
+            database = settings.CLICKHOUSE_NAME
+            partition_query = (
+                "SELECT partition_key FROM system.tables "
+                f"WHERE database = '{database}' AND name = '{{}}'"
+            )
+            old_part = ch.execute(partition_query.format(table_old))[0][0]
+            new_part = ch.execute(partition_query.format(table_new))[0][0]
+            ok = new_part == EXPECTED_PARTITION_KEY
+            diffs += not ok
+            self.stdout.write(
+                f'Partition: old={old_part or "(none)"} new={new_part or "(none)"} '
+                f'{"OK" if ok else f"DIFF (expected {EXPECTED_PARTITION_KEY})"}'
+            )
 
             # One aggregate query per table over the shared numeric columns;
             # Float columns default to NaN and RECORD is nullable, so the

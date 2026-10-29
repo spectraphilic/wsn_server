@@ -827,6 +827,10 @@ class FakeClickHouse:
             table = query.split()[2]
             cols = self.NEW if table.endswith('_new') else self.OLD
             return [(name, ctype) for name, ctype in cols.items()]
+        if query.startswith('SELECT partition_key'):
+            table = query.split("name = ")[1].strip().strip("'")
+            key = '' if not table.endswith('_new') else 'toYYYYMM(toDateTime(TIMESTAMP))'
+            return [(key,)]
         if query.startswith('SELECT count()'):
             return [(584,)]
         if query.startswith('SELECT min(TIMESTAMP)'):
@@ -859,6 +863,8 @@ table = "test_new"
     assert 'Ledger: 1 done, 0 pending, 0 error' in out
     assert 'only in new: source_file' in out
     assert 'Types differ: RECORD (UInt32 -> Nullable(UInt32))' in out
+    assert ('Partition: old=(none) new=toYYYYMM(toDateTime(TIMESTAMP)) OK'
+            in out)
     assert 'Rows: old=584 new=584 OK' in out
     assert 'Range:' in out and ' OK' in out
     assert 'Ux: OK' in out
