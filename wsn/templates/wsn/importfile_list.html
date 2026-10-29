@@ -10,6 +10,30 @@
 
 {% block content %}
 <div id="content-main">
+    <form method="get">
+        <select name="name">
+            <option value="">{% translate 'All names' %}</option>
+            {% for n in names %}
+            <option value="{{ n }}"{% if n == name %} selected{% endif %}>{{ n }}</option>
+            {% endfor %}
+        </select>
+        <select name="status">
+            <option value="">{% translate 'All statuses' %}</option>
+            {% for value, label in statuses %}
+            <option value="{{ value }}"{% if value == status %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="{% translate 'Filter' %}">
+    </form>
+    <p>
+        {% blocktranslate with count=page.paginator.count %}{{ count }} files{% endblocktranslate %}
+        {% if page.paginator.num_pages > 1 %}
+            &mdash;
+            {% if page.has_previous %}<a href="?{% if query %}{{ query.urlencode }}&amp;{% endif %}page={{ page.previous_page_number }}">&lsaquo; {% translate 'Previous' %}</a>{% endif %}
+            {% translate 'Page' %} {{ page.number }} / {{ page.paginator.num_pages }}
+            {% if page.has_next %}<a href="?{% if query %}{{ query.urlencode }}&amp;{% endif %}page={{ page.next_page_number }}">{% translate 'Next' %} &rsaquo;</a>{% endif %}
+        {% endif %}
+    </p>
     <table>
         <thead>
             <tr>
@@ -34,14 +58,5 @@
             {% endfor %}
         </tbody>
     </table>
-    <p>
-        {% blocktranslate with count=page.paginator.count %}{{ count }} files{% endblocktranslate %}
-        {% if page.paginator.num_pages > 1 %}
-            &mdash;
-            {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">&lsaquo; {% translate 'Previous' %}</a>{% endif %}
-            {% translate 'Page' %} {{ page.number }} / {{ page.paginator.num_pages }}
-            {% if page.has_next %}<a href="?page={{ page.next_page_number }}">{% translate 'Next' %} &rsaquo;</a>{% endif %}
-        {% endif %}
-    </p>
 </div>
 {% endblock %}
