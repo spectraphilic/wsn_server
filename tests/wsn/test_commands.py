@@ -18,6 +18,7 @@ from django.core.management.base import CommandError
 
 # Project
 from wsn.clickhouse import ClickHouse
+from wsn.management.commands import file_verify
 from wsn.models import ImportFile
 from wsn.parsers.cr6 import CR6Parser
 
@@ -794,6 +795,100 @@ def test_file_register_lock(tmp_path):
         fcntl.flock(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
         with pytest.raises(CommandError, match='another file_register run'):
             call_command('file_register', config)
+
+
+class FakeClickHouse:
+    """
+    ClickHouse double for file_verify: the old table has plain types, the
+    new table adds a Nullable RECORD and the source_file column.
+    """
+
+    differ = False
+
+    OLD = {
+        'TIMESTAMP': "DateTime64(3, 'UTC')",
+        'RECORD': 'UInt32',
+        'Ux': 'Float64',
+    }
+    NEW = {
+        **OLD,
+        'RECORD': 'Nullable(UInt32)',
+        'source_file': 'LowCardinality(String)',
+    }
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    def execute(self, query, *args, **kwargs):
+        if query.startswith('DESCRIBE TABLE'):
+            table = query.split()[2]
+            cols = self.NEW if table.endswith('_new') else self.OLD
+            return [(name, ctype) for name, ctype in cols.items()]
+        if query.startswith('SELECT count()'):
+            return [(584,)]
+        if query.startswith('SELECT min(TIMESTAMP)'):
+            return [(datetime.datetime(2023, 9, 14), datetime.datetime(2026, 9, 4))]
+        # Per-column aggregate query: RECORD (nullable, 4 exprs) and Ux
+        # (float, 4 exprs)
+        value = 2.0 if self.differ and 'FROM test_new' in query else 1
+        return [tuple([value] * 8)]
+
+
+def test_file_verify(db, tmp_path, monkeypatch, capsys):
+    config = tmp_path / 'config.toml'
+    config.write_text('''
+[import]
+
+[import.test]
+path = "/tmp/unused"
+pattern = "*.dat"
+pipeline = "archive_first"
+table = "test_new"
+''')
+    ImportFile.objects.create(name='test', path='2023/09/x.dat.xz',
+                              status=ImportFile.Status.DONE)
+    monkeypatch.setattr(file_verify, 'ClickHouse', FakeClickHouse)
+
+    # Identical tables: all checks OK
+    assert call_command('file_verify', config, name='test') == 0
+    out = capsys.readouterr().out
+    assert 'test (old) vs test_new (new)' in out
+    assert 'Ledger: 1 done, 0 pending, 0 error' in out
+    assert 'only in new: source_file' in out
+    assert 'Rows: old=584 new=584 OK' in out
+    assert 'Range:' in out and ' OK' in out
+    assert 'Ux: OK' in out
+    assert 'All checks OK' in out
+
+    # Diffs are reported, not failed
+    FakeClickHouse.differ = True
+    assert call_command('file_verify', config, name='test') == 0
+    out = capsys.readouterr().out
+    assert 'RECORD: DIFF' in out
+    assert 'Ux: DIFF' in out
+    assert '2 check(s) differ' in out
+    FakeClickHouse.differ = False
+
+
+def test_file_verify_requires_new(db, tmp_path):
+    # An entry without table = "xxx_new" is not in a migratable state
+    config = tmp_path / 'config.toml'
+    config.write_text('''
+[import]
+
+[import.test]
+path = "/tmp/unused"
+pattern = "*.dat"
+pipeline = "archive_first"
+''')
+    with pytest.raises(CommandError, match=r'not a \*_new table'):
+        call_command('file_verify', config, name='test')
+
+    with pytest.raises(CommandError, match='no archive_first entry'):
+        call_command('file_verify', config, name='other')
 
 
 @requires_clickhouse
