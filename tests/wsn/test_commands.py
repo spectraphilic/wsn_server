@@ -724,6 +724,11 @@ path = "{directory}"
 pattern = "*.dat"
 pipeline = "archive_first"
 
+[import.licor]
+path = "{directory}"
+pattern = "*.ghg"
+pipeline = "archive_first"
+
 [import.old_entry]
 path = "{directory}"
 pattern = "*.dat"
@@ -731,7 +736,9 @@ pattern = "*.dat"
 
     assert call_command('file_register', config) == 0
     assert ImportFile.objects.count() == 2
-    assert ImportFile.objects.filter(name='test').count() == 2
+    # Entries sharing one archive directory register only their own files
+    assert ImportFile.objects.filter(name='test').count() == 1
+    assert ImportFile.objects.filter(name='licor').count() == 1
 
     # Idempotent
     assert call_command('file_register', config) == 0

@@ -1,4 +1,5 @@
 import fcntl
+import fnmatch
 import pathlib
 
 import tomllib
@@ -9,7 +10,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 # Project
 from wsn.models import ImportFile
-from wsn.parsers import get_parser
+from wsn.parsers import get_parser, get_raw_name
 from wsn.parsers.base import get_archive_root
 
 
@@ -61,6 +62,7 @@ class Command(BaseCommand):
                 directory = pathlib.Path(values['path'])
                 if not directory.is_absolute():
                     raise CommandError(f'{entry_name}: path must be absolute: {directory}')
+                pattern = values['pattern']
 
                 archive = get_archive_root(directory, directory) / 'archive'
                 if not archive.is_dir():
@@ -70,6 +72,11 @@ class Command(BaseCommand):
                 for path in sorted(archive.rglob('*.xz')):
                     if get_parser(path.name) is None:
                         self.stderr.write(f"{path} WARNING no parser for this file, skipped")
+                        continue
+
+                    # Entries sharing one archive directory (e.g. Biomet and
+                    # Status of the same logger) only register their own files
+                    if not fnmatch.fnmatch(get_raw_name(path.name), pattern):
                         continue
 
                     relpath = str(path.relative_to(archive))

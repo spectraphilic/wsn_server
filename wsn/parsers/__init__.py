@@ -25,6 +25,19 @@ def parse_archived_date(name):
     return Parser.get_archive_date(inner)
 
 
+def get_raw_name(name):
+    """
+    Map an archived filename back to the original raw filename, e.g.
+    'name.dat.xz' -> 'name.dat', 'name.tar.xz' -> 'name.ghg' (only Licor
+    archives as tar.xz). Used to match archived files against an entry's
+    pattern, e.g. when several entries share one archive directory.
+    """
+    inner = name.removesuffix('.xz')
+    if inner.endswith('.tar'):
+        return inner.removesuffix('.tar') + '.ghg'
+    return inner
+
+
 def get_parser(name):
     """
     Return the parser for an archived filename, e.g. 'name.dat.xz' or
