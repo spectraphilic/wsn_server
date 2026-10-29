@@ -858,6 +858,7 @@ table = "test_new"
     assert 'test (old) vs test_new (new)' in out
     assert 'Ledger: 1 done, 0 pending, 0 error' in out
     assert 'only in new: source_file' in out
+    assert 'Types differ: RECORD (UInt32 -> Nullable(UInt32))' in out
     assert 'Rows: old=584 new=584 OK' in out
     assert 'Range:' in out and ' OK' in out
     assert 'Ux: OK' in out

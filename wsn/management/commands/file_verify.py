@@ -98,6 +98,15 @@ class Command(BaseCommand):
                 + (f', only in old: {", ".join(only_old)}' if only_old else '')
                 + (f', only in new: {", ".join(only_new)}' if only_new else '')
             )
+            # Type changes on shared columns (e.g. RECORD -> Nullable) are
+            # expected on some tables; reported, like the one-sided columns
+            type_diffs = sorted(
+                f'{col} ({old_cols[col]} -> {new_cols[col]})'
+                for col in shared
+                if old_cols[col] != new_cols[col]
+            )
+            if type_diffs:
+                self.stdout.write(f'Types differ: {", ".join(type_diffs)}')
 
             # One aggregate query per table over the shared numeric columns;
             # Float columns default to NaN and RECORD is nullable, so the
