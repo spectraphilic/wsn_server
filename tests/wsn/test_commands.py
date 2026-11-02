@@ -226,7 +226,7 @@ pipeline = "archive_first"
     assert ImportFile.objects.filter(name='test_b').count() == 1
 
 
-def test_file_archive_pipeline(db, tmp_path, capsys):
+def test_file_archive_pipeline(db, tmp_path, caplog):
     # Entries with pipeline="archive_first" are handled by file_archive only,
     # entries with pipeline="archive_only" are archived but never imported,
     # entries without a pipeline key or with pipeline="import_first" are
@@ -297,7 +297,7 @@ pipeline = "archve_first"
     # Disabled and unknown entries are left alone, the typo is reported
     assert disabled_file.exists()
     assert typo_file.exists()
-    assert 'unknown pipeline value' in capsys.readouterr().err
+    assert 'unknown pipeline value' in caplog.text
 
     # import_file skips entries with a pipeline key other than import_first
     assert call_command('import_file', config, skip=0) == 0
@@ -378,7 +378,7 @@ pipeline = "archive_only"
     assert ImportFile.objects.count() == 0
 
 
-def test_file_archive_future_date(db, tmp_path, capsys):
+def test_file_archive_future_date(db, tmp_path, caplog):
     # A file with a filename date more than 2 days in the future means the
     # logger's clock is wrong: it is renamed aside, like truncated files,
     # on both archive_first and archive_only entries
@@ -414,13 +414,12 @@ pipeline = "archive_only"
 ''')
 
     assert call_command('file_archive', config, skip=0) == 0
-    captured = capsys.readouterr()
 
     # The future-dated file is renamed aside and not registered
     assert not (directory / far_name).exists()
     assert (directory / f'{far_name}.future').exists()
-    assert 'WARNING' in captured.err
-    assert 'future' in captured.err
+    assert 'WARNING' in caplog.text
+    assert 'future' in caplog.text
 
     # A file within the window is archived and registered normally
     assert not (directory / near_name).exists()
@@ -552,7 +551,7 @@ def test_file_import_transient(db, tmp_path, archived, monkeypatch):
     assert obj.status == ImportFile.Status.PENDING
 
 
-def test_file_import_bad_timestamp(db, api_user, tmp_path, capsys):
+def test_file_import_bad_timestamp(db, api_user, tmp_path, caplog):
     # A row with a timestamp too far from the filename date is skipped
     directory = tmp_path / 'eton2'
     directory.mkdir(parents=True)
@@ -575,9 +574,9 @@ pipeline = "archive_first"
 
     assert call_command('file_archive', config, skip=0) == 0
     assert call_command('file_import', config) == 0
-    captured = capsys.readouterr()
-    assert 'WARNING 1 row(s) skipped' in captured.err
-    assert '2001-01-01' in captured.err
+    assert 'WARNING' in caplog.text
+    assert '1 row(s) skipped' in caplog.text
+    assert '2001-01-01' in caplog.text
 
     response = api_user.query_pg()
     assert len(response.json()['rows']) == 167
@@ -586,7 +585,7 @@ pipeline = "archive_first"
     assert obj.error == ''
 
 
-def test_file_import_future_timestamp(db, api_user, tmp_path, capsys):
+def test_file_import_future_timestamp(db, api_user, tmp_path, caplog):
     # A row with a timestamp far in the future, like the ones found in
     # mobileflux files, is skipped
     directory = tmp_path / 'eton2'
@@ -610,9 +609,9 @@ pipeline = "archive_first"
 
     assert call_command('file_archive', config, skip=0) == 0
     assert call_command('file_import', config) == 0
-    captured = capsys.readouterr()
-    assert 'WARNING 1 row(s) skipped' in captured.err
-    assert '2028-01-01' in captured.err
+    assert 'WARNING' in caplog.text
+    assert '1 row(s) skipped' in caplog.text
+    assert '2028-01-01' in caplog.text
 
     response = api_user.query_pg()
     assert len(response.json()['rows']) == 167

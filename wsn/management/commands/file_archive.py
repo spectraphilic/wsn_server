@@ -1,11 +1,11 @@
 import datetime
 import fcntl
 import fnmatch
+import logging
 import os
 import pathlib
 import time
 import tomllib
-import traceback
 import zipfile
 
 # Django
@@ -18,6 +18,9 @@ from wsn.models import ImportFile
 from wsn.parsers import PARSERS
 from wsn.parsers.base import EmptyError, TruncatedError
 from wsn.parsers.schemas import Schema
+
+
+logger = logging.getLogger(__name__)
 
 
 # A file's date comes from the logger's clock at file creation, so it
@@ -54,7 +57,7 @@ class Command(BaseCommand):
         # This is a safety measure, just in case the file has not been
         # completely uploaded.
         if stat.st_mtime > self.upto:
-            self.stdout.write(f"{filepath} skip for now, will handle later")
+            logger.info(f"{filepath} skip for now, will handle later")
             return
 
         # The date in the filename comes from the logger's clock at file
@@ -66,8 +69,8 @@ class Command(BaseCommand):
             file_date = None
         limit = datetime.date.today() + datetime.timedelta(days=FUTURE_FILE_DAYS)
         if file_date is not None and file_date > limit:
-            self.stderr.write(
-                f"{filepath} WARNING filename date {file_date} is more than "
+            logger.warning(
+                f"{filepath} filename date {file_date} is more than "
                 f"{FUTURE_FILE_DAYS} days in the future, renamed"
             )
             os.rename(filepath, f'{filepath}.future')
@@ -82,12 +85,12 @@ class Command(BaseCommand):
             try:
                 relpath = Parser.get_archive_relpath(filepath)
             except ValueError:
-                self.stderr.write(f"{filepath} WARNING cannot archive, no date in filename")
+                logger.warning(f"{filepath} cannot archive, no date in filename")
                 return
 
             path = str(relpath)
             if ImportFile.objects.filter(name=name, path=path).exists():
-                self.stdout.write(f"{filepath} already archived, skipped")
+                logger.info(f"{filepath} already archived, skipped")
                 return
 
         if type(schema) is str:
@@ -98,53 +101,51 @@ class Command(BaseCommand):
             parser = Parser(filepath, stat=stat, schema=schema)
             metadata, fields, rows = parser.parse()
         except EmptyError:
-            self.stdout.write(f'{filepath} WARNING file is empty, removed')
+            logger.warning(f'{filepath} file is empty, removed')
             os.remove(filepath)
             return
         except TruncatedError:
-            self.stdout.write(f'{filepath} WARNING file is truncated')
+            logger.warning(f'{filepath} file is truncated')
             os.rename(filepath, f'{filepath}.truncated')
             return
         except UnicodeDecodeError:
             # Sometimes Sommer files have garbage
-            self.stdout.write(f'{filepath} WARNING file is not UTF-8')
+            logger.warning(f'{filepath} file is not UTF-8')
             os.rename(filepath, f'{filepath}.badutf8')
             return
         except zipfile.BadZipFile:
-            self.stdout.write(f'{filepath} WARNING bad zip file')
+            logger.warning(f'{filepath} bad zip file')
             os.rename(filepath, f'{filepath}.badzip')
             return
         # Catch-all: a single bad file must not abort the whole run; it is
         # logged and left in place to be retried on the next run
         except Exception:  # noqa: BLE001
-            self.stderr.write(f"{filepath} ERROR")
-            traceback.print_exc(file=self.stderr)
+            logger.exception(f"{filepath} cannot parse")
             return
 
         # Archive file
         original_size = os.path.getsize(filepath)
-        self.stdout.write(f"{filepath} file parsed")
+        logger.info(f"{filepath} file parsed")
         try:
             dst = parser.archive()
         except Exception:  # noqa: BLE001
-            self.stderr.write(f"{filepath} ERROR archiving, file left in place")
-            traceback.print_exc(file=self.stderr)
+            logger.exception(f"{filepath} archiving failed, file left in place")
             return
-        self.stdout.write(f"{filepath} file archived to {dst}")
+        logger.info(f"{filepath} file archived to {dst}")
 
         # Register the file; it will be imported by the file_import command
         if archive_only:
-            self.stdout.write(f"{filepath} archived only, not registered")
+            logger.info(f"{filepath} archived only, not registered")
         else:
             _, created = ImportFile.objects.get_or_create(name=name, path=path)
             if not created:
-                self.stderr.write(f"{filepath} WARNING already registered by another run")
+                logger.warning(f"{filepath} already registered by another run")
 
         # Print statistics
         compressed_size = os.path.getsize(dst)
         ratio = compressed_size / original_size if original_size > 0 else 0
         ratio = ratio * 100
-        self.stdout.write(
+        logger.info(
             f"Size from {filesizeformat(original_size)} to {filesizeformat(compressed_size)} "
             f"({ratio:.0f} % of the original)"
         )
@@ -179,8 +180,8 @@ class Command(BaseCommand):
                 pipeline = values.get('pipeline', 'import_first')
                 if pipeline not in ('archive_first', 'archive_only'):
                     if pipeline not in ('import_first', ''):
-                        self.stderr.write(
-                            f"{entry_name}: WARNING unknown pipeline value {pipeline!r}")
+                        logger.warning(
+                            f"{entry_name}: unknown pipeline value {pipeline!r}")
                     continue
 
                 if name and entry_name != name:

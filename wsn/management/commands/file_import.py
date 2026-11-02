@@ -1,8 +1,8 @@
 import fcntl
+import logging
 import pathlib
 import tempfile
 import tomllib
-import traceback
 
 # Django
 from django.conf import settings
@@ -14,6 +14,9 @@ from wsn.parsers import get_parser
 from wsn.parsers.base import get_archive_root, unarchive, validate_rows
 from wsn.parsers.schemas import Schema
 from wsn.upload import upload2ch, upload2pg
+
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -28,23 +31,23 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        parser.add_argument('config', help="Path to the TOML configuration file")
-        parser.add_argument('--name', help="Import only the given name from the config file")
+        parser.add_argument('config', help='Path to the TOML configuration file')
+        parser.add_argument('--name', help='Import only the given name from the config file')
 
     def handle_row(self, obj, config):
         name = obj.name
         values = config.get(name)
         if not isinstance(values, dict):
-            self.stderr.write(f"{name}:{obj.path} ERROR no matching entry in the config file, left pending")
+            logger.error(f"{name}:{obj.path} no matching entry in the config file, left pending")
             return
 
         if values.get('pipeline', 'import_first') != 'archive_first':
-            self.stderr.write(f"{name}:{obj.path} ERROR entry is not pipeline = \"archive_first\", left pending")
+            logger.error(f'{name}:{obj.path} entry is not pipeline = "archive_first", left pending')
             return
 
         directory = pathlib.Path(values['path'])
         if not directory.is_absolute():
-            self.stderr.write(f"{name}:{obj.path} ERROR path must be absolute: {directory}")
+            logger.error(f"{name}:{obj.path} path must be absolute: {directory}")
             return
 
         # Locate the archived file
@@ -53,12 +56,12 @@ class Command(BaseCommand):
             # This is permanent when the file has been deleted, transient
             # when there is a filesystem problem; either way the row is left
             # pending
-            self.stderr.write(f"{archived} WARNING archived file not found, left pending")
+            logger.warning(f"{archived} archived file not found, left pending")
             return
 
         Parser = get_parser(archived.name)
         if Parser is None:
-            self.stderr.write(f"{archived} ERROR no parser for this file, left pending")
+            logger.error(f"{archived} no parser for this file, left pending")
             return
 
         schema_name = values.get('schema', 'default')
@@ -73,8 +76,7 @@ class Command(BaseCommand):
                 parser = Parser(filepath, schema=schema)
                 metadata, fields, rows = parser.parse()
             except Exception as exc:
-                self.stderr.write(f"{archived} ERROR cannot parse archived file")
-                traceback.print_exc(file=self.stderr)
+                logger.exception(f"{archived} cannot parse archived file")
                 obj.status = ImportFile.Status.ERROR
                 obj.error = str(exc) or exc.__class__.__name__
                 obj.save(update_fields=['status', 'error', 'updated_at'])
@@ -90,8 +92,8 @@ class Command(BaseCommand):
             except ValueError:
                 bad_rows = []
             if bad_rows:
-                self.stderr.write(
-                    f"{archived} WARNING {len(bad_rows)} row(s) skipped, "
+                logger.warning(
+                    f"{archived} {len(bad_rows)} row(s) skipped, "
                     f"bad timestamp: {bad_rows[0][2]}"
                 )
 
@@ -103,14 +105,13 @@ class Command(BaseCommand):
                     upload2ch(table_name, metadata, fields, rows, schema,
                               source_file=obj.path)
             except Exception:
-                self.stderr.write(f"{archived} ERROR upload failed, left pending")
-                traceback.print_exc(file=self.stderr)
+                logger.exception(f"{archived} upload failed, left pending")
                 return
 
         obj.status = ImportFile.Status.DONE
         obj.error = ''
         obj.save(update_fields=['status', 'error', 'updated_at'])
-        self.stdout.write(f"{name}:{obj.path} imported, {len(rows)} rows")
+        logger.info(f"{name}:{obj.path} imported, {len(rows)} rows")
 
     def handle(self, config, name, *args, **kwargs):
         # Prevent overlapping runs (e.g. a slow cron run overlapping with
