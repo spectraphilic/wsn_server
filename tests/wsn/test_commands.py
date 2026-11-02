@@ -848,12 +848,54 @@ class FakeClickHouse:
             return [(key,)]
         if query.startswith('SELECT count()'):
             return [(584,)]
-        if query.startswith('SELECT min(TIMESTAMP)'):
-            return [(datetime.datetime(2023, 9, 14), datetime.datetime(2026, 9, 4))]
+        if query.startswith('SELECT toUInt32(min(TIMESTAMP))'):
+            return [(1694649600, 1786329600)]
         # Per-column aggregate query: RECORD (nullable, 4 exprs) and Ux
         # (float, 4 exprs)
         value = 2.0 if self.differ and 'FROM test_new' in query else 1
         return [tuple([value] * 8)]
+
+
+class FakeClickHouseUInt32(FakeClickHouse):
+    """
+    The old table has a UInt32 epoch TIMESTAMP, the new table a DateTime:
+    date-typed columns are compared as epoch seconds on both sides.
+    """
+
+    OLD = {**FakeClickHouse.OLD, 'TIMESTAMP': 'UInt32'}
+    NEW = {**FakeClickHouse.NEW, 'TIMESTAMP': "DateTime('UTC')"}
+
+    def execute(self, query, *args, **kwargs):
+        if 'toUInt32' in query and query.startswith('SELECT'):
+            # Aggregates: TIMESTAMP (4 exprs) + RECORD (4) + Ux (4)
+            return [tuple([1] * 12)]
+        return super().execute(query, *args, **kwargs)
+
+
+def test_file_verify_epoch_to_datetime(db, tmp_path, monkeypatch, capsys):
+    # A table migrated from UInt32 epoch timestamps to DateTime verifies
+    # cleanly: sum() is not applied to DateTime, the range compares equal
+    # instants on both sides
+    config = tmp_path / 'config.toml'
+    config.write_text('''
+[import]
+
+[import.test]
+path = "/tmp/unused"
+pattern = "*.dat"
+pipeline = "archive_first"
+table = "test_new"
+''')
+    ImportFile.objects.create(name='test', path='2023/09/x.dat.xz',
+                              status=ImportFile.Status.DONE)
+    monkeypatch.setattr(file_verify, 'ClickHouse', FakeClickHouseUInt32)
+
+    assert call_command('file_verify', config, name='test') == 0
+    out = capsys.readouterr().out
+    assert "TIMESTAMP (UInt32 -> DateTime('UTC'))" in out
+    assert 'Range:' in out and ' OK' in out
+    assert 'TIMESTAMP: OK' in out
+    assert 'All checks OK' in out
 
 
 def test_file_verify(db, tmp_path, monkeypatch, capsys):

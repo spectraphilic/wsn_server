@@ -1,3 +1,4 @@
+import datetime
 import tomllib
 
 # Django
@@ -134,7 +135,10 @@ class Command(BaseCommand):
 
             # One aggregate query per table over the shared numeric columns;
             # Float columns default to NaN and RECORD is nullable, so the
-            # aggregates are conditional
+            # aggregates are conditional. Columns that are date-typed on
+            # either side (e.g. TIMESTAMP as UInt32 on one side and DateTime
+            # on the other) are compared as epoch seconds: it makes the two
+            # types comparable and sum() is not allowed on DateTime
             numeric_cols = []
             exprs = []
             specs = []  # (column, stat), positional match with the result row
@@ -143,29 +147,32 @@ class Command(BaseCommand):
                 if not ctype.startswith(NUMERIC_PREFIXES):
                     continue
                 is_float = ctype.startswith('Float')
+                is_date = ctype.startswith('Date') or \
+                    split_type(new_cols[col])[0].startswith('Date')
+                value = f'toUInt32("{col}")' if is_date else f'"{col}"'
                 if nullable:
                     cond = f'({col} IS NOT NULL)'
                     if is_float:
                         cond = f'({col} IS NOT NULL AND NOT isNaN({col}))'
                     exprs.extend([
-                        f'minIf("{col}", {cond})',
-                        f'maxIf("{col}", {cond})',
-                        f'sumIf("{col}", {cond})',
+                        f'minIf({value}, {cond})',
+                        f'maxIf({value}, {cond})',
+                        f'sumIf({value}, {cond})',
                         f'countIf({cond})',
                     ])
                 elif is_float:
                     cond = f'NOT isNaN({col})'
                     exprs.extend([
-                        f'minIf("{col}", {cond})',
-                        f'maxIf("{col}", {cond})',
-                        f'sumIf("{col}", {cond})',
+                        f'minIf({value}, {cond})',
+                        f'maxIf({value}, {cond})',
+                        f'sumIf({value}, {cond})',
                         f'countIf({cond})',
                     ])
                 else:
                     exprs.extend([
-                        f'min("{col}")',
-                        f'max("{col}")',
-                        f'sum("{col}")',
+                        f'min({value})',
+                        f'max({value})',
+                        f'sum({value})',
                         f'count("{col}")',
                     ])
                 numeric_cols.append(col)
@@ -182,15 +189,25 @@ class Command(BaseCommand):
             diffs += not ok
             self.stdout.write(f'Rows: old={old_count} new={new_count} {"OK" if ok else "DIFF"}')
 
-            # Timestamp range
-            range_query = 'SELECT min(TIMESTAMP), max(TIMESTAMP) FROM {} FINAL'
+            # Timestamp range, compared as epoch seconds so UInt32 and
+            # DateTime tables are comparable, displayed as dates
+            range_query = (
+                'SELECT toUInt32(min(TIMESTAMP)), toUInt32(max(TIMESTAMP)) '
+                'FROM {} FINAL'
+            )
             old_range = ch.execute(range_query.format(table_old))[0]
             new_range = ch.execute(range_query.format(table_new))[0]
             ok = close(old_range[0], new_range[0]) and close(old_range[1], new_range[1])
             diffs += not ok
+
+            def fmt(ts):
+                return datetime.datetime.fromtimestamp(
+                    ts, tz=datetime.UTC).strftime('%Y-%m-%d %H:%M:%S')
+
             self.stdout.write(
-                f'Range: old={old_range[0]} .. {old_range[1]} '
-                f'new={new_range[0]} .. {new_range[1]} {"OK" if ok else "DIFF"}'
+                f'Range: old={fmt(old_range[0])} .. {fmt(old_range[1])} '
+                f'new={fmt(new_range[0])} .. {fmt(new_range[1])} '
+                f'{"OK" if ok else "DIFF"}'
             )
 
             # Per-column aggregates
