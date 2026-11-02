@@ -37,11 +37,13 @@ def make_readonly_admin_with_formatted_timestamp(model_class, timestamp_field='t
             ts_value = getattr(obj, timestamp_field)
             if ts_value is None:
                 return None
-            # Optional: handle milliseconds (remove if all timestamps are in seconds)
-            if ts_value > 1e10:
-                ts_value /= 1000
-            dt = datetime.datetime.fromtimestamp(ts_value, tz=datetime.UTC)
-            return dt.strftime('%Y-%m-%d %H:%M:%S')
+            if not isinstance(ts_value, datetime.datetime):
+                # Numeric epoch column (UInt32/UInt64): seconds, or
+                # milliseconds above 1e10
+                if ts_value > 1e10:
+                    ts_value /= 1000
+                ts_value = datetime.datetime.fromtimestamp(ts_value, tz=datetime.UTC)
+            return ts_value.strftime('%Y-%m-%d %H:%M:%S')
 
     DynamicTimestampAdmin.__name__ = f'{model_class.__name__}Admin'
     return DynamicTimestampAdmin
