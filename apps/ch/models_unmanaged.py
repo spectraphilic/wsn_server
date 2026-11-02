@@ -274,7 +274,7 @@ class GruvebadetData(models.ClickhouseModel):
 
 
 class GruvebadetDiagnostic(models.ClickhouseModel):
-    timestamp = models.UInt32Field(db_column='TIMESTAMP', primary_key=True)  # Field name made lowercase.
+    timestamp = models.DateTimeField(db_column='TIMESTAMP', primary_key=True)  # Field name made lowercase.
     skippedsystemscan = models.Float64Field(db_column='SkippedSystemScan')  # Field name made lowercase.
     paneltemp_max = models.Float64Field(db_column='PanelTemp_Max')  # Field name made lowercase.
     battery_max = models.Float64Field(db_column='Battery_Max')  # Field name made lowercase.

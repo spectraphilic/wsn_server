@@ -22,7 +22,7 @@ SCHEMAS = {
         'TransmitTimeStamp': Field(type="DateTime64(3, 'UTC')"),
     },
     'gruvebadet': {
-        'TIMESTAMP': Field(type='UInt32'),
+        'TIMESTAMP': Field(type="DateTime('UTC')"),
         'RECORD': Field(type='UInt32'),
         # Diagnostics
         'CompileResults': Field(type='String'),
