@@ -5,6 +5,7 @@ import tomllib
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Count
+from django.template.defaultfilters import filesizeformat
 
 # Project
 from wsn.clickhouse import ClickHouse
@@ -45,37 +46,40 @@ def close(old, new):
 
 class Command(BaseCommand):
     """
-    Verify a migrated table against its predecessor, before the swap.
+    Verify a migrated table against its predecessor, before or after the
+    swap.
 
-    Runs against entries that still have table = "xxx_new" in the config.
+    Before the swap the entry has table = "xxx_new" in the config and the
+    tables xxx (old) and xxx_new (new) are compared. After the swap the
+    config option is removed and the backup table xxx_old is compared
+    against the live table xxx, for as long as the backup is kept.
+
     Compares the ledger status, the partition keys, the row counts (with
-    FINAL, so ReplacingMergeTree duplicates are accounted for), the
-    TIMESTAMP range and per-column min/max/sum/count over the shared
-    numeric columns. Columns that exist on only one side (e.g.
+    FINAL, so ReplacingMergeTree duplicates are accounted for), the on-disk
+    sizes (informational), the TIMESTAMP range and per-column
+    min/max/sum/count over the shared numeric columns. Columns that exist on only one side (e.g.
     source_file, Pressure_kPa, the inert CH4 columns) are reported as
     skipped, not compared.
 
     Diffs are reported, not failed: some are expected by design, e.g.
     rows with bad timestamps that the old pipeline imported and the new
-    one skips. Operational problems (missing entry, table not *_new)
-    fail loudly.
+    one skips. Operational problems (missing entry, table in no
+    migratable state) fail loudly.
     """
 
     def add_arguments(self, parser):
         parser.add_argument('config', help="Path to the TOML configuration file")
         parser.add_argument('--name', help="Verify only the given name from the config file")
 
+    @staticmethod
+    def exists(ch, table):
+        database = settings.CLICKHOUSE_NAME
+        return ch.execute(
+            "SELECT count() FROM system.tables "
+            f"WHERE database = '{database}' AND name = '{table}'"
+        )[0][0] > 0
+
     def verify(self, name, values):
-        table_new = values.get('table', name)
-        if not table_new.endswith('_new'):
-            raise CommandError(
-                f'{name}: config table = "{table_new}" is not a *_new table; '
-                'run this before the swap'
-            )
-        table_old = table_new[:-len('_new')]
-
-        self.stdout.write(f'{table_old} (old) vs {table_new} (new)')
-
         # Ledger
         rows = ImportFile.objects.filter(name=name).values('status').annotate(n=Count('status'))
         status = {row['status']: row['n'] for row in rows}
@@ -88,6 +92,22 @@ class Command(BaseCommand):
 
         diffs = 0
         with ClickHouse() as ch:
+            # Migration phase: before the swap the entry has table =
+            # "xxx_new" in the config; after the swap the config option is
+            # removed and the backup table is xxx_old
+            table_new = values.get('table', name)
+            if table_new.endswith('_new'):
+                table_old = table_new[:-len('_new')]
+            elif self.exists(ch, f'{name}_old'):
+                table_old, table_new = f'{name}_old', name
+            else:
+                raise CommandError(
+                    f'{name}: config has no table = "xxx_new" and no '
+                    f'{name}_old table exists; run this before the swap'
+                )
+
+            self.stdout.write(f'{table_old} (old) vs {table_new} (new)')
+
             def columns(table):
                 try:
                     return {row[0]: row[1] for row in ch.execute(f'DESCRIBE TABLE {table}')}
@@ -189,6 +209,17 @@ class Command(BaseCommand):
             diffs += not ok
             self.stdout.write(f'Rows: old={old_count} new={new_count} {"OK" if ok else "DIFF"}')
 
+            # Table sizes, informational: the new table is recompressed and
+            # carries source_file, so it is not a diff
+            size_query = (
+                "SELECT total_bytes FROM system.tables "
+                f"WHERE database = '{database}' AND name = '{{}}'"
+            )
+            old_size = ch.execute(size_query.format(table_old))[0][0]
+            new_size = ch.execute(size_query.format(table_new))[0][0]
+            fmt_size = lambda s: filesizeformat(s) if s is not None else 'unknown'
+            self.stdout.write(f'Size: old={fmt_size(old_size)} new={fmt_size(new_size)}')
+
             # Timestamp range, compared as epoch seconds so UInt32 and
             # DateTime tables are comparable, displayed as dates
             range_query = (
@@ -235,6 +266,18 @@ class Command(BaseCommand):
         verified = 0
         total_diffs = 0
         problems = 0
+
+        # Batch mode only: the set of existing tables, to skip entries that
+        # are in no migratable state (no xxx_new in the config, no xxx_old
+        # in ClickHouse)
+        existing = set()
+        if not name:
+            with ClickHouse() as ch:
+                database = settings.CLICKHOUSE_NAME
+                existing = {row[0] for row in ch.execute(
+                    f"SELECT name FROM system.tables "
+                    f"WHERE database = '{database}'")}
+
         for entry_name, values in config.items():
             if not isinstance(values, dict):
                 continue
@@ -243,8 +286,8 @@ class Command(BaseCommand):
             if name:
                 if entry_name != name:
                     continue
-            elif not values.get('table', entry_name).endswith('_new'):
-                # Batch mode: already-swapped entries are skipped silently
+            elif not (values.get('table', entry_name).endswith('_new')
+                      or f'{entry_name}_old' in existing):
                 continue
             verified += 1
             diffs, p = self.verify(entry_name, values)
@@ -252,9 +295,7 @@ class Command(BaseCommand):
             problems += p
 
         if name and not verified:
-            raise CommandError(
-                f'{name}: no archive_first entry with table = "xxx_new" found in the config'
-            )
+            raise CommandError(f'{name}: no archive_first entry found in the config')
 
         if problems:
             self.stderr.write(

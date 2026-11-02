@@ -846,6 +846,13 @@ class FakeClickHouse:
             table = query.split("name = ")[1].strip().strip("'")
             key = '' if not table.endswith('_new') else 'toYYYYMM(toDateTime(TIMESTAMP))'
             return [(key,)]
+        if query.startswith('SELECT count() FROM system.tables'):
+            # No xxx_old backup tables in the pre-swap scenario
+            return [(0,)]
+        if query.startswith('SELECT total_bytes'):
+            table = query.split("name = ")[1].strip().strip("'")
+            size = 30 * 1024 * 1024 if table.endswith('_new') else 50 * 1024 * 1024
+            return [(size,)]
         if query.startswith('SELECT count()'):
             return [(584,)]
         if query.startswith('SELECT toUInt32(min(TIMESTAMP))'):
@@ -923,6 +930,8 @@ table = "test_new"
     assert ('Partition: old=(none) new=toYYYYMM(toDateTime(TIMESTAMP)) OK'
             in out)
     assert 'Rows: old=584 new=584 OK' in out
+    # filesizeformat separates the value and unit with a non-breaking space
+    assert 'Size: old=50.0\xa0MB new=30.0\xa0MB' in out
     assert 'Range:' in out and ' OK' in out
     assert 'Ux: OK' in out
     assert 'All checks OK' in out
@@ -937,8 +946,29 @@ table = "test_new"
     FakeClickHouse.differ = False
 
 
-def test_file_verify_requires_new(db, tmp_path):
-    # An entry without table = "xxx_new" is not in a migratable state
+class FakeClickHouseAfterSwap(FakeClickHouse):
+    """Post-swap state: the live table is `test`, the backup is `test_old`."""
+
+    def execute(self, query, *args, **kwargs):
+        if query.startswith('DESCRIBE TABLE'):
+            table = query.split()[2]
+            cols = self.NEW if table == 'test' else self.OLD
+            return [(name, ctype) for name, ctype in cols.items()]
+        if query.startswith('SELECT partition_key'):
+            table = query.split("name = ")[1].strip().strip("'")
+            key = 'toYYYYMM(toDateTime(TIMESTAMP))' if table == 'test' else ''
+            return [(key,)]
+        if query.startswith('SELECT count() FROM system.tables'):
+            table = query.split("name = ")[1].strip().strip("'")
+            return [(1 if table == 'test_old' else 0,)]
+        if query.startswith('SELECT name FROM system.tables'):
+            return [('test',), ('test_old',)]
+        return super().execute(query, *args, **kwargs)
+
+
+def test_file_verify_after_swap(db, tmp_path, monkeypatch, capsys):
+    # After the swap the entry has no table option; the backup table
+    # <name>_old is compared against the live table
     config = tmp_path / 'config.toml'
     config.write_text('''
 [import]
@@ -948,7 +978,30 @@ path = "/tmp/unused"
 pattern = "*.dat"
 pipeline = "archive_first"
 ''')
-    with pytest.raises(CommandError, match=r'not a \*_new table'):
+    ImportFile.objects.create(name='test', path='2023/09/x.dat.xz',
+                              status=ImportFile.Status.DONE)
+    monkeypatch.setattr(file_verify, 'ClickHouse', FakeClickHouseAfterSwap)
+
+    assert call_command('file_verify', config, name='test') == 0
+    out = capsys.readouterr().out
+    assert 'test_old (old) vs test (new)' in out
+    assert 'All checks OK' in out
+
+
+def test_file_verify_requires_state(db, tmp_path, monkeypatch):
+    # An entry in no migratable state (no table = "xxx_new" in the config,
+    # no xxx_old backup table) fails loudly
+    config = tmp_path / 'config.toml'
+    config.write_text('''
+[import]
+
+[import.test]
+path = "/tmp/unused"
+pattern = "*.dat"
+pipeline = "archive_first"
+''')
+    monkeypatch.setattr(file_verify, 'ClickHouse', FakeClickHouse)
+    with pytest.raises(CommandError, match='no table = "xxx_new" and no test_old'):
         call_command('file_verify', config, name='test')
 
     with pytest.raises(CommandError, match='no archive_first entry'):

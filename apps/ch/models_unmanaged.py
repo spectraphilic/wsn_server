@@ -231,7 +231,7 @@ class FinseSommer(models.ClickhouseModel):
 
 
 class GruvebadetData(models.ClickhouseModel):
-    timestamp = models.UInt32Field(db_column='TIMESTAMP', primary_key=True)  # Field name made lowercase.
+    timestamp = models.DateTimeField(db_column='TIMESTAMP', primary_key=True)  # Field name made lowercase.
     atmos22_dir = models.Float64Field(db_column='ATMOS22_DIR')  # Field name made lowercase.
     fc2driftmean_99_99_1_1_1 = models.Float64Field(db_column='FC2DRIFTmean_99_99_1_1_1')  # Field name made lowercase.
     atmos22_tc = models.Float64Field(db_column='ATMOS22_TC')  # Field name made lowercase.
