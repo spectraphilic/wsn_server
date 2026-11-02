@@ -512,6 +512,22 @@ def test_file_import_name(db, archived):
     assert ImportFile.objects.get().status == ImportFile.Status.DONE
 
 
+def test_file_import_log(db, archived, tmp_path):
+    # With --log the messages go to the file in the dated format, and the
+    # module logger is restored for the next runs
+    config = archived
+    logfile = tmp_path / 'import.log'
+    assert call_command('file_import', config, log=str(logfile)) == 0
+    obj = ImportFile.objects.get()
+    assert obj.status == ImportFile.Status.DONE
+    content = logfile.read_text()
+    assert content.startswith('[')  # Dated format
+    assert f'{obj.name}:{obj.path} imported' in content
+
+    # Without --log the messages go to the logging stream again
+    assert call_command('file_import', config) == 0
+
+
 def test_file_import_permanent_error(db, archived):
     # A corrupted archive cannot be parsed: the row is marked as error
     config = archived

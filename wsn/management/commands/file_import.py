@@ -1,8 +1,12 @@
 import fcntl
 import logging
 import pathlib
+import sys
 import tempfile
 import tomllib
+
+# Third-party requirements
+from tqdm import tqdm
 
 # Django
 from django.conf import settings
@@ -17,6 +21,13 @@ from wsn.upload import upload2ch, upload2pg
 
 
 logger = logging.getLogger(__name__)
+
+# Same format as the 'default' formatter in settings.LOGGING
+LOG_FORMATTER = logging.Formatter(
+    fmt='[{asctime}] {levelname} {name} {message}',
+    style='{',
+    datefmt='%d/%m/%Y:%H:%M:%S %z',
+)
 
 
 class Command(BaseCommand):
@@ -33,6 +44,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('config', help='Path to the TOML configuration file')
         parser.add_argument('--name', help='Import only the given name from the config file')
+        parser.add_argument('--log', help="Log to this file instead of stdout (for manual runs)")
 
     def handle_row(self, obj, config):
         name = obj.name
@@ -113,7 +125,7 @@ class Command(BaseCommand):
         obj.save(update_fields=['status', 'error', 'updated_at'])
         logger.info(f"{name}:{obj.path} imported, {len(rows)} rows")
 
-    def handle(self, config, name, *args, **kwargs):
+    def handle(self, config, name, log, *args, **kwargs):
         # Prevent overlapping runs (e.g. a slow cron run overlapping with
         # the next one). The lock is held until this command finishes, so
         # there are no stale locks. A second run fails loudly instead of
@@ -126,14 +138,34 @@ class Command(BaseCommand):
             except BlockingIOError:
                 raise CommandError('another file_import run is in progress')
 
-            with open(config, 'rb') as f:
-                config = tomllib.load(f)
-            config = config['import']
+            # Manual runs log to a file (--log), leaving stdout for the
+            # progress bar
+            handler = None
+            if log:
+                handler = logging.FileHandler(log)
+                handler.setFormatter(LOG_FORMATTER)
+                logger.addHandler(handler)
+                propagate, logger.propagate = logger.propagate, False
 
-            objs = ImportFile.objects.filter(status=ImportFile.Status.PENDING)
-            if name:
-                objs = objs.filter(name=name)
-            for obj in objs.iterator():
-                self.handle_row(obj, config)
+            try:
+                with open(config, 'rb') as f:
+                    config = tomllib.load(f)
+                config = config['import']
+
+                objs = ImportFile.objects.filter(status=ImportFile.Status.PENDING)
+                if name:
+                    objs = objs.filter(name=name)
+
+                # A live progress bar on stdout for manual runs
+                rows = objs.iterator()
+                if sys.stdout.isatty():
+                    rows = tqdm(rows, total=objs.count(), unit='file',
+                                file=sys.stdout)
+                for obj in rows:
+                    self.handle_row(obj, config)
+            finally:
+                if handler is not None:
+                    logger.removeHandler(handler)
+                    logger.propagate = propagate
 
         return 0
