@@ -109,11 +109,16 @@ def test_importfile_list_pager_keeps_filters(client, staff):
     response = client.get(url, {'name': 'n1'})
     content = response.content.decode()
     assert 'n2_000.xz' not in content
+    # bulk_create stamps increasing timestamps per row; newest first
+    assert 'n1_149.xz' in content
+    assert 'n1_000.xz' not in content
     # The pager links keep the active filter
     assert 'name=n1&amp;page=2' in content
 
     response = client.get(url, {'name': 'n1', 'page': '2'})
-    assert 'n1_149.xz' in response.content.decode()
+    content = response.content.decode()
+    assert 'n1_000.xz' in content
+    assert 'n1_149.xz' not in content
 
 
 def test_importfile_list_pager_above_table(client, staff):

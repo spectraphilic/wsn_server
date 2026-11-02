@@ -11,7 +11,7 @@ from .models import ImportFile
 
 @staff_member_required
 def importfile_list(request):
-    objects = ImportFile.objects.all()
+    objects = ImportFile.objects.order_by('-updated_at', 'name', 'path')
     name = request.GET.get('name', '')
     if name:
         objects = objects.filter(name=name)
