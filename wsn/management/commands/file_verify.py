@@ -1,5 +1,4 @@
 import datetime
-import time
 import tomllib
 
 # Django
@@ -59,9 +58,9 @@ class Command(BaseCommand):
     FINAL, so ReplacingMergeTree duplicates are accounted for), the on-disk
     sizes (informational), the TIMESTAMP range and per-column
     min/max/sum/count over the shared numeric columns. It also prints the
-    rows/bytes read (from system.query_log) by the same 31-day time-range
-    query on each side (informational: pruning is what the migration buys,
-    and wall-clock time is cache noise). Columns that exist on only one side (e.g.
+    rows read within the last-31-days window (from system.parts) on each
+    side (informational: pruning is what the migration buys, and rows read
+    are deterministic, unlike wall-clock time). Columns that exist on only one side (e.g.
     source_file, Pressure_kPa, the inert CH4 columns) are reported as
     skipped, not compared.
 
@@ -245,90 +244,63 @@ class Command(BaseCommand):
                 f'{"OK" if ok else "DIFF"}'
             )
 
-            # Query cost: run the same 31-day time-range query on each
-            # side and report the rows/bytes read back from
-            # system.query_log. Partition pruning is what the migration's
-            # monthly partitioning buys, and rows read are deterministic,
-            # unlike wall-clock time (cache noise). Informational, like the
-            # Size line. The window is the last 31 days of the new table,
-            # the same absolute window for both sides.
+            # Query cost: how many rows a time-range query reads on each
+            # side, from system.parts. Partition pruning is what the
+            # migration's monthly partitioning buys, and rows read are
+            # deterministic, unlike wall-clock time (cache noise).
+            # Informational, like the Size line. The window is the last
+            # 31 days of the new table, the same absolute window for both
+            # sides; months wholly overlap the window, so the new side is
+            # slightly overstated at the edges.
             window_end = new_range[1]
             window_start = window_end - 31 * 86400
 
-            def perf_where(cols):
-                ctype, _ = split_type(cols['TIMESTAMP'])
-                if ctype.startswith('Date'):
-                    # Direct date compare keeps partition pruning intact;
-                    # wrapping the column in a function hides it from the
-                    # partition key
-                    return (
-                        f"TIMESTAMP >= toDateTime({window_start}, 'UTC') "
-                        f"AND TIMESTAMP < toDateTime({window_end}, 'UTC')"
-                    )
-                return (
-                    f'TIMESTAMP >= {window_start} '
-                    f'AND TIMESTAMP < {window_end}'
-                )
+            def fmt_ym(ts):
+                return datetime.datetime.fromtimestamp(
+                    ts, tz=datetime.UTC).strftime('%Y%m')
 
-            def perf_measure(table, cols, label):
-                query = (
-                    f'SELECT count() FROM {table} '
-                    f'WHERE {perf_where(cols)}'
-                )
-                query_id = f'file-verify-perf-{label}'
-                ch.execute(query, query_id=query_id,
-                           settings={'log_queries': 1})
-                return query_id
-
-            lookup_query = (
-                'SELECT read_rows, read_bytes, query_duration_ms, '
-                "ProfileEvents['SelectedParts'], "
-                "ProfileEvents['SelectedMarks'] "
-                'FROM system.query_log '
-                "WHERE type = 'QueryFinish' "
-                # %(name)s params are substituted client-side by the
-                # driver; {name:Type} would reach the server literally
-                'AND query_id = %(query_id)s '
-                'ORDER BY query_start_time DESC LIMIT 1'
+            parts_query = (
+                'SELECT count(), sum(rows), '
+                'countIf(partition_id BETWEEN %(ym_start)s AND %(ym_end)s), '
+                'sumIf(rows, partition_id BETWEEN %(ym_start)s AND %(ym_end)s) '
+                'FROM system.parts '
+                'WHERE database = %(database)s AND table = %(table)s '
+                'AND active'
             )
 
-            # The log flushes on a timer (default every 7.5s) and the
-            # table may not exist until the first flush, so poll; the
-            # ClickHouse user may not be allowed to run SYSTEM FLUSH LOGS
-            qids = (perf_measure(table_old, old_cols, 'old'),
-                    perf_measure(table_new, new_cols, 'new'))
-            perfs = [None, None]
+            def perf_estimate(table):
+                # Rows and parts overlapping the window's months. An
+                # unpartitioned table has a single 'all' partition, which
+                # never matches: the whole table is read
+                n_parts, total, n_overlap, overlap = ch.execute(
+                    parts_query,
+                    {
+                        'ym_start': fmt_ym(window_start),
+                        'ym_end': fmt_ym(window_end),
+                        'database': database,
+                        'table': table,
+                    },
+                )[0]
+                return (overlap or total or 0), (n_overlap or n_parts)
+
             perf_error = None
-            for _ in range(6):
-                for i, qid in enumerate(qids):
-                    if perfs[i] is not None:
-                        continue
-                    try:
-                        rows = ch.execute(lookup_query, {'query_id': qid})
-                        perfs[i] = rows[0] if rows else None
-                    except Exception as exc:
-                        perf_error = exc
-                if all(p is not None for p in perfs):
-                    break
-                time.sleep(2)
+            try:
+                old_read, old_n_parts = perf_estimate(table_old)
+                new_read, new_n_parts = perf_estimate(table_new)
+            except Exception as exc:
+                # Informational: report why, don't fail the verification
+                old_read = new_read = old_n_parts = new_n_parts = None
+                perf_error = exc
 
-            old_perf, new_perf = perfs
-            if any(p is None for p in perfs) and perf_error is None:
-                perf_error = RuntimeError(
-                    'no query_log entry for the measured queries')
-
-            def fmt_perf(perf):
-                if perf is None:
+            def fmt_perf(rows, n_parts):
+                if rows is None:
                     return 'unavailable'
-                rows, bytes_, ms, parts, marks = perf
-                return (
-                    f'{rows:,} rows, {filesizeformat(bytes_)} '
-                    f'in {ms} ms ({parts} parts, {marks} marks)'
-                )
+                return f'{rows:,} rows ({n_parts} parts)'
 
             perf_line = (
                 f'Perf: {fmt(window_start)} .. {fmt(window_end)}: '
-                f'old={fmt_perf(old_perf)} new={fmt_perf(new_perf)}'
+                f'old={fmt_perf(old_read, old_n_parts)} '
+                f'new={fmt_perf(new_read, new_n_parts)}'
             )
             if perf_error is not None:
                 reason = str(perf_error).splitlines()[0]
