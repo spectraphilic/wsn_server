@@ -958,6 +958,37 @@ table = "test_new"
     FakeClickHouse.differ = False
 
 
+class FakeClickHousePerfError(FakeClickHouse):
+    """The query_log lookup fails: the reason is printed, verification passes"""
+
+    def execute(self, query, *args, **kwargs):
+        if query.startswith('SELECT read_rows'):
+            raise RuntimeError('Code: 81. DB::Exception: Table system.query_log does not exist')
+        return super().execute(query, *args, **kwargs)
+
+
+def test_file_verify_perf_unavailable(db, tmp_path, monkeypatch, capsys):
+    config = tmp_path / 'config.toml'
+    config.write_text('''
+[import]
+
+[import.test]
+path = "/tmp/unused"
+pattern = "*.dat"
+pipeline = "archive_first"
+table = "test_new"
+''')
+    ImportFile.objects.create(name='test', path='2023/09/x.dat.xz',
+                              status=ImportFile.Status.DONE)
+    monkeypatch.setattr(file_verify, 'ClickHouse', FakeClickHousePerfError)
+
+    assert call_command('file_verify', config, name='test') == 0
+    out = capsys.readouterr().out
+    assert 'old=unavailable new=unavailable' in out
+    assert 'RuntimeError: Code: 81. DB::Exception: Table system.query_log does not exist' in out
+    assert 'All checks OK' in out
+
+
 class FakeClickHouseAfterSwap(FakeClickHouse):
     """Post-swap state: the live table is `test`, the backup is `test_old`."""
 

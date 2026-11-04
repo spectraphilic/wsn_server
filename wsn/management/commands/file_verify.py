@@ -277,22 +277,27 @@ class Command(BaseCommand):
                 query_id = f'file-verify-perf-{label}'
                 ch.execute(query, query_id=query_id,
                            settings={'log_queries': 1})
-                try:
-                    ch.execute('SYSTEM FLUSH LOGS')
-                    rows = ch.execute(
-                        'SELECT read_rows, read_bytes, query_duration_ms '
-                        'FROM system.query_log '
-                        "WHERE type = 'QueryFinish' "
-                        'AND query_id = {query_id:String} '
-                        'ORDER BY query_start_time DESC LIMIT 1',
-                        {'query_id': query_id},
-                    )
-                except Exception:
-                    return None  # query_log not available
+                ch.execute('SYSTEM FLUSH LOGS')
+                rows = ch.execute(
+                    'SELECT read_rows, read_bytes, query_duration_ms '
+                    'FROM system.query_log '
+                    "WHERE type = 'QueryFinish' "
+                    # %(name)s params are substituted client-side by the
+                    # driver; {name:Type} would reach the server literally
+                    'AND query_id = %(query_id)s '
+                    'ORDER BY query_start_time DESC LIMIT 1',
+                    {'query_id': query_id},
+                )
                 return rows[0] if rows else None
 
-            old_perf = perf_estimate(table_old, old_cols, 'old')
-            new_perf = perf_estimate(table_new, new_cols, 'new')
+            perf_error = None
+            try:
+                old_perf = perf_estimate(table_old, old_cols, 'old')
+                new_perf = perf_estimate(table_new, new_cols, 'new')
+            except Exception as exc:
+                # Informational: report why, don't fail the verification
+                old_perf = new_perf = None
+                perf_error = exc
 
             def fmt_perf(perf):
                 if perf is None:
@@ -300,10 +305,14 @@ class Command(BaseCommand):
                 rows, bytes_, ms = perf
                 return f'{rows:,} rows, {filesizeformat(bytes_)} ({ms} ms)'
 
-            self.stdout.write(
+            perf_line = (
                 f'Perf: {fmt(window_start)} .. {fmt(window_end)}: '
                 f'old={fmt_perf(old_perf)} new={fmt_perf(new_perf)}'
             )
+            if perf_error is not None:
+                reason = str(perf_error).splitlines()[0]
+                perf_line += f' ({type(perf_error).__name__}: {reason})'
+            self.stdout.write(perf_line)
 
             # Per-column aggregates
             old_stats = stats(table_old)
