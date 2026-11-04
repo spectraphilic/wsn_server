@@ -864,8 +864,8 @@ class FakeClickHouse:
             # with; the partitioned new table reads a fraction of the rows
             label = args[0]['query_id'].rsplit('-', 1)[-1]
             if label == 'new':
-                return [(74512, 3686400, 5)]
-            return [(860506, 43868160, 45)]
+                return [(74512, 3686400, 5, 2, 64)]
+            return [(860506, 43868160, 45, 1, 512)]
         # Per-column aggregate query: RECORD (nullable, 4 exprs) and Ux
         # (float, 4 exprs)
         value = 2.0 if self.differ and 'FROM test_new' in query else 1
@@ -943,8 +943,8 @@ table = "test_new"
     assert 'Size: old=50.0\xa0MB new=30.0\xa0MB' in out
     assert 'Range:' in out and ' OK' in out
     assert ('Perf: 2026-07-10 02:40:00 .. 2026-08-10 02:40:00: '
-            'old=860,506 rows, 41.8\xa0MB (45 ms) '
-            'new=74,512 rows, 3.5\xa0MB (5 ms)' in out)
+            'old=860,506 rows, 41.8\xa0MB in 45 ms (1 parts, 512 marks) '
+            'new=74,512 rows, 3.5\xa0MB in 5 ms (2 parts, 64 marks)' in out)
     assert 'Ux: OK' in out
     assert 'All checks OK' in out
 
@@ -981,6 +981,8 @@ table = "test_new"
     ImportFile.objects.create(name='test', path='2023/09/x.dat.xz',
                               status=ImportFile.Status.DONE)
     monkeypatch.setattr(file_verify, 'ClickHouse', FakeClickHousePerfError)
+    # The poll loop retried 6 times; don't sleep for real
+    monkeypatch.setattr(time, 'sleep', lambda s: None)
 
     assert call_command('file_verify', config, name='test') == 0
     out = capsys.readouterr().out

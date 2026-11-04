@@ -1,4 +1,5 @@
 import datetime
+import time
 import tomllib
 
 # Django
@@ -269,7 +270,7 @@ class Command(BaseCommand):
                     f'AND TIMESTAMP < {window_end}'
                 )
 
-            def perf_estimate(table, cols, label):
+            def perf_measure(table, cols, label):
                 query = (
                     f'SELECT count() FROM {table} '
                     f'WHERE {perf_where(cols)}'
@@ -277,33 +278,53 @@ class Command(BaseCommand):
                 query_id = f'file-verify-perf-{label}'
                 ch.execute(query, query_id=query_id,
                            settings={'log_queries': 1})
-                ch.execute('SYSTEM FLUSH LOGS')
-                rows = ch.execute(
-                    'SELECT read_rows, read_bytes, query_duration_ms '
-                    'FROM system.query_log '
-                    "WHERE type = 'QueryFinish' "
-                    # %(name)s params are substituted client-side by the
-                    # driver; {name:Type} would reach the server literally
-                    'AND query_id = %(query_id)s '
-                    'ORDER BY query_start_time DESC LIMIT 1',
-                    {'query_id': query_id},
-                )
-                return rows[0] if rows else None
+                return query_id
 
+            lookup_query = (
+                'SELECT read_rows, read_bytes, query_duration_ms, '
+                "ProfileEvents['SelectedParts'], "
+                "ProfileEvents['SelectedMarks'] "
+                'FROM system.query_log '
+                "WHERE type = 'QueryFinish' "
+                # %(name)s params are substituted client-side by the
+                # driver; {name:Type} would reach the server literally
+                'AND query_id = %(query_id)s '
+                'ORDER BY query_start_time DESC LIMIT 1'
+            )
+
+            # The log flushes on a timer (default every 7.5s) and the
+            # table may not exist until the first flush, so poll; the
+            # ClickHouse user may not be allowed to run SYSTEM FLUSH LOGS
+            qids = (perf_measure(table_old, old_cols, 'old'),
+                    perf_measure(table_new, new_cols, 'new'))
+            perfs = [None, None]
             perf_error = None
-            try:
-                old_perf = perf_estimate(table_old, old_cols, 'old')
-                new_perf = perf_estimate(table_new, new_cols, 'new')
-            except Exception as exc:
-                # Informational: report why, don't fail the verification
-                old_perf = new_perf = None
-                perf_error = exc
+            for _ in range(6):
+                for i, qid in enumerate(qids):
+                    if perfs[i] is not None:
+                        continue
+                    try:
+                        rows = ch.execute(lookup_query, {'query_id': qid})
+                        perfs[i] = rows[0] if rows else None
+                    except Exception as exc:
+                        perf_error = exc
+                if all(p is not None for p in perfs):
+                    break
+                time.sleep(2)
+
+            old_perf, new_perf = perfs
+            if any(p is None for p in perfs) and perf_error is None:
+                perf_error = RuntimeError(
+                    'no query_log entry for the measured queries')
 
             def fmt_perf(perf):
                 if perf is None:
                     return 'unavailable'
-                rows, bytes_, ms = perf
-                return f'{rows:,} rows, {filesizeformat(bytes_)} ({ms} ms)'
+                rows, bytes_, ms, parts, marks = perf
+                return (
+                    f'{rows:,} rows, {filesizeformat(bytes_)} '
+                    f'in {ms} ms ({parts} parts, {marks} marks)'
+                )
 
             perf_line = (
                 f'Perf: {fmt(window_start)} .. {fmt(window_end)}: '
