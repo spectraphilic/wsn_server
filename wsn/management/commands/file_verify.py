@@ -58,9 +58,9 @@ class Command(BaseCommand):
     FINAL, so ReplacingMergeTree duplicates are accounted for), the on-disk
     sizes (informational), the TIMESTAMP range and per-column
     min/max/sum/count over the shared numeric columns. It also prints the
-    rows/parts EXPLAIN ESTIMATE reports for a 31-day time-range query on
-    each side (informational: pruning is what the migration buys, and
-    wall-clock time is cache noise). Columns that exist on only one side (e.g.
+    rows/bytes read (from system.query_log) by the same 31-day time-range
+    query on each side (informational: pruning is what the migration buys,
+    and wall-clock time is cache noise). Columns that exist on only one side (e.g.
     source_file, Pressure_kPa, the inert CH4 columns) are reported as
     skipped, not compared.
 
@@ -244,10 +244,11 @@ class Command(BaseCommand):
                 f'{"OK" if ok else "DIFF"}'
             )
 
-            # Query cost: EXPLAIN ESTIMATE reports the parts/rows the plan
-            # will read, which is what the migration's monthly partitioning
-            # buys. Plan only, no data is scanned, so it is safe on the big
-            # tables and immune to cache noise. Informational, like the
+            # Query cost: run the same 31-day time-range query on each
+            # side and report the rows/bytes read back from
+            # system.query_log. Partition pruning is what the migration's
+            # monthly partitioning buys, and rows read are deterministic,
+            # unlike wall-clock time (cache noise). Informational, like the
             # Size line. The window is the last 31 days of the new table,
             # the same absolute window for both sides.
             window_end = new_range[1]
@@ -268,23 +269,40 @@ class Command(BaseCommand):
                     f'AND TIMESTAMP < {window_end}'
                 )
 
-            def perf_estimate(table, cols):
-                # EXPLAIN ESTIMATE columns: database, table, parts,
-                # partitions, rows, marks; one row per table read
-                rows = ch.execute(
-                    f'EXPLAIN ESTIMATE SELECT count() FROM {table} '
+            def perf_estimate(table, cols, label):
+                query = (
+                    f'SELECT count() FROM {table} '
                     f'WHERE {perf_where(cols)}'
                 )
-                parts = sum(row[2] for row in rows)
-                est_rows = sum(row[4] for row in rows)
-                return parts, est_rows
+                query_id = f'file-verify-perf-{label}'
+                ch.execute(query, query_id=query_id,
+                           settings={'log_queries': 1})
+                try:
+                    ch.execute('SYSTEM FLUSH LOGS')
+                    rows = ch.execute(
+                        'SELECT read_rows, read_bytes, query_duration_ms '
+                        'FROM system.query_log '
+                        "WHERE type = 'QueryFinish' "
+                        'AND query_id = {query_id:String} '
+                        'ORDER BY query_start_time DESC LIMIT 1',
+                        {'query_id': query_id},
+                    )
+                except Exception:
+                    return None  # query_log not available
+                return rows[0] if rows else None
 
-            old_parts, old_read = perf_estimate(table_old, old_cols)
-            new_parts, new_read = perf_estimate(table_new, new_cols)
+            old_perf = perf_estimate(table_old, old_cols, 'old')
+            new_perf = perf_estimate(table_new, new_cols, 'new')
+
+            def fmt_perf(perf):
+                if perf is None:
+                    return 'unavailable'
+                rows, bytes_, ms = perf
+                return f'{rows:,} rows, {filesizeformat(bytes_)} ({ms} ms)'
+
             self.stdout.write(
                 f'Perf: {fmt(window_start)} .. {fmt(window_end)}: '
-                f'old={old_read:,} rows ({old_parts} parts) '
-                f'new={new_read:,} rows ({new_parts} parts)'
+                f'old={fmt_perf(old_perf)} new={fmt_perf(new_perf)}'
             )
 
             # Per-column aggregates

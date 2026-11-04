@@ -857,13 +857,15 @@ class FakeClickHouse:
             return [(584,)]
         if query.startswith('SELECT toUInt32(min(TIMESTAMP))'):
             return [(1694649600, 1786329600)]
-        if query.startswith('EXPLAIN ESTIMATE'):
-            # Columns: database, table, parts, partitions, rows, marks.
-            # The partitioned new table reads a fraction of the rows
-            table = query.split(' FROM ')[1].split(' WHERE')[0].strip()
-            if table.endswith('_new'):
-                return [('db', table, 2, 2, 74512, 64)]
-            return [('db', table, 1, 1, 860506, 512)]
+        if query.startswith('SYSTEM FLUSH LOGS'):
+            return []
+        if query.startswith('SELECT read_rows'):
+            # The lookup is keyed by the query_id the measured query ran
+            # with; the partitioned new table reads a fraction of the rows
+            label = args[0]['query_id'].rsplit('-', 1)[-1]
+            if label == 'new':
+                return [(74512, 3686400, 5)]
+            return [(860506, 43868160, 45)]
         # Per-column aggregate query: RECORD (nullable, 4 exprs) and Ux
         # (float, 4 exprs)
         value = 2.0 if self.differ and 'FROM test_new' in query else 1
@@ -941,7 +943,8 @@ table = "test_new"
     assert 'Size: old=50.0\xa0MB new=30.0\xa0MB' in out
     assert 'Range:' in out and ' OK' in out
     assert ('Perf: 2026-07-10 02:40:00 .. 2026-08-10 02:40:00: '
-            'old=860,506 rows (1 parts) new=74,512 rows (2 parts)' in out)
+            'old=860,506 rows, 41.8\xa0MB (45 ms) '
+            'new=74,512 rows, 3.5\xa0MB (5 ms)' in out)
     assert 'Ux: OK' in out
     assert 'All checks OK' in out
 
@@ -972,13 +975,6 @@ class FakeClickHouseAfterSwap(FakeClickHouse):
             return [(1 if table == 'test_old' else 0,)]
         if query.startswith('SELECT name FROM system.tables'):
             return [('test',), ('test_old',)]
-        if query.startswith('EXPLAIN ESTIMATE'):
-            # Columns: database, table, parts, partitions, rows, marks.
-            # Post-swap the live table is the new one
-            table = query.split(' FROM ')[1].split(' WHERE')[0].strip()
-            if table == 'test':
-                return [('db', table, 2, 2, 74512, 64)]
-            return [('db', table, 1, 1, 860506, 512)]
         return super().execute(query, *args, **kwargs)
 
 
