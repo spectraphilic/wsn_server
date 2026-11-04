@@ -57,7 +57,10 @@ class Command(BaseCommand):
     Compares the ledger status, the partition keys, the row counts (with
     FINAL, so ReplacingMergeTree duplicates are accounted for), the on-disk
     sizes (informational), the TIMESTAMP range and per-column
-    min/max/sum/count over the shared numeric columns. Columns that exist on only one side (e.g.
+    min/max/sum/count over the shared numeric columns. It also prints the
+    rows/parts EXPLAIN ESTIMATE reports for a 31-day time-range query on
+    each side (informational: pruning is what the migration buys, and
+    wall-clock time is cache noise). Columns that exist on only one side (e.g.
     source_file, Pressure_kPa, the inert CH4 columns) are reported as
     skipped, not compared.
 
@@ -239,6 +242,49 @@ class Command(BaseCommand):
                 f'Range: old={fmt(old_range[0])} .. {fmt(old_range[1])} '
                 f'new={fmt(new_range[0])} .. {fmt(new_range[1])} '
                 f'{"OK" if ok else "DIFF"}'
+            )
+
+            # Query cost: EXPLAIN ESTIMATE reports the parts/rows the plan
+            # will read, which is what the migration's monthly partitioning
+            # buys. Plan only, no data is scanned, so it is safe on the big
+            # tables and immune to cache noise. Informational, like the
+            # Size line. The window is the last 31 days of the new table,
+            # the same absolute window for both sides.
+            window_end = new_range[1]
+            window_start = window_end - 31 * 86400
+
+            def perf_where(cols):
+                ctype, _ = split_type(cols['TIMESTAMP'])
+                if ctype.startswith('Date'):
+                    # Direct date compare keeps partition pruning intact;
+                    # wrapping the column in a function hides it from the
+                    # partition key
+                    return (
+                        f"TIMESTAMP >= toDateTime({window_start}, 'UTC') "
+                        f"AND TIMESTAMP < toDateTime({window_end}, 'UTC')"
+                    )
+                return (
+                    f'TIMESTAMP >= {window_start} '
+                    f'AND TIMESTAMP < {window_end}'
+                )
+
+            def perf_estimate(table, cols):
+                # EXPLAIN ESTIMATE columns: database, table, parts,
+                # partitions, rows, marks; one row per table read
+                rows = ch.execute(
+                    f'EXPLAIN ESTIMATE SELECT count() FROM {table} '
+                    f'WHERE {perf_where(cols)}'
+                )
+                parts = sum(row[2] for row in rows)
+                est_rows = sum(row[4] for row in rows)
+                return parts, est_rows
+
+            old_parts, old_read = perf_estimate(table_old, old_cols)
+            new_parts, new_read = perf_estimate(table_new, new_cols)
+            self.stdout.write(
+                f'Perf: {fmt(window_start)} .. {fmt(window_end)}: '
+                f'old={old_read:,} rows ({old_parts} parts) '
+                f'new={new_read:,} rows ({new_parts} parts)'
             )
 
             # Per-column aggregates
