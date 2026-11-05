@@ -857,6 +857,8 @@ class FakeClickHouse:
             return [(584,)]
         if query.startswith('SELECT toUInt32(min(TIMESTAMP))'):
             return [(1694649600, 1786329600)]
+        if query.startswith('SELECT toUInt32(max(TIMESTAMP))'):
+            return [(1786329600,)]
         # Per-column aggregate query: RECORD (nullable, 4 exprs) and Ux
         # (float, 4 exprs)
         value = 2.0 if self.differ and 'FROM test_new' in query else 1
@@ -944,6 +946,34 @@ table = "test_new"
     assert 'Ux: DIFF' in out
     assert '2 check(s) differ' in out
     FakeClickHouse.differ = False
+
+
+def test_file_verify_perf(tmp_path, monkeypatch, capsys):
+    # --perf times a query on both tables and skips the checks; it needs
+    # no PostgreSQL ledger (no db fixture here)
+    config = tmp_path / 'config.toml'
+    config.write_text('''
+[import]
+
+[import.test]
+path = "/tmp/unused"
+pattern = "*.dat"
+pipeline = "archive_first"
+table = "test_new"
+''')
+    monkeypatch.setattr(file_verify, 'ClickHouse', FakeClickHouse)
+
+    assert call_command('file_verify', config, name='test', perf=True) == 0
+    out = capsys.readouterr().out
+    assert 'test (old) vs test_new (new)' in out
+    line = [line for line in out.splitlines() if line.startswith('Perf:')]
+    assert len(line) == 1
+    assert line[0].startswith(
+        'Perf: 2026-07-10 02:40:00 .. 2026-08-10 02:40:00: old=')
+    assert ' new=' in line[0] and line[0].endswith(' ms')
+    # The checks are skipped
+    assert 'Ledger:' not in out
+    assert 'All checks OK' not in out
 
 
 class FakeClickHouseAfterSwap(FakeClickHouse):

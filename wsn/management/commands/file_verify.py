@@ -1,4 +1,5 @@
 import datetime
+import time
 import tomllib
 
 # Django
@@ -18,6 +19,12 @@ EXPECTED_PARTITION_KEY = 'toYYYYMM(toDateTime(TIMESTAMP))'
 
 NUMERIC_PREFIXES = ('Int', 'UInt', 'Float', 'Decimal')
 STATS = ('min', 'max', 'sum', 'count')
+
+# --perf: the timed query is a count() over a 31-day window, the query
+# shape the monthly partitioning is for; best of PERF_RUNS runs after a
+# warmup run
+PERF_WINDOW = 31 * 86400
+PERF_RUNS = 3
 
 
 def split_type(ctype):
@@ -65,11 +72,16 @@ class Command(BaseCommand):
     rows with bad timestamps that the old pipeline imported and the new
     one skips. Operational problems (missing entry, table in no
     migratable state) fail loudly.
+
+    With --perf the checks are skipped and the command times the same
+    31-day time-range count() on both tables instead.
     """
 
     def add_arguments(self, parser):
         parser.add_argument('config', help="Path to the TOML configuration file")
         parser.add_argument('--name', help="Verify only the given name from the config file")
+        parser.add_argument('--perf', action='store_true',
+                            help="Time a query on both tables only, skip the checks")
 
     @staticmethod
     def exists(ch, table):
@@ -78,6 +90,22 @@ class Command(BaseCommand):
             "SELECT count() FROM system.tables "
             f"WHERE database = '{database}' AND name = '{table}'"
         )[0][0] > 0
+
+    def tables(self, ch, name, values):
+        # Migration phase: before the swap the entry has table =
+        # "xxx_new" in the config; after the swap the config option is
+        # removed and the backup table is xxx_old
+        table_new = values.get('table', name)
+        if table_new.endswith('_new'):
+            table_old = table_new[:-len('_new')]
+        elif self.exists(ch, f'{name}_old'):
+            table_old, table_new = f'{name}_old', name
+        else:
+            raise CommandError(
+                f'{name}: config has no table = "xxx_new" and no '
+                f'{name}_old table exists; run this before the swap'
+            )
+        return table_old, table_new
 
     def verify(self, name, values):
         # Ledger
@@ -92,19 +120,7 @@ class Command(BaseCommand):
 
         diffs = 0
         with ClickHouse() as ch:
-            # Migration phase: before the swap the entry has table =
-            # "xxx_new" in the config; after the swap the config option is
-            # removed and the backup table is xxx_old
-            table_new = values.get('table', name)
-            if table_new.endswith('_new'):
-                table_old = table_new[:-len('_new')]
-            elif self.exists(ch, f'{name}_old'):
-                table_old, table_new = f'{name}_old', name
-            else:
-                raise CommandError(
-                    f'{name}: config has no table = "xxx_new" and no '
-                    f'{name}_old table exists; run this before the swap'
-                )
+            table_old, table_new = self.tables(ch, name, values)
 
             self.stdout.write(f'{table_old} (old) vs {table_new} (new)')
 
@@ -258,6 +274,71 @@ class Command(BaseCommand):
 
         return diffs, problems
 
+    def perf(self, name, values):
+        # Time the same 31-day time-range count() on both tables: this is
+        # the query shape the monthly partitioning is for. Wall time is
+        # meaningless on small tables and informative on the big ones;
+        # best-of-N after a warmup run is the least noisy figure, as
+        # cache effects only ever make repeats faster.
+        with ClickHouse() as ch:
+            table_old, table_new = self.tables(ch, name, values)
+            self.stdout.write(f'{table_old} (old) vs {table_new} (new)')
+
+            def describe(table):
+                return {row[0]: row[1]
+                        for row in ch.execute(f'DESCRIBE TABLE {table}')}
+
+            window_end = ch.execute(
+                f'SELECT toUInt32(max(TIMESTAMP)) FROM {table_new}'
+            )[0][0]
+            window_start = window_end - PERF_WINDOW
+
+            def where(cols):
+                ctype, _ = split_type(cols['TIMESTAMP'])
+                if ctype.startswith('Date'):
+                    # Direct date compare keeps partition pruning intact
+                    return (
+                        f"TIMESTAMP >= toDateTime({window_start}, 'UTC') "
+                        f"AND TIMESTAMP < toDateTime({window_end}, 'UTC')"
+                    )
+                return (
+                    f'TIMESTAMP >= {window_start} '
+                    f'AND TIMESTAMP < {window_end}'
+                )
+
+            def timeit(query):
+                ch.execute(query)  # warmup
+                best = None
+                for _ in range(PERF_RUNS):
+                    t0 = time.perf_counter()
+                    ch.execute(query)
+                    elapsed = time.perf_counter() - t0
+                    best = elapsed if best is None else min(best, elapsed)
+                return best
+
+            old = timeit(
+                f'SELECT count() FROM {table_old} '
+                f'WHERE {where(describe(table_old))}'
+            )
+            new = timeit(
+                f'SELECT count() FROM {table_new} '
+                f'WHERE {where(describe(table_new))}'
+            )
+
+            def fmt_ts(ts):
+                return datetime.datetime.fromtimestamp(
+                    ts, tz=datetime.UTC).strftime('%Y-%m-%d %H:%M:%S')
+
+            def fmt_ms(seconds):
+                if seconds < 1:
+                    return f'{seconds * 1000:.1f} ms'
+                return f'{seconds:.2f} s'
+
+            self.stdout.write(
+                f'Perf: {fmt_ts(window_start)} .. {fmt_ts(window_end)}: '
+                f'old={fmt_ms(old)} new={fmt_ms(new)}'
+            )
+
     def handle(self, config, name, *args, **kwargs):
         with open(config, 'rb') as f:
             config = tomllib.load(f)
@@ -266,6 +347,7 @@ class Command(BaseCommand):
         verified = 0
         total_diffs = 0
         problems = 0
+        perf = kwargs.get('perf', False)
 
         # Batch mode only: the set of existing tables, to skip entries that
         # are in no migratable state (no xxx_new in the config, no xxx_old
@@ -290,12 +372,18 @@ class Command(BaseCommand):
                       or f'{entry_name}_old' in existing):
                 continue
             verified += 1
+            if perf:
+                self.perf(entry_name, values)
+                continue
             diffs, p = self.verify(entry_name, values)
             total_diffs += diffs
             problems += p
 
         if name and not verified:
             raise CommandError(f'{name}: no archive_first entry found in the config')
+
+        if perf:
+            return 0
 
         if problems:
             self.stderr.write(
