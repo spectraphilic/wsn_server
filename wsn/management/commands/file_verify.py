@@ -57,10 +57,7 @@ class Command(BaseCommand):
     Compares the ledger status, the partition keys, the row counts (with
     FINAL, so ReplacingMergeTree duplicates are accounted for), the on-disk
     sizes (informational), the TIMESTAMP range and per-column
-    min/max/sum/count over the shared numeric columns. It also prints the
-    rows read within the last-31-days window (from system.parts) on each
-    side (informational: pruning is what the migration buys, and rows read
-    are deterministic, unlike wall-clock time). Columns that exist on only one side (e.g.
+    min/max/sum/count over the shared numeric columns. Columns that exist on only one side (e.g.
     source_file, Pressure_kPa, the inert CH4 columns) are reported as
     skipped, not compared.
 
@@ -243,69 +240,6 @@ class Command(BaseCommand):
                 f'new={fmt(new_range[0])} .. {fmt(new_range[1])} '
                 f'{"OK" if ok else "DIFF"}'
             )
-
-            # Query cost: how many rows a time-range query reads on each
-            # side, from system.parts. Partition pruning is what the
-            # migration's monthly partitioning buys, and rows read are
-            # deterministic, unlike wall-clock time (cache noise).
-            # Informational, like the Size line. The window is the last
-            # 31 days of the new table, the same absolute window for both
-            # sides; months wholly overlap the window, so the new side is
-            # slightly overstated at the edges.
-            window_end = new_range[1]
-            window_start = window_end - 31 * 86400
-
-            def fmt_ym(ts):
-                return datetime.datetime.fromtimestamp(
-                    ts, tz=datetime.UTC).strftime('%Y%m')
-
-            parts_query = (
-                'SELECT count(), sum(rows), '
-                'countIf(partition_id BETWEEN %(ym_start)s AND %(ym_end)s), '
-                'sumIf(rows, partition_id BETWEEN %(ym_start)s AND %(ym_end)s) '
-                'FROM system.parts '
-                'WHERE database = %(database)s AND table = %(table)s '
-                'AND active'
-            )
-
-            def perf_estimate(table):
-                # Rows and parts overlapping the window's months. An
-                # unpartitioned table has a single 'all' partition, which
-                # never matches: the whole table is read
-                n_parts, total, n_overlap, overlap = ch.execute(
-                    parts_query,
-                    {
-                        'ym_start': fmt_ym(window_start),
-                        'ym_end': fmt_ym(window_end),
-                        'database': database,
-                        'table': table,
-                    },
-                )[0]
-                return (overlap or total or 0), (n_overlap or n_parts)
-
-            perf_error = None
-            try:
-                old_read, old_n_parts = perf_estimate(table_old)
-                new_read, new_n_parts = perf_estimate(table_new)
-            except Exception as exc:
-                # Informational: report why, don't fail the verification
-                old_read = new_read = old_n_parts = new_n_parts = None
-                perf_error = exc
-
-            def fmt_perf(rows, n_parts):
-                if rows is None:
-                    return 'unavailable'
-                return f'{rows:,} rows ({n_parts} parts)'
-
-            perf_line = (
-                f'Perf: {fmt(window_start)} .. {fmt(window_end)}: '
-                f'old={fmt_perf(old_read, old_n_parts)} '
-                f'new={fmt_perf(new_read, new_n_parts)}'
-            )
-            if perf_error is not None:
-                reason = str(perf_error).splitlines()[0]
-                perf_line += f' ({type(perf_error).__name__}: {reason})'
-            self.stdout.write(perf_line)
 
             # Per-column aggregates
             old_stats = stats(table_old)

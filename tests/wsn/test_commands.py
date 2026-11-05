@@ -853,22 +853,10 @@ class FakeClickHouse:
             table = query.split("name = ")[1].strip().strip("'")
             size = 30 * 1024 * 1024 if table.endswith('_new') else 50 * 1024 * 1024
             return [(size,)]
-        if query.startswith('SELECT count(), sum(rows)'):
-            # system.parts aggregate: total parts/rows and window overlap.
-            # The partitioned new table reads a fraction of the rows
-            if args[0]['table'].endswith('_new'):
-                return [(20, 860506, 2, 74512)]
-            return [(1, 860506, 0, 0)]
         if query.startswith('SELECT count()'):
             return [(584,)]
         if query.startswith('SELECT toUInt32(min(TIMESTAMP))'):
             return [(1694649600, 1786329600)]
-        if query.startswith('SELECT count(), sum(rows)'):
-            # system.parts aggregate: total parts/rows and window overlap.
-            # The partitioned new table reads a fraction of the rows
-            if args[0]['table'].endswith('_new'):
-                return [(20, 860506, 2, 74512)]
-            return [(1, 860506, 0, 0)]
         # Per-column aggregate query: RECORD (nullable, 4 exprs) and Ux
         # (float, 4 exprs)
         value = 2.0 if self.differ and 'FROM test_new' in query else 1
@@ -945,8 +933,6 @@ table = "test_new"
     # filesizeformat separates the value and unit with a non-breaking space
     assert 'Size: old=50.0\xa0MB new=30.0\xa0MB' in out
     assert 'Range:' in out and ' OK' in out
-    assert ('Perf: 2026-07-10 02:40:00 .. 2026-08-10 02:40:00: '
-            'old=860,506 rows (1 parts) new=74,512 rows (2 parts)' in out)
     assert 'Ux: OK' in out
     assert 'All checks OK' in out
 
@@ -958,37 +944,6 @@ table = "test_new"
     assert 'Ux: DIFF' in out
     assert '2 check(s) differ' in out
     FakeClickHouse.differ = False
-
-
-class FakeClickHousePerfError(FakeClickHouse):
-    """The system.parts query fails: the reason is printed, verification passes"""
-
-    def execute(self, query, *args, **kwargs):
-        if query.startswith('SELECT count(), sum(rows)'):
-            raise RuntimeError('Code: 497. DB::Exception: wsn: Not allowed to SELECT from system.parts')
-        return super().execute(query, *args, **kwargs)
-
-
-def test_file_verify_perf_unavailable(db, tmp_path, monkeypatch, capsys):
-    config = tmp_path / 'config.toml'
-    config.write_text('''
-[import]
-
-[import.test]
-path = "/tmp/unused"
-pattern = "*.dat"
-pipeline = "archive_first"
-table = "test_new"
-''')
-    ImportFile.objects.create(name='test', path='2023/09/x.dat.xz',
-                              status=ImportFile.Status.DONE)
-    monkeypatch.setattr(file_verify, 'ClickHouse', FakeClickHousePerfError)
-
-    assert call_command('file_verify', config, name='test') == 0
-    out = capsys.readouterr().out
-    assert 'old=unavailable new=unavailable' in out
-    assert 'RuntimeError: Code: 497. DB::Exception: wsn: Not allowed to SELECT from system.parts' in out
-    assert 'All checks OK' in out
 
 
 class FakeClickHouseAfterSwap(FakeClickHouse):
@@ -1008,11 +963,6 @@ class FakeClickHouseAfterSwap(FakeClickHouse):
             return [(1 if table == 'test_old' else 0,)]
         if query.startswith('SELECT name FROM system.tables'):
             return [('test',), ('test_old',)]
-        if query.startswith('SELECT count(), sum(rows)'):
-            # Post-swap the live table is the new one
-            if args[0]['table'] == 'test':
-                return [(20, 860506, 2, 74512)]
-            return [(1, 860506, 0, 0)]
         return super().execute(query, *args, **kwargs)
 
 
