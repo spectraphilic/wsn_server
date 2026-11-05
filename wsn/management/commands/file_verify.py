@@ -185,11 +185,14 @@ class Command(BaseCommand):
                 is_float = ctype.startswith('Float')
                 is_date = ctype.startswith('Date') or \
                     split_type(new_cols[col])[0].startswith('Date')
-                value = f'toUInt32("{col}")' if is_date else f'"{col}"'
+                # Quoted everywhere: Sommer channel names contain commas
+                # and spaces, e.g. "Cube, Ice rate"
+                ident = f'"{col}"'
+                value = f'toUInt32({ident})' if is_date else ident
                 if nullable:
-                    cond = f'({col} IS NOT NULL)'
+                    cond = f'({ident} IS NOT NULL)'
                     if is_float:
-                        cond = f'({col} IS NOT NULL AND NOT isNaN({col}))'
+                        cond = f'({ident} IS NOT NULL AND NOT isNaN({ident}))'
                     exprs.extend([
                         f'minIf({value}, {cond})',
                         f'maxIf({value}, {cond})',
@@ -197,7 +200,7 @@ class Command(BaseCommand):
                         f'countIf({cond})',
                     ])
                 elif is_float:
-                    cond = f'NOT isNaN({col})'
+                    cond = f'NOT isNaN({ident})'
                     exprs.extend([
                         f'minIf({value}, {cond})',
                         f'maxIf({value}, {cond})',
@@ -209,7 +212,7 @@ class Command(BaseCommand):
                         f'min({value})',
                         f'max({value})',
                         f'sum({value})',
-                        f'count("{col}")',
+                        f'count({ident})',
                     ])
                 numeric_cols.append(col)
                 specs.extend((col, stat) for stat in STATS)

@@ -819,11 +819,14 @@ class FakeClickHouse:
     """
 
     differ = False
+    queries = []
 
     OLD = {
         'TIMESTAMP': "DateTime64(3, 'UTC')",
         'RECORD': 'UInt32',
         'Ux': 'Float64',
+        # Sommer channel names contain commas and spaces
+        'Cube, Ice rate': 'Float64',
     }
     NEW = {
         **OLD,
@@ -838,6 +841,7 @@ class FakeClickHouse:
         return False
 
     def execute(self, query, *args, **kwargs):
+        self.queries.append(query)
         if query.startswith('DESCRIBE TABLE'):
             table = query.split()[2]
             cols = self.NEW if table.endswith('_new') else self.OLD
@@ -859,10 +863,10 @@ class FakeClickHouse:
             return [(1694649600, 1786329600)]
         if query.startswith('SELECT toUInt32(max(TIMESTAMP))'):
             return [(1786329600,)]
-        # Per-column aggregate query: RECORD (nullable, 4 exprs) and Ux
-        # (float, 4 exprs)
+        # Per-column aggregate query: RECORD (nullable, 4 exprs), Ux and
+        # Cube, Ice rate (float, 4 exprs each)
         value = 2.0 if self.differ and 'FROM test_new' in query else 1
-        return [tuple([value] * 8)]
+        return [tuple([value] * 12)]
 
 
 class FakeClickHouseUInt32(FakeClickHouse):
@@ -876,8 +880,9 @@ class FakeClickHouseUInt32(FakeClickHouse):
 
     def execute(self, query, *args, **kwargs):
         if 'toUInt32' in query and query.startswith('SELECT'):
-            # Aggregates: TIMESTAMP (4 exprs) + RECORD (4) + Ux (4)
-            return [tuple([1] * 12)]
+            # Aggregates: TIMESTAMP (4 exprs) + RECORD (4) + Ux (4) +
+            # Cube, Ice rate (4)
+            return [tuple([1] * 16)]
         return super().execute(query, *args, **kwargs)
 
 
@@ -921,6 +926,7 @@ table = "test_new"
     ImportFile.objects.create(name='test', path='2023/09/x.dat.xz',
                               status=ImportFile.Status.DONE)
     monkeypatch.setattr(file_verify, 'ClickHouse', FakeClickHouse)
+    FakeClickHouse.queries.clear()
 
     # Identical tables: all checks OK
     assert call_command('file_verify', config, name='test') == 0
@@ -936,6 +942,12 @@ table = "test_new"
     assert 'Size: old=50.0\xa0MB new=30.0\xa0MB' in out
     assert 'Range:' in out and ' OK' in out
     assert 'Ux: OK' in out
+    assert 'Cube, Ice rate: OK' in out
+    # Column names with commas and spaces must be quoted everywhere they
+    # appear in the aggregate query (Code 62 otherwise)
+    queries = '\n'.join(FakeClickHouse.queries)
+    assert 'isNaN("Cube, Ice rate")' in queries
+    assert 'isNaN(Cube, Ice rate)' not in queries
     assert 'All checks OK' in out
 
     # Diffs are reported, not failed
@@ -944,7 +956,8 @@ table = "test_new"
     out = capsys.readouterr().out
     assert 'RECORD: DIFF' in out
     assert 'Ux: DIFF' in out
-    assert '2 check(s) differ' in out
+    assert 'Cube, Ice rate: DIFF' in out
+    assert '3 check(s) differ' in out
     FakeClickHouse.differ = False
 
 
