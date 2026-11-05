@@ -299,7 +299,7 @@ class GruvebadetDiagnostic(models.ClickhouseModel):
 
 
 class Mammamia3Mm3Borehole(models.ClickhouseModel):
-    timestamp = models.UInt32Field(db_column='TIMESTAMP', primary_key=True)  # Field name made lowercase.
+    timestamp = models.DateTimeField(db_column='TIMESTAMP', primary_key=True)  # Field name made lowercase.
     readezortd_ok = models.Float64Field(db_column='ReadEzoRTD_OK')  # Field name made lowercase.
     bh_recnum = models.Float64Field(db_column='BH_RecNum')  # Field name made lowercase.
     bh_plough_force = models.Float64Field(db_column='BH_Plough_Force')  # Field name made lowercase.
@@ -357,7 +357,7 @@ class Mammamia3Mm3Borehole(models.ClickhouseModel):
 
 
 class Mammamia3Mm3Surface(models.ClickhouseModel):
-    timestamp = models.UInt32Field(db_column='TIMESTAMP', primary_key=True)  # Field name made lowercase.
+    timestamp = models.DateTimeField(db_column='TIMESTAMP', primary_key=True)  # Field name made lowercase.
     plough_d = models.Float64Field(db_column='Plough_D')  # Field name made lowercase.
     ftpfilename_mm3_surface = models.StringField(db_column='FtpFileName_mm3_Surface')  # Field name made lowercase.
     tries = models.Float64Field(db_column='Tries')  # Field name made lowercase.

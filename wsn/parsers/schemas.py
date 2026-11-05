@@ -10,7 +10,7 @@ class Field:
 
 SCHEMAS = {
     'mammamia3': {
-        'TIMESTAMP': Field(type='UInt32'),
+        'TIMESTAMP': Field(type="DateTime('UTC')"),
         'RECORD': Field(type='UInt32'),
         # Borehole
         'SurfaceTimeStamp': Field(type="DateTime('UTC')"),
