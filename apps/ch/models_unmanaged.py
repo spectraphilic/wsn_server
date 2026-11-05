@@ -196,7 +196,7 @@ class FinsefluxStationstatus(models.ClickhouseModel):
 
 
 class FinseSommer(models.ClickhouseModel):
-    timestamp = models.UInt32Field(db_column='TIMESTAMP', primary_key=True)  # Field name made lowercase.
+    timestamp = models.DateTimeField(db_column='TIMESTAMP', primary_key=True)  # Field name made lowercase.
     supply_voltage = models.Float64Field(db_column='Supply voltage')  # Field name made lowercase. Field renamed to remove unsuitable characters.
     cube_dir_value = models.Float64Field(db_column='Cube, Dir.value')  # Field name made lowercase. Field renamed to remove unsuitable characters.
     exception_code = models.Float64Field(db_column='Exception code')  # Field name made lowercase. Field renamed to remove unsuitable characters.
@@ -386,7 +386,7 @@ class Mammamia3Mm3Surface(models.ClickhouseModel):
 
 
 class Mobileflux2Biomet(models.ClickhouseModel):
-    timestamp = models.UInt32Field(db_column='TIMESTAMP', primary_key=True)  # Field name made lowercase.
+    timestamp = models.DateTimeField(db_column='TIMESTAMP', primary_key=True)  # Field name made lowercase.
     fc2driftmin_99_99_1_1_1 = models.Float64Field(db_column='FC2DRIFTmin_99_99_1_1_1')  # Field name made lowercase.
     fc2wsmax_16_99_1_1_1 = models.Float64Field(db_column='FC2WSmax_16_99_1_1_1')  # Field name made lowercase.
     fc2driftstd_99_99_1_1_1 = models.Float64Field(db_column='FC2DRIFTstd_99_99_1_1_1')  # Field name made lowercase.

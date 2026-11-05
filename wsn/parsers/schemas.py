@@ -150,6 +150,14 @@ SCHEMAS = {
         'Uz': Field(source='WC3'),
         'Ts': Field(source='C'),
     },
+    'finse_sommer': {
+        'TIMESTAMP': Field(type="DateTime('UTC')"),
+        'RECORD': Field(type='UInt32'),
+    },
+    'mobileflux2': {
+        'TIMESTAMP': Field(type="DateTime('UTC')"),
+        'RECORD': Field(type='UInt32'),
+    },
     'default': {
         'TIMESTAMP': Field(type='UInt32'),
         'RECORD': Field(type='UInt32'),
