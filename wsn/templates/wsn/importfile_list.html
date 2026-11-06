@@ -1,5 +1,12 @@
 {% extends "admin/base_site.html" %}
-{% load i18n %}
+{% load i18n static %}
+
+{% block bodyclass %}change-list{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static "admin/css/changelists.css" %}">
+{% endblock %}
 
 {% block breadcrumbs %}
 <ol class="breadcrumbs">
@@ -10,53 +17,71 @@
 
 {% block content %}
 <div id="content-main">
-    <form method="get">
-        <select name="name">
-            <option value="">{% translate 'All names' %}</option>
-            {% for n in names %}
-            <option value="{{ n }}"{% if n == name %} selected{% endif %}>{{ n }}</option>
-            {% endfor %}
-        </select>
-        <select name="status">
-            <option value="">{% translate 'All statuses' %}</option>
-            {% for value, label in statuses %}
-            <option value="{{ value }}"{% if value == status %} selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-        </select>
-        <input type="submit" value="{% translate 'Filter' %}">
-    </form>
-    <p>
-        {% blocktranslate with count=page.paginator.count %}{{ count }} files{% endblocktranslate %}
-        {% if page.paginator.num_pages > 1 %}
-            &mdash;
-            {% if page.has_previous %}<a href="?{% if query %}{{ query.urlencode }}&amp;{% endif %}page={{ page.previous_page_number }}">&lsaquo; {% translate 'Previous' %}</a>{% endif %}
-            {% translate 'Page' %} {{ page.number }} / {{ page.paginator.num_pages }}
-            {% if page.has_next %}<a href="?{% if query %}{{ query.urlencode }}&amp;{% endif %}page={{ page.next_page_number }}">{% translate 'Next' %} &rsaquo;</a>{% endif %}
-        {% endif %}
-    </p>
-    <table>
-        <thead>
-            <tr>
-                <th>{% translate 'Name' %}</th>
-                <th>{% translate 'Path' %}</th>
-                <th>{% translate 'Status' %}</th>
-                <th>{% translate 'Error' %}</th>
-                <th>{% translate 'Created' %}</th>
-                <th>{% translate 'Updated' %}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for file in page %}
-            <tr>
-                <td>{{ file.name }}</td>
-                <td>{{ file.path }}</td>
-                <td>{{ file.status }}</td>
-                <td>{{ file.error }}</td>
-                <td>{{ file.created_at }}</td>
-                <td>{{ file.updated_at }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="module filtered" id="changelist">
+        <div class="changelist-form-container">
+            <div>
+                <nav class="paginator" aria-labelledby="pagination">
+                    <h2 id="pagination" class="visually-hidden">{% translate 'Pagination import files' %}</h2>
+                    <ul>
+                        {% for i in page_range %}
+                        <li>
+                            {% if i == '…' %}
+                            {{ i }}
+                            {% elif i == page.number %}
+                            <a role="button" href="" aria-current="page">{{ i }}</a>
+                            {% else %}
+                            <a role="button" href="?{% if query %}{{ query.urlencode }}&amp;{% endif %}page={{ i }}">{{ i }}</a>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% blocktranslate with count=page.paginator.count %}{{ count }} files{% endblocktranslate %}
+                </nav>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{% translate 'Name' %}</th>
+                            <th>{% translate 'Path' %}</th>
+                            <th>{% translate 'Status' %}</th>
+                            <th>{% translate 'Error' %}</th>
+                            <th>{% translate 'Created' %}</th>
+                            <th>{% translate 'Updated' %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file in page %}
+                        <tr>
+                            <td>{{ file.name }}</td>
+                            <td>{{ file.path }}</td>
+                            <td>{{ file.status }}</td>
+                            <td>{{ file.error }}</td>
+                            <td>{{ file.created_at }}</td>
+                            <td>{{ file.updated_at }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <search id="changelist-filter">
+                <h2>{% translate 'Filter' %}</h2>
+                <details data-filter-title="{% translate 'Status' %}" open>
+                    <summary>{% translate 'By status' %}</summary>
+                    <ul>
+                        {% for choice in status_choices %}
+                        <li{% if choice.selected %} class="selected"{% endif %}><a href="{{ choice.querystring|iriencode }}">{{ choice.label }} ({{ choice.count }})</a></li>
+                        {% endfor %}
+                    </ul>
+                </details>
+                <details data-filter-title="{% translate 'Name' %}" open>
+                    <summary>{% translate 'By name' %}</summary>
+                    <ul>
+                        {% for choice in name_choices %}
+                        <li{% if choice.selected %} class="selected"{% endif %}><a href="{{ choice.querystring|iriencode }}">{{ choice.label }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </details>
+            </search>
+        </div>
+    </div>
 </div>
 {% endblock %}

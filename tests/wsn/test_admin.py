@@ -96,6 +96,38 @@ def test_importfile_list_filters(client, staff):
     assert 'pending.xz' in response.content.decode()
 
 
+def test_importfile_list_filter_links(client, staff):
+    ImportFile.objects.create(name='eton2', path='eton2_a.xz')
+    ImportFile.objects.create(name='eton2', path='eton2_b.xz',
+                              status=ImportFile.Status.DONE)
+    ImportFile.objects.create(name='licor_myr2', path='licor_a.xz',
+                              status=ImportFile.Status.ERROR)
+    client.force_login(staff)
+    url = reverse('admin_importfile_list')
+
+    # Every choice is a sidebar link with its row count; without filters the
+    # "All" entries are selected
+    content = client.get(url).content.decode()
+    assert '<a href="?name=eton2">eton2</a>' in content
+    assert '<a href="?status=pending">Pending (1)</a>' in content
+    assert '<a href="?status=done">Done (1)</a>' in content
+    assert '<a href="?status=error">Error (1)</a>' in content
+    assert content.count('<li class="selected"><a href="?">All (3)</a></li>') == 1
+    assert content.count('<li class="selected"><a href="?">All</a></li>') == 1
+
+    # Active status: matching choice selected, name links keep the filter
+    content = client.get(url, {'status': 'pending'}).content.decode()
+    assert '<li class="selected"><a href="?status=pending">Pending (1)</a></li>' in content
+    assert '<a href="?status=pending&amp;name=eton2">eton2</a>' in content
+    assert '<li><a href="?">All (3)</a></li>' in content
+
+    # Active name: counts are recomputed within that name
+    content = client.get(url, {'name': 'eton2'}).content.decode()
+    assert '<li class="selected"><a href="?name=eton2">All (2)</a></li>' in content
+    assert '<a href="?name=eton2&amp;status=done">Done (1)</a>' in content
+    assert '<a href="?name=eton2&amp;status=error">Error (0)</a>' in content
+
+
 def test_importfile_list_pager_keeps_filters(client, staff):
     ImportFile.objects.bulk_create(
         ImportFile(name='n1', path=f'n1_{i:03}.xz') for i in range(150)
@@ -128,4 +160,4 @@ def test_importfile_list_pager_above_table(client, staff):
     client.force_login(staff)
     response = client.get(reverse('admin_importfile_list'))
     content = response.content.decode()
-    assert content.index('Page 1 / 3') < content.index('<table>')
+    assert content.index('aria-current="page"') < content.index('<table>')
